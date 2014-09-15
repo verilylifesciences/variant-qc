@@ -21,13 +21,15 @@ The following example makes use of the [Phase 1 variants](http://ftp.1000genomes
 
 The VCFs comprising this dataset are **3.5 TB** when uncompressed and provide information about **39,706,715** variants for **1,092** individuals.
 
-```{r init, cache=TRUE, comment=NA, echo=FALSE, message=FALSE, warning=FALSE}
+```{r init, cache=FALSE, comment=NA, echo=FALSE, message=FALSE, warning=FALSE}
+# TODO: ensure that bigrquery is released to CRAN
 require(bigrquery)
 require(ggplot2)
 require(dplyr)
 require(xtable)
 require(testthat)
 require(scales)
+
 # Setup for BigQuery access
 billing_project <- "google.com:biggene" # put your projectID here
 DisplayAndDispatchQuery <- function(queryUri, replacements=list()) {
@@ -41,6 +43,7 @@ DisplayAndDispatchQuery <- function(queryUri, replacements=list()) {
 }
 
 # Setup for Genomics API access
+# TODO: swap this out with the Genomics R client when ready
 source("~/api-client-r/genomics-api.R")
 configure()
 ```
@@ -51,7 +54,7 @@ Working at Scale
 ### Cluster Computing
 
 Suppose we have a new dataset.  One of the first things we might do is a basic visualization.  Let's start by projecting the relevant data into 2-dimensional space by performing a [Principal Coordinate Analysis](http://occamstypewriter.org/boboh/2012/01/17/pca_and_pcoa_explained/) based on the number of variants shared by each pair of individuals.
-```{r cache=TRUE, comment=NA}
+```{r cache=FALSE, comment=NA}
 # TODO: In live demo, spin up Spark cluster on Google Compute Engine Click-to-deploy
 # and kick off full PCoA job from R but then load in pre-computed results so that 
 # we can proceed.
@@ -62,7 +65,7 @@ pca_1kg <- read.csv("./data/1kg-pca-results.csv")
 This analysis performed an $O(N^2)$ computation upon the relevant fields within the *3.5 TB* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Genomics Variants API](https://developers.google.com/genomics/v1beta/reference/variants) for its input.  When running upon X cores, this job typically takes Y minutes. 
 
 Visualizing the results we see quite distinct clusters:
-```{r fig.align="center", fig.width=10, cache=TRUE, comment=NA}
+```{r fig.align="center", fig.width=10, cache=FALSE, comment=NA}
 ggplot(pca_1kg) +
   geom_point(aes(x=PC1, y=PC2)) +
   xlab("principal component 1") +
@@ -71,19 +74,19 @@ ggplot(pca_1kg) +
 ```
 
 Let's pull in the [supplementary information](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/README_20130606_sample_info) we do have on these samples from [Google Cloud Storage](https://developers.google.com/storage/):
-```{r cache=TRUE, comment=NA}
+```{r cache=FALSE, comment=NA}
 sample_info <- read.csv("http://storage.googleapis.com/deflaux-test-1/1000_Genomes-phase_1-sample_info.csv")
 pca_1kg <- inner_join(pca_1kg, sample_info)
 ```
 
-```{r echo=FALSE, eval=FALSE, cache=TRUE, comment=NA}
+```{r echo=FALSE, eval=FALSE, cache=FALSE, comment=NA}
 # We could have also gotten this data from BigQuery
 sample_info <- DisplayAndDispatchQuery("./sql/sample-info.sql")
 pca_1kg <- inner_join(pca_1kg, sample_info)
 ```
 
 Applying sample ethnicity to the plot:
-```{r fig.align="center", fig.width=10, cache=TRUE, comment=NA}
+```{r fig.align="center", fig.width=10, cache=FALSE, comment=NA}
 ggplot(pca_1kg) +
   geom_point(aes(x=PC1, y=PC2, color=Super_Population)) +
   xlab("principal component 1") +
@@ -97,13 +100,13 @@ we see that ethnicity appears to be the primary explanation for the clusters.
 
 Let's also validate this by delving futher into counts of heterozygous reference (where one of the alleles is equal to the reference) and heterozygous 
 alternate (where neither of the alleles is equal to the reference) variants.
-```{r cache=TRUE, comment=NA}
+```{r cache=FALSE, comment=NA}
 sample_alt_counts <- DisplayAndDispatchQuery("./sql/sample-alt-counts.sql")
 ```
 This analysis performed an $O(N)$ computation via [Google BigQuery](https://developers.google.com/bigquery/).  Since BigQuery is a columnar data store, it scans only the columns referenced by the query.  In this case, 1 TB of data was scanned, typically within 10 seconds.
 
 Visualizing the results we again see quite distinct clusters:
-```{r fig.align="center", fig.width=10, cache=TRUE, comment=NA}
+```{r fig.align="center", fig.width=10, cache=FALSE, comment=NA}
 sample_alt_counts <- inner_join(sample_alt_counts, sample_info)
 ggplot(sample_alt_counts) +
   geom_point(aes(x=single, y=double, color=Super_Population)) +
@@ -119,7 +122,7 @@ Zooming-In
 
 Suppose we are interested in examining variants within the BRCA1 gene.  We might run our PCoA a second time, zooming-in specifically to this region within the genome.
 
-```{r cache=TRUE, comment=NA}
+```{r cache=FALSE, comment=NA}
 # TODO: in live demo, run Spark locally and kick off PCoA job from R.
 pca_1kg_brca1 <- read.table("./data/1kg-brca1-pca-results.tsv")
 names(pca_1kg_brca1) <- c("Sample", "V1", "PC1", "PC2", "V2")
@@ -127,7 +130,7 @@ names(pca_1kg_brca1) <- c("Sample", "V1", "PC1", "PC2", "V2")
 Since the amount of data over which this Spark job ran was small, it was feasible to run it locally.
 
 Examining this data visually:
-```{r fig.align="center", fig.width=10, cache=TRUE, comment=NA}
+```{r fig.align="center", fig.width=10, cache=FALSE, comment=NA}
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2)) +
   xlab("principal component 1") +
@@ -138,7 +141,7 @@ ggplot(pca_1kg_brca1) +
 we see distinct clusters with a much different structure than our former result upon the entire dataset.  
 
 Let's apply the sample information we have to this visualization to see if any of it explains the clustering.
-```{r fig.align="center", fig.width=10, cache=TRUE, comment=NA}
+```{r fig.align="center", fig.width=10, cache=FALSE, comment=NA}
 pca_1kg_brca1 <- inner_join(pca_1kg_brca1, sample_info)
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2, color=Gender)) +
@@ -148,7 +151,7 @@ ggplot(pca_1kg_brca1) +
 ```
 Gender has no apparent bearing on these variants.
 
-```{r fig.align="center", fig.width=10, cache=TRUE, comment=NA}
+```{r fig.align="center", fig.width=10, cache=FALSE, comment=NA}
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2, color=Super_Population)) +
   xlab("principal component 1") +
@@ -159,11 +162,11 @@ ggplot(pca_1kg_brca1) +
 we see that ethnicity does appear to account for some amount of the clustering in the second principal component axis but not in the first principal component axis.
 
 Let's split these individuals into two groups based on their position relative to the origin of the first principal component and visualize them again with their grouping.
-```{r cache=TRUE, comment=NA}
+```{r cache=FALSE, comment=NA}
 pca_1kg_brca1 <- mutate(pca_1kg_brca1, 
                         case = 0 > PC1)
 ```
-```{r fig.align="center", fig.width=10, cache=TRUE, comment=NA}
+```{r fig.align="center", fig.width=10, cache=FALSE, comment=NA}
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2, color=Super_Population, shape=case)) +
   xlab("principal component 1") +
@@ -172,23 +175,23 @@ ggplot(pca_1kg_brca1) +
 ```
 
 Next we perform a simplistic GWAS on the BRCA1 variants to retreive a ranked list of variants that differentiate these groups.
-```{r cache=TRUE, comment=NA}
+```{r cache=FALSE, comment=NA}
 case_sample_ids <- paste("'", filter(pca_1kg_brca1, case==TRUE)$Sample, "'", sep="", collapse=",")
 significant_variants <- DisplayAndDispatchQuery("./sql/gwas-brca1-pattern.sql",
                                                 list(CASE_SAMPLE_IDS__=case_sample_ids))
 ```
 Note that with a minor change to the SQL, we could have run this same GWAS query over all variants within a much larger region, over an entire chromosome, or even the full dataset; returning the ranked list of variants that differ between the two groups.
-```{r cache=TRUE, comment=NA}
+```{r cache=FALSE, comment=NA}
 head(significant_variants)
 ```
 
 Next we will annotate the top differenting variants using [BioConductor](http://www.bioconductor.org/).  First we will use the Genomics API R client to retrieve just the variant in which we are interested and expose it to R using the BioConductor VRanges data type.
-```{r cache=TRUE, comment=NA}
+```{r cache=FALSE, comment=NA}
 getVariantData(datasetId="1154144306496329440", chromosome="17", start=41261233, end=41261234)
 summary(variantdata)
 ```
 
-```{r cache=TRUE, comment=NA}
+```{r cache=FALSE, comment=NA}
 require(VariantAnnotation)
 require(BSgenome.Hsapiens.UCSC.hg19)
 require(TxDb.Hsapiens.UCSC.hg19.knownGene)
@@ -197,14 +200,15 @@ variantdata <- renameSeqlevels(variantdata, c("17"="chr17"))
 # TODO: talk to the BioConductor team at 1:30pm to get advice on what might be a better example here
 all <- locateVariants(variantdata, txdb, AllVariants())
 all
+# TODO: see if the structure we see here corresponds to hapotypes http://hapmap.ncbi.nlm.nih.gov/originhaplotype.html
 ```
 
 And if we want to zoom in even further, we can retrieve the reads from the [Genomics Reads API](https://developers.google.com/genomics/v1beta/reference/readsets) for a given sample and examine coverage:
-```{r cache=TRUE, comment=NA}
+```{r cache=FALSE, comment=NA}
 getReadData(readsetId="CJDmkYn8ChCcnc7i4KaWqmQ", chromosome="17", start=41261180, end=41261280)
 ```
 
-```{r fig.align="center", fig.width=10, cache=TRUE, comment=NA}
+```{r fig.align="center", fig.width=10, cache=FALSE, comment=NA}
 p1 <- autoplot(alignments, aes(color=strand, fill=strand))
 p2 <- ggplot(as(alignments, "GRanges")) + stat_coverage(color="gray40", fill="skyblue")
 tracks(p1, p2, xlab="chr17")
@@ -217,7 +221,7 @@ In summary, in this demo from the R prompt we were able to exercise both large s
 Provenance
 -------------------
 Lastly, let us capture version information about R and loaded packages for the sake of provenance.
-```{r cache=TRUE, comment=NA}
+```{r cache=FALSE, comment=NA}
 sessionInfo()
 ```
 
