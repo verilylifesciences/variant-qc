@@ -14,15 +14,8 @@
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
 
----
-title: "Data Analyis using the Genomics API"
-output:
-  html_document:
-    keep_md: yes
-    toc: yes
-  pdf_document:
-    toc: yes
----
+Data Analyis using the Genomics API
+===================================
 
 The following example makes use of the [Phase 1 variants](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20110521/README.phase1_integrated_release_version3_20120430) from the [1,000 Genomes Project](http://www.1000genomes.org/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](http://developers.google.com/genomics/datasets/1000-genomes-phase-1).
 
@@ -212,7 +205,7 @@ p1 <- autoplot(alignments, aes(color=strand, fill=strand))
 p2 <- ggplot(as(alignments, "GRanges")) + stat_coverage(color="gray40", fill="skyblue")
 tracks(p1, p2, xlab="chr17")
 ```
-See also [GABrowse](See Also http://gabrowse.appspot.com/#=&readsetId=CJDmkYn8ChCcnc7i4KaWqmQ&backend=GOOGLE) for an interactive Reads browser.
+See also [GABrowse](http://gabrowse.appspot.com/#=&readsetId=CJDmkYn8ChCcnc7i4KaWqmQ&backend=GOOGLE) for an interactive Reads browser.
 
 In summary, in this demo from the R prompt we were able to exercise both large scale and small scale data analysis using cloud-based infrastructure.
 
@@ -224,6 +217,6 @@ sessionInfo()
 ```
 
 ```{r, include=FALSE}
-   file.rename(from="AllModalitiesDemo.knit.md", 
+   file.rename(from="AllModalitiesDemo.md", 
                to="README.md")
 ```
