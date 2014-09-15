@@ -123,7 +123,6 @@ GROUP BY
   Sample
 ORDER BY
   Sample</code></pre>
-<pre><code>Auto-refreshing stale OAuth token.</code></pre>
 <p>This analysis performed an <span class="math">\(O(N)\)</span> computation via <a href="https://developers.google.com/bigquery/">Google BigQuery</a>. Since BigQuery is a columnar data store, it scans only the columns referenced by the query. In this case, 1 TB of data was scanned, typically within 10 seconds.</p>
 <p>Visualizing the results we again see quite distinct clusters:</p>
 <pre class="r"><code>sample_alt_counts &lt;- inner_join(sample_alt_counts, sample_info)</code></pre>
@@ -293,44 +292,15 @@ ORDER BY
 <p>Next we will annotate the top differenting variants using <a href="http://www.bioconductor.org/">BioConductor</a>. First we will use the Genomics API R client to retrieve just the variant in which we are interested and expose it to R using the BioConductor VRanges data type.</p>
 <pre class="r"><code>getVariantData(datasetId=&quot;1154144306496329440&quot;, chromosome=&quot;17&quot;, start=41261233, end=41261234)</code></pre>
 <pre><code>Fetching variant data page
-Auto-refreshing stale OAuth token.
 Parsing variant data page
 Variant data is now available</code></pre>
 <pre class="r"><code>summary(variantdata)</code></pre>
 <pre><code> Length   Class    Mode 
    1092 VRanges      S4 </code></pre>
 <pre class="r"><code>require(VariantAnnotation)
-require(BSgenome.Hsapiens.UCSC.hg19)</code></pre>
-<pre><code>Loading required package: BSgenome.Hsapiens.UCSC.hg19</code></pre>
-<pre class="r"><code>require(TxDb.Hsapiens.UCSC.hg19.knownGene)</code></pre>
-<pre><code>Loading required package: TxDb.Hsapiens.UCSC.hg19.knownGene
-Loading required package: GenomicFeatures
-Loading required package: AnnotationDbi
-Loading required package: Biobase
-Welcome to Bioconductor
-
-    Vignettes contain introductory material; view with
-    'browseVignettes()'. To cite Bioconductor, see
-    'citation(&quot;Biobase&quot;)', and for packages 'citation(&quot;pkgname&quot;)'.
-
-
-Attaching package: 'Biobase'
-
-The following object is masked from 'package:httr':
-
-    content
-
-
-Attaching package: 'AnnotationDbi'
-
-The following object is masked from 'package:BSgenome':
-
-    species
-
-The following object is masked from 'package:dplyr':
-
-    select</code></pre>
-<pre class="r"><code>txdb &lt;- TxDb.Hsapiens.UCSC.hg19.knownGene
+require(BSgenome.Hsapiens.UCSC.hg19)
+require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+txdb &lt;- TxDb.Hsapiens.UCSC.hg19.knownGene
 variantdata &lt;- renameSeqlevels(variantdata, c(&quot;17&quot;=&quot;chr17&quot;))
 # TODO: talk to the BioConductor team at 1:30pm to get advice on what might be a better example here
 all &lt;- locateVariants(variantdata, txdb, AllVariants())</code></pre>
@@ -428,7 +398,7 @@ other attached packages:
 [15] IRanges_1.22.10                         
 [16] BiocGenerics_0.10.0                     
 [17] BiocInstaller_1.14.2                    
-[18] httr_0.4                                
+[18] httr_0.3                                
 [19] rjson_0.2.14                            
 [20] scales_0.2.4                            
 [21] testthat_0.8.1                          

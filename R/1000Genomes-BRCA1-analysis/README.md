@@ -432,12 +432,8 @@ getReadData(readsetId="CJDmkYn8ChCcnc7i4KaWqmQ", chromosome="17", start=41261180
 
 ```
 Fetching read data page
-```
-
-```
-Error: error in evaluating the argument 'table' in selecting a method for function '%in%': Error in (function (classes, fdef, mtable)  : 
-  unable to find an inherited method for function 'content' for signature '"response"'
-Calls: content -> <Anonymous>
+Parsing read data page
+Read data is now available
 ```
 
 
@@ -486,28 +482,28 @@ other attached packages:
  [3] AnnotationDbi_1.26.0                    
  [4] Biobase_2.24.0                          
  [5] BSgenome.Hsapiens.UCSC.hg19_1.3.99      
- [6] markdown_0.7.4                          
- [7] knitr_1.6                               
- [8] VariantAnnotation_1.10.5                
- [9] ggbio_1.12.10                           
-[10] GenomicAlignments_1.0.6                 
-[11] BSgenome_1.32.0                         
-[12] Rsamtools_1.16.1                        
-[13] Biostrings_2.32.1                       
-[14] XVector_0.4.0                           
-[15] GenomicRanges_1.16.4                    
-[16] GenomeInfoDb_1.0.2                      
-[17] IRanges_1.22.10                         
-[18] BiocGenerics_0.10.0                     
-[19] BiocInstaller_1.14.2                    
-[20] httr_0.4                                
-[21] rjson_0.2.14                            
-[22] scales_0.2.4                            
-[23] testthat_0.8.1                          
-[24] xtable_1.7-3                            
-[25] dplyr_0.2                               
-[26] ggplot2_1.0.0                           
-[27] bigrquery_0.1                           
+ [6] knitr_1.6                               
+ [7] VariantAnnotation_1.10.5                
+ [8] ggbio_1.12.10                           
+ [9] GenomicAlignments_1.0.6                 
+[10] BSgenome_1.32.0                         
+[11] Rsamtools_1.16.1                        
+[12] Biostrings_2.32.1                       
+[13] XVector_0.4.0                           
+[14] GenomicRanges_1.16.4                    
+[15] GenomeInfoDb_1.0.2                      
+[16] IRanges_1.22.10                         
+[17] BiocGenerics_0.10.0                     
+[18] BiocInstaller_1.14.2                    
+[19] httr_0.3                                
+[20] rjson_0.2.14                            
+[21] scales_0.2.4                            
+[22] testthat_0.8.1                          
+[23] xtable_1.7-3                            
+[24] dplyr_0.2                               
+[25] ggplot2_1.0.0                           
+[26] bigrquery_0.1                           
+[27] devtools_1.5                            
 
 loaded via a namespace (and not attached):
  [1] assertthat_0.1.0.99 BatchJobs_1.3       BBmisc_1.7         
@@ -518,15 +514,15 @@ loaded via a namespace (and not attached):
 [16] evaluate_0.5.5      fail_1.2            foreach_1.4.2      
 [19] formatR_1.0         Formula_1.1-2       grid_3.1.1         
 [22] gridExtra_0.9.1     gtable_0.1.2        Hmisc_3.14-4       
-[25] htmltools_0.2.4     iterators_1.0.7     jsonlite_0.9.11    
+[25] httpuv_1.3.0        iterators_1.0.7     jsonlite_0.9.11    
 [28] labeling_0.3        lattice_0.20-29     latticeExtra_0.6-26
-[31] MASS_7.3-34         munsell_0.4.2       plyr_1.8.1         
-[34] proto_0.3-10        RColorBrewer_1.0-5  Rcpp_0.11.2        
-[37] RCurl_1.95-4.3      reshape2_1.4        rmarkdown_0.2.64   
+[31] MASS_7.3-34         memoise_0.2.1       munsell_0.4.2      
+[34] plyr_1.8.1          proto_0.3-10        RColorBrewer_1.0-5 
+[37] Rcpp_0.11.2         RCurl_1.95-4.3      reshape2_1.4       
 [40] RSQLite_0.11.4      rtracklayer_1.24.2  sendmailR_1.1-2    
 [43] splines_3.1.1       stats4_3.1.1        stringr_0.6.2      
-[46] survival_2.37-7     tools_3.1.1         XML_3.98-1.1       
-[49] zlibbioc_1.10.0    
+[46] survival_2.37-7     tools_3.1.1         whisker_0.3-2      
+[49] XML_3.98-1.1        zlibbioc_1.10.0    
 ```
 
 
