@@ -1,22 +1,14 @@
-# Sample alternate allele counts within this bi-allelic data.
+# Count alternate alleles for each sample.
 SELECT
   genotype.sample_id AS Sample,
-  SUM(IF((genotype.first_allele > 0
-        AND genotype.second_allele = 0)
-      OR (genotype.first_allele = 0
-        AND genotype.second_allele > 0),
-      1,
-      0))
-  AS single,
-  SUM(IF(genotype.first_allele > 0
-      AND genotype.second_allele > 0,
-      1,
-      0)) AS double,
+  SUM(IF((genotype.first_allele > 0 AND genotype.second_allele = 0)
+      OR (genotype.first_allele = 0 AND genotype.second_allele > 0),
+      1, 0)) AS single,
+  SUM(IF(genotype.first_allele > 0  AND genotype.second_allele > 0,
+      1, 0)) AS double,
 FROM
   [google.com:biggene:1000genomes.variants1kG]
-OMIT
-  RECORD IF contig IN ("X",
-    "Y")
+OMIT RECORD IF contig IN ("X", "Y")
 GROUP BY
   Sample
 ORDER BY

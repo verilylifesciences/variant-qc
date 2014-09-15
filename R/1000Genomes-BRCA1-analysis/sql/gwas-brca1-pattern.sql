@@ -39,24 +39,12 @@ FROM (
     SUM(ref_count + alt_count) AS allele_count,
     SUM(ref_count) AS ref_count,
     SUM(alt_count) AS alt_count,
-    SUM(IF(TRUE = is_case,
-        INTEGER(ref_count + alt_count),
-        0)) AS case_count,
-    SUM(IF(FALSE = is_case,
-        INTEGER(ref_count + alt_count),
-        0)) AS control_count,
-    SUM(IF(TRUE = is_case,
-        ref_count,
-        0)) AS case_ref_count,
-    SUM(IF(TRUE = is_case,
-        alt_count,
-        0)) AS case_alt_count,
-    SUM(IF(FALSE = is_case,
-        ref_count,
-        0)) AS control_ref_count,
-    SUM(IF(FALSE = is_case,
-        alt_count,
-        0)) AS control_alt_count,
+    SUM(IF(TRUE = is_case, INTEGER(ref_count + alt_count), 0)) AS case_count,
+    SUM(IF(FALSE = is_case, INTEGER(ref_count + alt_count), 0)) AS control_count,
+    SUM(IF(TRUE = is_case, ref_count, 0)) AS case_ref_count,
+    SUM(IF(TRUE = is_case, alt_count, 0)) AS case_alt_count,
+    SUM(IF(FALSE = is_case, ref_count, 0)) AS control_ref_count,
+    SUM(IF(FALSE = is_case, alt_count, 0)) AS control_alt_count,
   FROM (
     SELECT
       contig,
@@ -94,4 +82,4 @@ HAVING
   chi_squared_score >= 29.71679
 ORDER BY
   chi_squared_score DESC,
-  allele_count DESC
+  position
