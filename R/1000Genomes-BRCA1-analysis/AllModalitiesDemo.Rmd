@@ -90,6 +90,7 @@ ggplot(pca_1kg) +
   ylab("principal component 2") +
   ggtitle("Principal Coordinate Analysis upon 1,000 Genomes")
 ```
+
 we see that ethnicity appears to be the primary explanation for the clusters.
 
 ### Querying
@@ -133,6 +134,7 @@ ggplot(pca_1kg_brca1) +
   ylab("principal component 2") +
   ggtitle("Principal Coordinate Analysis upon BRCA1 within 1,000 Genomes")
 ```
+
 we see distinct clusters with a much different structure than our former result upon the entire dataset.  
 
 Let's apply the sample information we have to this visualization to see if any of it explains the clustering.
@@ -153,6 +155,7 @@ ggplot(pca_1kg_brca1) +
   ylab("principal component 2") +
   ggtitle("Principal Coordinate Analysis upon BRCA1 within 1,000 Genomes")
 ```
+
 we see that ethnicity does appear to account for some amount of the clustering in the second principal component axis but not in the first principal component axis.
 
 Let's split these individuals into two groups based on their position relative to the origin of the first principal component and visualize them again with their grouping.
@@ -167,6 +170,7 @@ ggplot(pca_1kg_brca1) +
   ylab("principal component 2") +
   ggtitle("Principal Coordinate Analysis upon BRCA1 within 1,000 Genomes")
 ```
+
 Next we perform a simplistic GWAS on the BRCA1 variants to retreive a ranked list of variants that differentiate these groups.
 ```{r cache=TRUE, comment=NA}
 case_sample_ids <- paste("'", filter(pca_1kg_brca1, case==TRUE)$Sample, "'", sep="", collapse=",")
@@ -205,6 +209,7 @@ p1 <- autoplot(alignments, aes(color=strand, fill=strand))
 p2 <- ggplot(as(alignments, "GRanges")) + stat_coverage(color="gray40", fill="skyblue")
 tracks(p1, p2, xlab="chr17")
 ```
+
 See also [GABrowse](http://gabrowse.appspot.com/#=&readsetId=CJDmkYn8ChCcnc7i4KaWqmQ&backend=GOOGLE) for an interactive Reads browser.
 
 In summary, in this demo from the R prompt we were able to exercise both large scale and small scale data analysis using cloud-based infrastructure.

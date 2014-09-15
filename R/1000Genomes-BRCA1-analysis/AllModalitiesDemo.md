@@ -76,6 +76,7 @@ ggplot(pca_1kg) +
 ```
 
 <img src="figure/unnamed-chunk-5.png" title="plot of chunk unnamed-chunk-5" alt="plot of chunk unnamed-chunk-5" style="display: block; margin: auto;" />
+
 we see that ethnicity appears to be the primary explanation for the clusters.
 
 ### Querying
@@ -152,6 +153,7 @@ ggplot(pca_1kg_brca1) +
 ```
 
 <img src="figure/unnamed-chunk-9.png" title="plot of chunk unnamed-chunk-9" alt="plot of chunk unnamed-chunk-9" style="display: block; margin: auto;" />
+
 we see distinct clusters with a much different structure than our former result upon the entire dataset.  
 
 Let's apply the sample information we have to this visualization to see if any of it explains the clustering.
@@ -185,6 +187,7 @@ ggplot(pca_1kg_brca1) +
 ```
 
 <img src="figure/unnamed-chunk-11.png" title="plot of chunk unnamed-chunk-11" alt="plot of chunk unnamed-chunk-11" style="display: block; margin: auto;" />
+
 we see that ethnicity does appear to account for some amount of the clustering in the second principal component axis but not in the first principal component axis.
 
 Let's split these individuals into two groups based on their position relative to the origin of the first principal component and visualize them again with their grouping.
@@ -203,6 +206,7 @@ ggplot(pca_1kg_brca1) +
 ```
 
 <img src="figure/unnamed-chunk-13.png" title="plot of chunk unnamed-chunk-13" alt="plot of chunk unnamed-chunk-13" style="display: block; margin: auto;" />
+
 Next we perform a simplistic GWAS on the BRCA1 variants to retreive a ranked list of variants that differentiate these groups.
 
 ```r
@@ -488,6 +492,7 @@ tracks(p1, p2, xlab="chr17")
 ```
 
 <img src="figure/unnamed-chunk-19.png" title="plot of chunk unnamed-chunk-19" alt="plot of chunk unnamed-chunk-19" style="display: block; margin: auto;" />
+
 See also [GABrowse](http://gabrowse.appspot.com/#=&readsetId=CJDmkYn8ChCcnc7i4KaWqmQ&backend=GOOGLE) for an interactive Reads browser.
 
 In summary, in this demo from the R prompt we were able to exercise both large scale and small scale data analysis using cloud-based infrastructure.
