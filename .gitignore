@@ -1,5 +1,5 @@
 .Rproj.user
 .Rhistory
 .RData
-R.Rproj
+*.Rproj
 client_secrets.json

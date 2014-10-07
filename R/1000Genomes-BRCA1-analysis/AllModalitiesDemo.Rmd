@@ -60,7 +60,7 @@ pca_1kg <- read.table("./data/1kg-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 # TODO: also consider just computing the similarity matrix via Spark and use the
 # appropriate R package to compute PCA
 ```
-This analysis performed an $O(N^2)$ computation upon the relevant fields within the *3.5 TB* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Genomics Variants API](https://developers.google.com/genomics/v1beta/reference/variants) for its input.  When running upon X cores, this job typically takes Y minutes. 
+This analysis performed an `O(N^2)` computation upon the relevant fields within the *3.5 TB* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Genomics Variants API](https://developers.google.com/genomics/v1beta/reference/variants) for its input.  Please see the relevant [source code](https://github.com/googlegenomics/spark-examples/blob/master/src/main/scala/com/google/cloud/genomics/spark/examples/VariantsPca.scala#L37) for more detail.  When running upon X cores, this job typically takes Y minutes. 
 
 Visualizing the results we see quite distinct clusters:
 ```{r fig.align="center", fig.width=10, cache=FALSE, comment=NA}
@@ -184,8 +184,12 @@ head(significant_variants)
 
 Next we will annotate the top differenting variants using [BioConductor](http://www.bioconductor.org/).  First we will use the Genomics API R client to retrieve just the variant in which we are interested and expose it to R using the BioConductor VRanges data type.
 ```{r cache=FALSE, comment=NA}
-variantData <- getVariantData(datasetId="10473108253681171589", chromosome="17", start=41218332, end=41218333)
+# TODO handle this vector inside the R package
+variantData <-  Reduce(append, apply(head(significant_variants, 20), 1, function(sv) {
+  getVariantData(datasetId="10473108253681171589", chromosome=sv["reference_name"], start=sv["start"], end=sv["end"])
+}))
 summary(variantData)
+
 ```
 
 ```{r cache=FALSE, comment=NA, message=FALSE}
@@ -194,10 +198,16 @@ require(BSgenome.Hsapiens.UCSC.hg19)
 require(TxDb.Hsapiens.UCSC.hg19.knownGene)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 variantData <- renameSeqlevels(variantData, c("17"="chr17"))
-# TODO: talk to the BioConductor team at 1:30pm to get advice on what might be a better example here
-all <- locateVariants(variantData, txdb, AllVariants())
-all
-# TODO: see if the structure we see here corresponds to hapotypes http://hapmap.ncbi.nlm.nih.gov/originhaplotype.html
+codingVariants <- locateVariants(variantData, txdb, CodingVariants())
+codingVariants
+
+# TODO: next predict the effect upon the protein
+#coding <- predictCoding(variantData, txdb, seqSource=Hsapiens, variantData$ALT)
+
+# TODO: then look up clinical impact (if any) in ClinVar
+
+# TODO: Lastly, see if the structure we see here corresponds to hapotypes 
+#       http://hapmap.ncbi.nlm.nih.gov/originhaplotype.html
 ```
 
 And if we want to zoom in even further, we can retrieve the reads from the [Genomics Reads API](https://developers.google.com/genomics/v1beta/reference/readsets) for a given sample and examine coverage:
