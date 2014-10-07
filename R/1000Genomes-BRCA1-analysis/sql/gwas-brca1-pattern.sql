@@ -1,9 +1,9 @@
 # A template for a simplistic GWAS query upon 1,000 Genomes phase 1 variants
 # within BRCA1.  The template allows customization of the list of sample ids
-# in the case group.
+# in the case group.  http://homes.cs.washington.edu/~suinlee/genome560/lecture7.pdf
 SELECT
-  contig,
-  position,
+  reference_name,
+  start,
   end,
   reference_bases,
   alternate_bases,
@@ -30,8 +30,8 @@ SELECT
   AS chi_squared_score
 FROM (
   SELECT
-    contig,
-    position,
+    reference_name,
+    start,
     end,
     reference_bases,
     alternate_bases,
@@ -47,26 +47,36 @@ FROM (
     SUM(IF(FALSE = is_case, alt_count, 0)) AS control_alt_count,
   FROM (
     SELECT
-      contig,
-      position,
-      reference_bases,
-      NTH(1, alternate_bases) WITHIN RECORD as alternate_bases,
+      reference_name,
+      start,
       end,
+      reference_bases,
+      alternate_bases,
       vt,
-      # 1,000 genomes data is bi-allelic so there is only ever a single alt
-      (0 = genotype.first_allele) + (0 = genotype.second_allele) AS ref_count,
-      (1 = genotype.first_allele) + (1 = genotype.second_allele) AS alt_count,
-      genotype.sample_id IN (CASE_SAMPLE_IDS__) AS is_case,
-    FROM
-      [google.com:biggene:1000genomes.variants1kG]
-    WHERE
-      contig = '17'
-      AND position BETWEEN 41196312
-      AND 41277500
-      )
+      # 1000 genomes data is bi-allelic so there is only ever a single alt
+      (0 = first_allele) + (0 = second_allele) AS ref_count,
+      (1 = first_allele) + (1 = second_allele) AS alt_count,
+      call.call_set_name IN (CASE_SAMPLE_IDS__) AS is_case,
+    FROM (
+        SELECT
+          reference_name,
+          start,
+          end,
+          reference_bases,
+          NTH(1, alternate_bases) WITHIN RECORD AS alternate_bases,
+          vt,
+          call.call_set_name,
+          NTH(1, call.genotype) WITHIN call AS first_allele,
+          NTH(2, call.genotype) WITHIN call AS second_allele,
+        FROM
+          [genomics-public-data:1000_genomes.variants]
+        WHERE
+          reference_name = '17'
+          AND start BETWEEN 41196311 AND 41277499
+    ) )
   GROUP BY
-    contig,
-    position,
+    reference_name,
+    start,
     end,
     reference_bases,
     alternate_bases,
@@ -82,4 +92,4 @@ HAVING
   chi_squared_score >= 29.71679
 ORDER BY
   chi_squared_score DESC,
-  position
+  start

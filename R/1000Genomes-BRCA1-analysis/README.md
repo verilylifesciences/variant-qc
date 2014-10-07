@@ -34,7 +34,7 @@ Suppose we have a new dataset.  One of the first things we might do is a basic v
 # TODO: In live demo, spin up Spark cluster on Google Compute Engine Click-to-deploy
 # and kick off full PCoA job from R but then load in pre-computed results so that 
 # we can proceed.
-pca_1kg <- read.csv("./data/1kg-pca-results.csv")
+pca_1kg <- read.table("./data/1kg-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 # TODO: also consider just computing the similarity matrix via Spark and use the
 # appropriate R package to compute PCA
 ```
@@ -55,7 +55,7 @@ ggplot(pca_1kg) +
 Let's pull in the [supplementary information](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/README_20130606_sample_info) we do have on these samples from [Google Cloud Storage](https://developers.google.com/storage/):
 
 ```r
-sample_info <- read.csv("http://storage.googleapis.com/deflaux-test-1/1000_Genomes-phase_1-sample_info.csv")
+sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
 pca_1kg <- inner_join(pca_1kg, sample_info)
 ```
 
@@ -91,15 +91,35 @@ sample_alt_counts <- DisplayAndDispatchQuery("./sql/sample-alt-counts.sql")
 ```
 # Count alternate alleles for each sample.
 SELECT
-  genotype.sample_id AS Sample,
-  SUM(IF((genotype.first_allele > 0 AND genotype.second_allele = 0)
-      OR (genotype.first_allele = 0 AND genotype.second_allele > 0),
-      1, 0)) AS single,
-  SUM(IF(genotype.first_allele > 0  AND genotype.second_allele > 0,
-      1, 0)) AS double,
+  Sample,
+  SUM(IF((first_allele > 0
+        AND second_allele = 0)
+      OR (first_allele = 0
+        AND second_allele > 0),
+      1,
+      0))
+  AS single,
+  SUM(IF(first_allele > 0
+      AND second_allele > 0,
+      1,
+      0))
+  AS double,
 FROM
-  [google.com:biggene:1000genomes.variants1kG]
-OMIT RECORD IF contig IN ("X", "Y")
+  (
+  SELECT
+    reference_name,
+    call.call_set_name AS Sample,
+    NTH(1,
+      call.genotype) WITHIN call AS first_allele,
+    NTH(2,
+      call.genotype) WITHIN call AS second_allele
+  FROM
+    [genomics-public-data:1000_genomes.variants])
+OMIT
+  RECORD IF
+  reference_name IN ("X",
+    "Y",
+    "MT")
 GROUP BY
   Sample
 ORDER BY
@@ -137,8 +157,7 @@ Suppose we are interested in examining variants within the BRCA1 gene.  We might
 
 ```r
 # TODO: in live demo, run Spark locally and kick off PCoA job from R.
-pca_1kg_brca1 <- read.table("./data/1kg-brca1-pca-results.tsv")
-names(pca_1kg_brca1) <- c("Sample", "V1", "PC1", "PC2", "V2")
+pca_1kg_brca1 <- read.table("./data/1kg-brca1-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 ```
 Since the amount of data over which this Spark job ran was small, it was feasible to run it locally.
 
@@ -199,7 +218,7 @@ pca_1kg_brca1 <- mutate(pca_1kg_brca1,
 
 ```r
 ggplot(pca_1kg_brca1) +
-  geom_point(aes(x=PC1, y=PC2, color=Super_Population, shape=case)) +
+  geom_point(aes(x=PC1, y=PC2, color=Super_Population, shape=case), size=3) +
   xlab("principal component 1") +
   ylab("principal component 2") +
   ggtitle("Principal Coordinate Analysis upon BRCA1 within 1,000 Genomes")
@@ -218,10 +237,10 @@ significant_variants <- DisplayAndDispatchQuery("./sql/gwas-brca1-pattern.sql",
 ```
 # A template for a simplistic GWAS query upon 1,000 Genomes phase 1 variants
 # within BRCA1.  The template allows customization of the list of sample ids
-# in the case group.
+# in the case group.  http://homes.cs.washington.edu/~suinlee/genome560/lecture7.pdf
 SELECT
-  contig,
-  position,
+  reference_name,
+  start,
   end,
   reference_bases,
   alternate_bases,
@@ -248,8 +267,8 @@ SELECT
   AS chi_squared_score
 FROM (
   SELECT
-    contig,
-    position,
+    reference_name,
+    start,
     end,
     reference_bases,
     alternate_bases,
@@ -265,26 +284,36 @@ FROM (
     SUM(IF(FALSE = is_case, alt_count, 0)) AS control_alt_count,
   FROM (
     SELECT
-      contig,
-      position,
-      reference_bases,
-      NTH(1, alternate_bases) WITHIN RECORD as alternate_bases,
+      reference_name,
+      start,
       end,
+      reference_bases,
+      alternate_bases,
       vt,
-      # 1,000 genomes data is bi-allelic so there is only ever a single alt
-      (0 = genotype.first_allele) + (0 = genotype.second_allele) AS ref_count,
-      (1 = genotype.first_allele) + (1 = genotype.second_allele) AS alt_count,
-      genotype.sample_id IN (CASE_SAMPLE_IDS__) AS is_case,
-    FROM
-      [google.com:biggene:1000genomes.variants1kG]
-    WHERE
-      contig = '17'
-      AND position BETWEEN 41196312
-      AND 41277500
-      )
+      # 1000 genomes data is bi-allelic so there is only ever a single alt
+      (0 = first_allele) + (0 = second_allele) AS ref_count,
+      (1 = first_allele) + (1 = second_allele) AS alt_count,
+      call.call_set_name IN (CASE_SAMPLE_IDS__) AS is_case,
+    FROM (
+        SELECT
+          reference_name,
+          start,
+          end,
+          reference_bases,
+          NTH(1, alternate_bases) WITHIN RECORD AS alternate_bases,
+          vt,
+          call.call_set_name,
+          NTH(1, call.genotype) WITHIN call AS first_allele,
+          NTH(2, call.genotype) WITHIN call AS second_allele,
+        FROM
+          [genomics-public-data:1000_genomes.variants]
+        WHERE
+          reference_name = '17'
+          AND start BETWEEN 41196311 AND 41277499
+    ) )
   GROUP BY
-    contig,
-    position,
+    reference_name,
+    start,
     end,
     reference_bases,
     alternate_bases,
@@ -300,7 +329,7 @@ HAVING
   chi_squared_score >= 29.71679
 ORDER BY
   chi_squared_score DESC,
-  position
+  start
 ```
 Note that with a minor change to the SQL, we could have run this same GWAS query over all variants within a much larger region, over an entire chromosome, or even the full dataset; returning the ranked list of variants that differ between the two groups.
 
@@ -309,43 +338,42 @@ head(significant_variants)
 ```
 
 ```
-  contig position end reference_bases alternate_bases  vt case_count
-1     17 41218333  NA               G               A SNP       1158
-2     17 41259049  NA               C               T SNP       1158
-3     17 41261233  NA               C               T SNP       1158
-4     17 41265776  NA               A               G SNP       1158
-5     17 41268206  NA               A               C SNP       1158
-6     17 41241390  NA               C               A SNP       1158
-  control_count allele_count ref_count alt_count case_ref_count
-1          1026         2184      1473       711            447
-2          1026         2184      1473       711            447
-3          1026         2184      1473       711            447
-4          1026         2184      1473       711            447
-5          1026         2184      1473       711            447
-6          1026         2184      1471       713            446
-  case_alt_count control_ref_count control_alt_count chi_squared_score
-1            711              1026                 0             934.0
-2            711              1026                 0             934.0
-3            711              1026                 0             934.0
-4            711              1026                 0             934.0
-5            711              1026                 0             934.0
-6            712              1025                 1             932.3
+  reference_name    start      end reference_bases alternate_bases  vt case_count
+1             17 41218332 41218333               G               A SNP       1158
+2             17 41259048 41259049               C               T SNP       1158
+3             17 41261232 41261233               C               T SNP       1158
+4             17 41265775 41265776               A               G SNP       1158
+5             17 41268205 41268206               A               C SNP       1158
+6             17 41241389 41241390               C               A SNP       1158
+  control_count allele_count ref_count alt_count case_ref_count case_alt_count
+1          1026         2184      1473       711            447            711
+2          1026         2184      1473       711            447            711
+3          1026         2184      1473       711            447            711
+4          1026         2184      1473       711            447            711
+5          1026         2184      1473       711            447            711
+6          1026         2184      1471       713            446            712
+  control_ref_count control_alt_count chi_squared_score
+1              1026                 0             934.0
+2              1026                 0             934.0
+3              1026                 0             934.0
+4              1026                 0             934.0
+5              1026                 0             934.0
+6              1025                 1             932.3
 ```
 
 Next we will annotate the top differenting variants using [BioConductor](http://www.bioconductor.org/).  First we will use the Genomics API R client to retrieve just the variant in which we are interested and expose it to R using the BioConductor VRanges data type.
 
 ```r
-getVariantData(datasetId="1154144306496329440", chromosome="17", start=41261233, end=41261234)
+variantData <- getVariantData(datasetId="10473108253681171589", chromosome="17", start=41218332, end=41218333)
 ```
 
 ```
 Fetching variant data page
 Parsing variant data page
-Variant data is now available
 ```
 
 ```r
-summary(variantdata)
+summary(variantData)
 ```
 
 ```
@@ -359,9 +387,9 @@ require(VariantAnnotation)
 require(BSgenome.Hsapiens.UCSC.hg19)
 require(TxDb.Hsapiens.UCSC.hg19.knownGene)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
-variantdata <- renameSeqlevels(variantdata, c("17"="chr17"))
+variantData <- renameSeqlevels(variantData, c("17"="chr17"))
 # TODO: talk to the BioConductor team at 1:30pm to get advice on what might be a better example here
-all <- locateVariants(variantdata, txdb, AllVariants())
+all <- locateVariants(variantData, txdb, AllVariants())
 ```
 
 ```
@@ -375,45 +403,32 @@ all
 
 ```
 GRanges with 1092 ranges and 7 metadata columns:
-         seqnames               ranges strand   |   LOCATION   QUERYID
-            <Rle>            <IRanges>  <Rle>   |   <factor> <integer>
-     [1]    chr17 [41261233, 41261233]      +   | intergenic         1
-     [2]    chr17 [41261233, 41261233]      +   | intergenic         2
-     [3]    chr17 [41261233, 41261233]      +   | intergenic         3
-     [4]    chr17 [41261233, 41261233]      +   | intergenic         4
-     [5]    chr17 [41261233, 41261233]      +   | intergenic         5
-     ...      ...                  ...    ... ...        ...       ...
-  [1088]    chr17 [41261233, 41261233]      +   | intergenic      1088
-  [1089]    chr17 [41261233, 41261233]      +   | intergenic      1089
-  [1090]    chr17 [41261233, 41261233]      +   | intergenic      1090
-  [1091]    chr17 [41261233, 41261233]      +   | intergenic      1091
-  [1092]    chr17 [41261233, 41261233]      +   | intergenic      1092
-              TXID     CDSID      GENEID                  PRECEDEID
-         <integer> <integer> <character>            <CharacterList>
-     [1]      <NA>      <NA>        <NA> 100313779,10230,113277,...
-     [2]      <NA>      <NA>        <NA> 100313779,10230,113277,...
-     [3]      <NA>      <NA>        <NA> 100313779,10230,113277,...
-     [4]      <NA>      <NA>        <NA> 100313779,10230,113277,...
-     [5]      <NA>      <NA>        <NA> 100313779,10230,113277,...
-     ...       ...       ...         ...                        ...
-  [1088]      <NA>      <NA>        <NA> 100313779,10230,113277,...
-  [1089]      <NA>      <NA>        <NA> 100313779,10230,113277,...
-  [1090]      <NA>      <NA>        <NA> 100313779,10230,113277,...
-  [1091]      <NA>      <NA>        <NA> 100313779,10230,113277,...
-  [1092]      <NA>      <NA>        <NA> 100313779,10230,113277,...
-                          FOLLOWID
-                   <CharacterList>
-     [1] 100847046,10197,10266,...
-     [2] 100847046,10197,10266,...
-     [3] 100847046,10197,10266,...
-     [4] 100847046,10197,10266,...
-     [5] 100847046,10197,10266,...
-     ...                       ...
-  [1088] 100847046,10197,10266,...
-  [1089] 100847046,10197,10266,...
-  [1090] 100847046,10197,10266,...
-  [1091] 100847046,10197,10266,...
-  [1092] 100847046,10197,10266,...
+         seqnames               ranges strand   |   LOCATION   QUERYID      TXID
+            <Rle>            <IRanges>  <Rle>   |   <factor> <integer> <integer>
+     [1]    chr17 [41218332, 41218332]      +   | intergenic         1      <NA>
+     [2]    chr17 [41218332, 41218332]      +   | intergenic         2      <NA>
+     [3]    chr17 [41218332, 41218332]      +   | intergenic         3      <NA>
+     [4]    chr17 [41218332, 41218332]      +   | intergenic         4      <NA>
+     [5]    chr17 [41218332, 41218332]      +   | intergenic         5      <NA>
+     ...      ...                  ...    ... ...        ...       ...       ...
+  [1088]    chr17 [41218332, 41218332]      +   | intergenic      1088      <NA>
+  [1089]    chr17 [41218332, 41218332]      +   | intergenic      1089      <NA>
+  [1090]    chr17 [41218332, 41218332]      +   | intergenic      1090      <NA>
+  [1091]    chr17 [41218332, 41218332]      +   | intergenic      1091      <NA>
+  [1092]    chr17 [41218332, 41218332]      +   | intergenic      1092      <NA>
+             CDSID      GENEID                  PRECEDEID                  FOLLOWID
+         <integer> <character>            <CharacterList>           <CharacterList>
+     [1]      <NA>        <NA> 100313779,10230,113277,... 100847046,10197,10266,...
+     [2]      <NA>        <NA> 100313779,10230,113277,... 100847046,10197,10266,...
+     [3]      <NA>        <NA> 100313779,10230,113277,... 100847046,10197,10266,...
+     [4]      <NA>        <NA> 100313779,10230,113277,... 100847046,10197,10266,...
+     [5]      <NA>        <NA> 100313779,10230,113277,... 100847046,10197,10266,...
+     ...       ...         ...                        ...                       ...
+  [1088]      <NA>        <NA> 100313779,10230,113277,... 100847046,10197,10266,...
+  [1089]      <NA>        <NA> 100313779,10230,113277,... 100847046,10197,10266,...
+  [1090]      <NA>        <NA> 100313779,10230,113277,... 100847046,10197,10266,...
+  [1091]      <NA>        <NA> 100313779,10230,113277,... 100847046,10197,10266,...
+  [1092]      <NA>        <NA> 100313779,10230,113277,... 100847046,10197,10266,...
   ---
   seqlengths:
    chr17
@@ -427,18 +442,27 @@ GRanges with 1092 ranges and 7 metadata columns:
 And if we want to zoom in even further, we can retrieve the reads from the [Genomics Reads API](https://developers.google.com/genomics/v1beta/reference/readsets) for a given sample and examine coverage:
 
 ```r
-getReadData(readsetId="CJDmkYn8ChCcnc7i4KaWqmQ", chromosome="17", start=41261180, end=41261280)
+readData <- getReadData(readsetId="CMvnhpKTFhCxoo_umsDk4CA", chromosome="17", start=41218200, end=41218500)
 ```
 
 ```
 Fetching read data page
 Parsing read data page
-Read data is now available
+```
+
+```r
+summary(readData)
+```
+
+```
+     Length       Class        Mode 
+         60 GAlignments          S4 
 ```
 
 
 ```r
-p1 <- autoplot(alignments, aes(color=strand, fill=strand))
+require(ggbio)
+p1 <- autoplot(readData, aes(color=strand, fill=strand))
 ```
 
 ```
@@ -447,7 +471,7 @@ Scale for 'fill' is already present. Adding another scale for 'fill', which will
 ```
 
 ```r
-p2 <- ggplot(as(alignments, "GRanges")) + stat_coverage(color="gray40", fill="skyblue")
+p2 <- ggplot(as(readData, "GRanges")) + stat_coverage(color="gray40", fill="skyblue")
 tracks(p1, p2, xlab="chr17")
 ```
 
@@ -473,56 +497,49 @@ locale:
 [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
 
 attached base packages:
-[1] parallel  stats     graphics  grDevices utils     datasets  methods  
-[8] base     
+[1] parallel  stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
  [1] TxDb.Hsapiens.UCSC.hg19.knownGene_2.14.0
- [2] GenomicFeatures_1.16.2                  
- [3] AnnotationDbi_1.26.0                    
+ [2] GenomicFeatures_1.16.3                  
+ [3] AnnotationDbi_1.26.1                    
  [4] Biobase_2.24.0                          
  [5] BSgenome.Hsapiens.UCSC.hg19_1.3.99      
- [6] knitr_1.6                               
- [7] VariantAnnotation_1.10.5                
- [8] ggbio_1.12.10                           
- [9] GenomicAlignments_1.0.6                 
-[10] BSgenome_1.32.0                         
-[11] Rsamtools_1.16.1                        
-[12] Biostrings_2.32.1                       
-[13] XVector_0.4.0                           
-[14] GenomicRanges_1.16.4                    
-[15] GenomeInfoDb_1.0.2                      
-[16] IRanges_1.22.10                         
-[17] BiocGenerics_0.10.0                     
-[18] BiocInstaller_1.14.2                    
-[19] httr_0.3                                
-[20] rjson_0.2.14                            
-[21] scales_0.2.4                            
-[22] testthat_0.8.1                          
-[23] xtable_1.7-3                            
-[24] dplyr_0.2                               
-[25] ggplot2_1.0.0                           
-[26] bigrquery_0.1                           
-[27] devtools_1.5                            
+ [6] scales_0.2.4                            
+ [7] testthat_0.9                            
+ [8] xtable_1.7-3                            
+ [9] bigrquery_0.1                           
+[10] knitr_1.6                               
+[11] dplyr_0.2                               
+[12] ggbio_1.12.10                           
+[13] ggplot2_1.0.0                           
+[14] GoogleGenomics_0.1.0                    
+[15] VariantAnnotation_1.10.5                
+[16] GenomicAlignments_1.0.6                 
+[17] BSgenome_1.32.0                         
+[18] Rsamtools_1.16.1                        
+[19] Biostrings_2.32.1                       
+[20] XVector_0.4.0                           
+[21] GenomicRanges_1.16.4                    
+[22] GenomeInfoDb_1.0.2                      
+[23] IRanges_1.22.10                         
+[24] BiocGenerics_0.10.0                     
 
 loaded via a namespace (and not attached):
- [1] assertthat_0.1.0.99 BatchJobs_1.3       BBmisc_1.7         
- [4] BiocParallel_0.6.1  biomaRt_2.20.0      biovizBase_1.12.3  
- [7] bitops_1.0-6        brew_1.0-6          checkmate_1.4      
-[10] cluster_1.15.3      codetools_0.2-9     colorspace_1.2-4   
-[13] DBI_0.3.0           dichromat_2.0-0     digest_0.6.4       
-[16] evaluate_0.5.5      fail_1.2            foreach_1.4.2      
-[19] formatR_1.0         Formula_1.1-2       grid_3.1.1         
-[22] gridExtra_0.9.1     gtable_0.1.2        Hmisc_3.14-4       
-[25] httpuv_1.3.0        iterators_1.0.7     jsonlite_0.9.11    
-[28] labeling_0.3        lattice_0.20-29     latticeExtra_0.6-26
-[31] MASS_7.3-34         memoise_0.2.1       munsell_0.4.2      
-[34] plyr_1.8.1          proto_0.3-10        RColorBrewer_1.0-5 
-[37] Rcpp_0.11.2         RCurl_1.95-4.3      reshape2_1.4       
-[40] RSQLite_0.11.4      rtracklayer_1.24.2  sendmailR_1.1-2    
-[43] splines_3.1.1       stats4_3.1.1        stringr_0.6.2      
-[46] survival_2.37-7     tools_3.1.1         whisker_0.3-2      
-[49] XML_3.98-1.1        zlibbioc_1.10.0    
+ [1] acepack_1.3-3.3     assertthat_0.1.0.99 base64enc_0.1-2     BatchJobs_1.4      
+ [5] BBmisc_1.7          BiocParallel_0.6.1  biomaRt_2.20.0      biovizBase_1.12.3  
+ [9] bitops_1.0-6        brew_1.0-6          checkmate_1.4       cluster_1.15.3     
+[13] codetools_0.2-9     colorspace_1.2-4    DBI_0.3.1           dichromat_2.0-0    
+[17] digest_0.6.4        evaluate_0.5.5      fail_1.2            foreach_1.4.2      
+[21] foreign_0.8-61      formatR_1.0         Formula_1.1-2       grid_3.1.1         
+[25] gridExtra_0.9.1     gtable_0.1.2        Hmisc_3.14-5        htmltools_0.2.6    
+[29] httr_0.5            iterators_1.0.7     jsonlite_0.9.12     labeling_0.3       
+[33] lattice_0.20-29     latticeExtra_0.6-26 MASS_7.3-35         munsell_0.4.2      
+[37] nnet_7.3-8          plyr_1.8.1          proto_0.3-10        RColorBrewer_1.0-5 
+[41] Rcpp_0.11.3         RCurl_1.95-4.3      reshape2_1.4        rjson_0.2.14       
+[45] rmarkdown_0.3.3     rpart_4.1-8         RSQLite_0.11.4      rtracklayer_1.24.2 
+[49] sendmailR_1.2-1     splines_3.1.1       stats4_3.1.1        stringr_0.6.2      
+[53] survival_2.37-7     tools_3.1.1         XML_3.98-1.1        zlibbioc_1.10.0    
 ```
 
 
