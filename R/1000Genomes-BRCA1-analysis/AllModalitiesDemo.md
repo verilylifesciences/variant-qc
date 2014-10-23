@@ -39,6 +39,15 @@ Visualizing the results, we see quite distinct clusters:
 
 ```r
 require(ggplot2)
+```
+
+```
+Loading required package: ggplot2
+Find out what's changed in ggplot2 with
+news(Version == "1.0.0", package = "ggplot2")
+```
+
+```r
 ggplot(pca_1kg) +
   geom_point(aes(x=PC1, y=PC2)) +
   xlab("principal component 1") +
@@ -53,6 +62,23 @@ Let's pull in the [supplementary information](http://ftp.1000genomes.ebi.ac.uk/v
 ```r
 sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
 require(dplyr)
+```
+
+```
+Loading required package: dplyr
+
+Attaching package: 'dplyr'
+
+The following object is masked from 'package:stats':
+
+    filter
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+```
+
+```r
 pca_1kg <- inner_join(pca_1kg, sample_info)
 ```
 
@@ -136,6 +162,13 @@ Joining by: "Sample"
 
 ```r
 require(scales) # for scientific_format()
+```
+
+```
+Loading required package: scales
+```
+
+```r
 ggplot(sample_alt_counts) +
   geom_point(aes(x=single, y=double, color=Super_Population)) +
   scale_x_continuous(label=scientific_format()) +
@@ -672,6 +705,26 @@ GAlignments object with 34 alignments and 1 metadata column:
 
 ```r
 require(ggbio)
+```
+
+```
+Loading required package: ggbio
+Need specific help about ggbio? try mailing 
+ the maintainer or visit http://tengfei.github.com/ggbio/
+
+Attaching package: 'ggbio'
+
+The following object is masked from 'package:scales':
+
+    rescale
+
+The following objects are masked from 'package:ggplot2':
+
+    geom_bar, geom_rect, geom_segment, ggsave, stat_bin,
+    stat_identity, xlim
+```
+
+```r
 strand_plot <- autoplot(readData, aes(color=strand, fill=strand))
 ```
 
@@ -712,55 +765,51 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] GoogleGenomics_0.1.0                   
- [2] devtools_1.6.1                         
- [3] scales_0.2.4                           
- [4] knitr_1.7                              
- [5] ggbio_1.14.0                           
- [6] org.Hs.eg.db_3.0.0                     
- [7] RSQLite_0.11.4                         
- [8] DBI_0.3.1                              
- [9] BiocInstaller_1.16.0                   
-[10] TxDb.Hsapiens.UCSC.hg19.knownGene_3.0.0
-[11] GenomicFeatures_1.18.1                 
-[12] AnnotationDbi_1.28.0                   
-[13] Biobase_2.26.0                         
-[14] BSgenome.Hsapiens.UCSC.hg19_1.3.99     
-[15] BSgenome_1.34.0                        
-[16] rtracklayer_1.26.1                     
-[17] VariantAnnotation_1.12.1               
-[18] GenomicAlignments_1.2.0                
-[19] Rsamtools_1.18.0                       
-[20] Biostrings_2.34.0                      
-[21] XVector_0.6.0                          
-[22] GenomicRanges_1.18.1                   
-[23] GenomeInfoDb_1.2.0                     
-[24] IRanges_2.0.0                          
-[25] S4Vectors_0.4.0                        
-[26] BiocGenerics_0.12.0                    
-[27] ggplot2_1.0.0                          
-[28] bigrquery_0.1                          
-[29] dplyr_0.3.0.2                          
+ [1] ggbio_1.14.0                           
+ [2] TxDb.Hsapiens.UCSC.hg19.knownGene_3.0.0
+ [3] GenomicFeatures_1.18.1                 
+ [4] AnnotationDbi_1.28.0                   
+ [5] Biobase_2.26.0                         
+ [6] BSgenome.Hsapiens.UCSC.hg19_1.3.99     
+ [7] BSgenome_1.34.0                        
+ [8] rtracklayer_1.26.1                     
+ [9] GoogleGenomics_0.1.0                   
+[10] VariantAnnotation_1.12.1               
+[11] GenomicAlignments_1.2.0                
+[12] Rsamtools_1.18.0                       
+[13] Biostrings_2.34.0                      
+[14] XVector_0.6.0                          
+[15] GenomicRanges_1.18.1                   
+[16] GenomeInfoDb_1.2.0                     
+[17] IRanges_2.0.0                          
+[18] S4Vectors_0.4.0                        
+[19] BiocGenerics_0.12.0                    
+[20] scales_0.2.4                           
+[21] bigrquery_0.1                          
+[22] dplyr_0.3.0.2                          
+[23] ggplot2_1.0.0                          
+[24] knitr_1.7                              
+[25] BiocInstaller_1.16.0                   
 
 loaded via a namespace (and not attached):
  [1] acepack_1.3-3.3     assertthat_0.1.0.99 base64enc_0.1-2    
  [4] BatchJobs_1.4       BBmisc_1.7          BiocParallel_1.0.0 
  [7] biomaRt_2.22.0      biovizBase_1.14.0   bitops_1.0-6       
 [10] brew_1.0-6          checkmate_1.5.0     cluster_1.15.3     
-[13] codetools_0.2-9     colorspace_1.2-4    dichromat_2.0-0    
-[16] digest_0.6.4        evaluate_0.5.5      fail_1.2           
-[19] foreach_1.4.2       foreign_0.8-61      formatR_1.0        
-[22] Formula_1.1-2       GGally_0.4.8        graph_1.44.0       
-[25] grid_3.1.1          gridExtra_0.9.1     gtable_0.1.2       
-[28] Hmisc_3.14-5        htmltools_0.2.6     httr_0.5           
+[13] codetools_0.2-9     colorspace_1.2-4    DBI_0.3.1          
+[16] dichromat_2.0-0     digest_0.6.4        evaluate_0.5.5     
+[19] fail_1.2            foreach_1.4.2       foreign_0.8-61     
+[22] formatR_1.0         Formula_1.1-2       GGally_0.4.8       
+[25] graph_1.44.0        grid_3.1.1          gridExtra_0.9.1    
+[28] gtable_0.1.2        Hmisc_3.14-5        httr_0.5           
 [31] iterators_1.0.7     jsonlite_0.9.13     labeling_0.3       
 [34] lattice_0.20-29     latticeExtra_0.6-26 lazyeval_0.1.9     
 [37] magrittr_1.0.1      MASS_7.3-35         munsell_0.4.2      
 [40] nnet_7.3-8          OrganismDbi_1.8.0   plyr_1.8.1         
 [43] proto_0.3-10        RBGL_1.42.0         RColorBrewer_1.0-5 
 [46] Rcpp_0.11.3         RCurl_1.95-4.3      reshape_0.8.5      
-[49] reshape2_1.4        rjson_0.2.14        rmarkdown_0.3.3    
-[52] rpart_4.1-8         sendmailR_1.2-1     splines_3.1.1      
+[49] reshape2_1.4        rjson_0.2.14        rpart_4.1-8        
+[52] RSQLite_0.11.4      sendmailR_1.2-1     splines_3.1.1      
 [55] stringr_0.6.2       survival_2.37-7     tools_3.1.1        
 [58] XML_3.98-1.1        zlibbioc_1.12.0    
 ```
