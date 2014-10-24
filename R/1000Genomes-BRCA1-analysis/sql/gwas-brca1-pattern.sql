@@ -51,29 +51,18 @@ FROM (
       start,
       end,
       reference_bases,
-      alternate_bases,
+      NTH(1, alternate_bases) WITHIN RECORD AS alternate_bases,
       vt,
       # 1000 genomes data is bi-allelic so there is only ever a single alt
-      (0 = first_allele) + (0 = second_allele) AS ref_count,
-      (1 = first_allele) + (1 = second_allele) AS alt_count,
+      SUM(0 == call.genotype) WITHIN call AS ref_count,
+      SUM(1 == call.genotype) WITHIN call AS alt_count,
       call.call_set_name IN (CASE_SAMPLE_IDS__) AS is_case,
-    FROM (
-        SELECT
-          reference_name,
-          start,
-          end,
-          reference_bases,
-          NTH(1, alternate_bases) WITHIN RECORD AS alternate_bases,
-          vt,
-          call.call_set_name,
-          NTH(1, call.genotype) WITHIN call AS first_allele,
-          NTH(2, call.genotype) WITHIN call AS second_allele,
-        FROM
-          [genomics-public-data:1000_genomes.variants]
-        WHERE
-          reference_name = '17'
-          AND start BETWEEN 41196311 AND 41277499
-    ) )
+    FROM
+      [genomics-public-data:1000_genomes.variants]
+    WHERE
+      reference_name = '17'
+      AND start BETWEEN 41196311 AND 41277499
+    )
   GROUP BY
     reference_name,
     start,

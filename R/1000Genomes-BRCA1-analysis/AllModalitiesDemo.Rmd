@@ -17,7 +17,7 @@
 Data Analyis using Google Genomics
 ===================================
 
-The following example makes use of the [Phase 1 variants](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20110521/README.phase1_integrated_release_version3_20120430) from the [1,000 Genomes Project](http://www.1000genomes.org/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](http://developers.google.com/genomics/datasets/1000-genomes-phase-1).
+The following example makes use of the [Phase 1 variants](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20110521/README.phase1_integrated_release_version3_20120430) from the [1,000 Genomes Project](http://www.1000genomes.org/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/1000-genomes).
 
 The VCFs comprising this dataset are **3.5 TB** when uncompressed and provide information about **39,706,715** variants for **1,092** individuals.
 
@@ -28,11 +28,11 @@ Working at Scale
 
 Suppose we have a new dataset.  One of the first things we might do is a basic visualization.  Let's start by projecting the relevant data into 2-dimensional space by performing a [Principal Coordinate Analysis](http://occamstypewriter.org/boboh/2012/01/17/pca_and_pcoa_explained/) based on the number of variants shared by each pair of individuals.
 
-In this example we are reading in previously computed results, but with [just a few clicks](https://cloud.google.com/solutions/hadoop/click-to-deploy), its easy to spin up a [Apache Spark](http://spark.apache.org/) cluster on [Google Compute Engine](https://cloud.google.com/hadoop/) and run this analysis.
+In this example we are reading in previously computed results, but with [just a few clicks](https://cloud.google.com/solutions/hadoop/click-to-deploy), its easy to spin up a [Apache Spark](http://spark.apache.org/) cluster on [Google Compute Engine](https://cloud.google.com/hadoop/what-is-hadoop) and run this analysis.
 ```{r comment=NA}
 pca_1kg <- read.table("./data/1kg-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 ```
-This analysis performed an `O(N^2)` computation upon the relevant fields within the *3.5 TB* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://developers.google.com/genomics/v1beta/reference/variants) for its input.  Please see [the instructions](https://github.com/googlegenomics/spark-examples) for how to run this job and the relevant [source code](https://github.com/googlegenomics/spark-examples/blob/master/src/main/scala/com/google/cloud/genomics/spark/examples/VariantsPca.scala#L37) for implementation details.  When running upon X cores, this job typically takes Y minutes.
+This analysis performed an `O(N^2)` computation upon the relevant fields within the *3.5 TB* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/v1beta/reference/variants) for its input.  Please see [the instructions](https://github.com/googlegenomics/spark-examples) for how to run this job and the relevant [source code](https://github.com/googlegenomics/spark-examples/blob/master/src/main/scala/com/google/cloud/genomics/spark/examples/VariantsPca.scala#L37) for implementation details.  When running upon X cores, this job typically takes Y minutes.
 
 Visualizing the results, we see quite distinct clusters:
 ```{r fig.align="center", fig.width=10, comment=NA}
@@ -44,7 +44,7 @@ ggplot(pca_1kg) +
   ggtitle("Principal Coordinate Analysis upon 1,000 Genomes")
 ```
 
-Let's pull in the [supplementary information](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/README_20130606_sample_info) we do have on these samples from [Google Cloud Storage](https://developers.google.com/storage/):
+Let's pull in the [supplementary information](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/README_20130606_sample_info) we do have on these samples from [Google Cloud Storage](https://cloud.google.com/storage/):
 ```{r comment=NA}
 sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
 require(dplyr)
@@ -91,7 +91,7 @@ sample_alt_counts <- DisplayAndDispatchQuery("./sql/sample-alt-counts.sql")
 ```
 Number of rows returned by this query: `r nrow(sample_alt_counts)`.
 
-This analysis performed an `O(N)` computation via [Google BigQuery](https://developers.google.com/bigquery/).  Since BigQuery is a columnar data store, it scans only the columns referenced by the query.  In this case, 1 TB of data was scanned, typically within 10 seconds.
+This analysis performed an `O(N)` computation via [Google BigQuery](https://cloud.google.com/bigquery/).  Since BigQuery is a columnar data store, it scans only the columns referenced by the query.  In this case, 1 TB of data was scanned, typically within 10 seconds.
 
 Visualizing the results, we again see quite distinct clusters:
 ```{r fig.align="center", fig.width=10, comment=NA}
@@ -197,7 +197,7 @@ variants[[1]]$calls[[1]]
 ```
 
 We can also convert this data to [BioConductor](http://www.bioconductor.org/) datatypes such as [GRanges data type](http://www.bioconductor.org/packages/release/bioc/vignettes/GenomicRanges/inst/doc/GenomicRangesIntroduction.pdf).
-```{r}
+```{r comment=NA}
 granges <- variantsToGRanges(variants)
 granges
 ```
@@ -223,7 +223,7 @@ So a question for our users who have much experience in this domain: what should
 
 Zooming in Even Further
 ------------------------
-We can also retrieve the reads from the [Genomics Reads API](https://developers.google.com/genomics/v1beta/reference/readsets) for a given sample and examine coverage:
+We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta/reference/readsets) for a given sample and examine coverage:
 ```{r message=FALSE, comment=NA}
 readData <- getReadData(readsetId="CJDmkYn8ChDN-4LNy4TDdw", chromosome="17",
                         start=41218200, end=41218500)

@@ -17,7 +17,7 @@
 Data Analyis using Google Genomics
 ===================================
 
-The following example makes use of the [Phase 1 variants](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20110521/README.phase1_integrated_release_version3_20120430) from the [1,000 Genomes Project](http://www.1000genomes.org/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](http://developers.google.com/genomics/datasets/1000-genomes-phase-1).
+The following example makes use of the [Phase 1 variants](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20110521/README.phase1_integrated_release_version3_20120430) from the [1,000 Genomes Project](http://www.1000genomes.org/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/1000-genomes).
 
 The VCFs comprising this dataset are **3.5 TB** when uncompressed and provide information about **39,706,715** variants for **1,092** individuals.
 
@@ -28,26 +28,17 @@ Working at Scale
 
 Suppose we have a new dataset.  One of the first things we might do is a basic visualization.  Let's start by projecting the relevant data into 2-dimensional space by performing a [Principal Coordinate Analysis](http://occamstypewriter.org/boboh/2012/01/17/pca_and_pcoa_explained/) based on the number of variants shared by each pair of individuals.
 
-In this example we are reading in previously computed results, but with [just a few clicks](https://cloud.google.com/solutions/hadoop/click-to-deploy), its easy to spin up a [Apache Spark](http://spark.apache.org/) cluster on [Google Compute Engine](https://cloud.google.com/hadoop/) and run this analysis.
+In this example we are reading in previously computed results, but with [just a few clicks](https://cloud.google.com/solutions/hadoop/click-to-deploy), its easy to spin up a [Apache Spark](http://spark.apache.org/) cluster on [Google Compute Engine](https://cloud.google.com/hadoop/what-is-hadoop) and run this analysis.
 
 ```r
 pca_1kg <- read.table("./data/1kg-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 ```
-This analysis performed an `O(N^2)` computation upon the relevant fields within the *3.5 TB* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://developers.google.com/genomics/v1beta/reference/variants) for its input.  Please see [the instructions](https://github.com/googlegenomics/spark-examples) for how to run this job and the relevant [source code](https://github.com/googlegenomics/spark-examples/blob/master/src/main/scala/com/google/cloud/genomics/spark/examples/VariantsPca.scala#L37) for implementation details.  When running upon X cores, this job typically takes Y minutes.
+This analysis performed an `O(N^2)` computation upon the relevant fields within the *3.5 TB* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/v1beta/reference/variants) for its input.  Please see [the instructions](https://github.com/googlegenomics/spark-examples) for how to run this job and the relevant [source code](https://github.com/googlegenomics/spark-examples/blob/master/src/main/scala/com/google/cloud/genomics/spark/examples/VariantsPca.scala#L37) for implementation details.  When running upon X cores, this job typically takes Y minutes.
 
 Visualizing the results, we see quite distinct clusters:
 
 ```r
 require(ggplot2)
-```
-
-```
-Loading required package: ggplot2
-Find out what's changed in ggplot2 with
-news(Version == "1.0.0", package = "ggplot2")
-```
-
-```r
 ggplot(pca_1kg) +
   geom_point(aes(x=PC1, y=PC2)) +
   xlab("principal component 1") +
@@ -57,28 +48,11 @@ ggplot(pca_1kg) +
 
 <img src="figure/unnamed-chunk-2-1.png" title="plot of chunk unnamed-chunk-2" alt="plot of chunk unnamed-chunk-2" style="display: block; margin: auto;" />
 
-Let's pull in the [supplementary information](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/README_20130606_sample_info) we do have on these samples from [Google Cloud Storage](https://developers.google.com/storage/):
+Let's pull in the [supplementary information](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/README_20130606_sample_info) we do have on these samples from [Google Cloud Storage](https://cloud.google.com/storage/):
 
 ```r
 sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
 require(dplyr)
-```
-
-```
-Loading required package: dplyr
-
-Attaching package: 'dplyr'
-
-The following object is masked from 'package:stats':
-
-    filter
-
-The following objects are masked from 'package:base':
-
-    intersect, setdiff, setequal, union
-```
-
-```r
 pca_1kg <- inner_join(pca_1kg, sample_info)
 ```
 
@@ -148,7 +122,7 @@ ORDER BY
 ```
 Number of rows returned by this query: 1092.
 
-This analysis performed an `O(N)` computation via [Google BigQuery](https://developers.google.com/bigquery/).  Since BigQuery is a columnar data store, it scans only the columns referenced by the query.  In this case, 1 TB of data was scanned, typically within 10 seconds.
+This analysis performed an `O(N)` computation via [Google BigQuery](https://cloud.google.com/bigquery/).  Since BigQuery is a columnar data store, it scans only the columns referenced by the query.  In this case, 1 TB of data was scanned, typically within 10 seconds.
 
 Visualizing the results, we again see quite distinct clusters:
 
@@ -162,13 +136,6 @@ Joining by: "Sample"
 
 ```r
 require(scales) # for scientific_format()
-```
-
-```
-Loading required package: scales
-```
-
-```r
 ggplot(sample_alt_counts) +
   geom_point(aes(x=single, y=double, color=Super_Population)) +
   scale_x_continuous(label=scientific_format()) +
@@ -321,29 +288,18 @@ FROM (
       start,
       end,
       reference_bases,
-      alternate_bases,
+      NTH(1, alternate_bases) WITHIN RECORD AS alternate_bases,
       vt,
       # 1000 genomes data is bi-allelic so there is only ever a single alt
-      (0 = first_allele) + (0 = second_allele) AS ref_count,
-      (1 = first_allele) + (1 = second_allele) AS alt_count,
+      SUM(0 == call.genotype) WITHIN call AS ref_count,
+      SUM(1 == call.genotype) WITHIN call AS alt_count,
       call.call_set_name IN (CASE_SAMPLE_IDS__) AS is_case,
-    FROM (
-        SELECT
-          reference_name,
-          start,
-          end,
-          reference_bases,
-          NTH(1, alternate_bases) WITHIN RECORD AS alternate_bases,
-          vt,
-          call.call_set_name,
-          NTH(1, call.genotype) WITHIN call AS first_allele,
-          NTH(2, call.genotype) WITHIN call AS second_allele,
-        FROM
-          [genomics-public-data:1000_genomes.variants]
-        WHERE
-          reference_name = '17'
-          AND start BETWEEN 41196311 AND 41277499
-    ) )
+    FROM
+      [genomics-public-data:1000_genomes.variants]
+    WHERE
+      reference_name = '17'
+      AND start BETWEEN 41196311 AND 41277499
+    )
   GROUP BY
     reference_name,
     start,
@@ -491,35 +447,35 @@ granges
 ```
 
 ```
-## GRanges object with 20 ranges and 4 metadata columns:
-##              seqnames               ranges strand   |            REF
-##                 <Rle>            <IRanges>  <Rle>   | <DNAStringSet>
-##    rs4793194       17 [41218333, 41218333]      *   |              G
-##    rs8176234       17 [41219780, 41219780]      *   |              T
-##    rs8176233       17 [41219804, 41219804]      *   |              T
-##    rs3950989       17 [41237953, 41237953]      *   |              G
-##    rs8176161       17 [41241390, 41241390]      *   |              C
-##          ...      ...                  ...    ... ...            ...
-##   rs12936316       17 [41263044, 41263044]      *   |              A
-##    rs8176109       17 [41265776, 41265776]      *   |              A
-##    rs8176098       17 [41268206, 41268206]      *   |              A
-##    rs8176092       17 [41270229, 41270229]      *   |              T
-##    rs8176088       17 [41270463, 41270463]      *   |              G
-##                             ALT      QUAL      FILTER
-##              <DNAStringSetList> <numeric> <character>
-##    rs4793194                  A       100        PASS
-##    rs8176234                  C       100        PASS
-##    rs8176233                  C       100        PASS
-##    rs3950989                  A       100        PASS
-##    rs8176161                  A       100        PASS
-##          ...                ...       ...         ...
-##   rs12936316                  G       100        PASS
-##    rs8176109                  G       100        PASS
-##    rs8176098                  C       100        PASS
-##    rs8176092                  G       100        PASS
-##    rs8176088                  A       100        PASS
-##   -------
-##   seqinfo: 1 sequence from an unspecified genome; no seqlengths
+GRanges object with 20 ranges and 4 metadata columns:
+             seqnames               ranges strand   |            REF
+                <Rle>            <IRanges>  <Rle>   | <DNAStringSet>
+   rs4793194       17 [41218333, 41218333]      *   |              G
+   rs8176234       17 [41219780, 41219780]      *   |              T
+   rs8176233       17 [41219804, 41219804]      *   |              T
+   rs3950989       17 [41237953, 41237953]      *   |              G
+   rs8176161       17 [41241390, 41241390]      *   |              C
+         ...      ...                  ...    ... ...            ...
+  rs12936316       17 [41263044, 41263044]      *   |              A
+   rs8176109       17 [41265776, 41265776]      *   |              A
+   rs8176098       17 [41268206, 41268206]      *   |              A
+   rs8176092       17 [41270229, 41270229]      *   |              T
+   rs8176088       17 [41270463, 41270463]      *   |              G
+                            ALT      QUAL      FILTER
+             <DNAStringSetList> <numeric> <character>
+   rs4793194                  A       100        PASS
+   rs8176234                  C       100        PASS
+   rs8176233                  C       100        PASS
+   rs3950989                  A       100        PASS
+   rs8176161                  A       100        PASS
+         ...                ...       ...         ...
+  rs12936316                  G       100        PASS
+   rs8176109                  G       100        PASS
+   rs8176098                  C       100        PASS
+   rs8176092                  G       100        PASS
+   rs8176088                  A       100        PASS
+  -------
+  seqinfo: 1 sequence from an unspecified genome; no seqlengths
 ```
 
 This allows us to utilize the various BioConductor variant annotation packages:
@@ -662,7 +618,7 @@ So a question for our users who have much experience in this domain: what should
 
 Zooming in Even Further
 ------------------------
-We can also retrieve the reads from the [Genomics Reads API](https://developers.google.com/genomics/v1beta/reference/readsets) for a given sample and examine coverage:
+We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta/reference/readsets) for a given sample and examine coverage:
 
 ```r
 readData <- getReadData(readsetId="CJDmkYn8ChDN-4LNy4TDdw", chromosome="17",
@@ -705,26 +661,6 @@ GAlignments object with 34 alignments and 1 metadata column:
 
 ```r
 require(ggbio)
-```
-
-```
-Loading required package: ggbio
-Need specific help about ggbio? try mailing 
- the maintainer or visit http://tengfei.github.com/ggbio/
-
-Attaching package: 'ggbio'
-
-The following object is masked from 'package:scales':
-
-    rescale
-
-The following objects are masked from 'package:ggplot2':
-
-    geom_bar, geom_rect, geom_segment, ggsave, stat_bin,
-    stat_identity, xlim
-```
-
-```r
 strand_plot <- autoplot(readData, aes(color=strand, fill=strand))
 ```
 
@@ -801,17 +737,18 @@ loaded via a namespace (and not attached):
 [19] fail_1.2            foreach_1.4.2       foreign_0.8-61     
 [22] formatR_1.0         Formula_1.1-2       GGally_0.4.8       
 [25] graph_1.44.0        grid_3.1.1          gridExtra_0.9.1    
-[28] gtable_0.1.2        Hmisc_3.14-5        httr_0.5           
-[31] iterators_1.0.7     jsonlite_0.9.13     labeling_0.3       
-[34] lattice_0.20-29     latticeExtra_0.6-26 lazyeval_0.1.9     
-[37] magrittr_1.0.1      MASS_7.3-35         munsell_0.4.2      
-[40] nnet_7.3-8          OrganismDbi_1.8.0   plyr_1.8.1         
-[43] proto_0.3-10        RBGL_1.42.0         RColorBrewer_1.0-5 
-[46] Rcpp_0.11.3         RCurl_1.95-4.3      reshape_0.8.5      
-[49] reshape2_1.4        rjson_0.2.14        rpart_4.1-8        
-[52] RSQLite_0.11.4      sendmailR_1.2-1     splines_3.1.1      
-[55] stringr_0.6.2       survival_2.37-7     tools_3.1.1        
-[58] XML_3.98-1.1        zlibbioc_1.12.0    
+[28] gtable_0.1.2        Hmisc_3.14-5        htmltools_0.2.6    
+[31] httr_0.5            iterators_1.0.7     jsonlite_0.9.13    
+[34] labeling_0.3        lattice_0.20-29     latticeExtra_0.6-26
+[37] lazyeval_0.1.9      magrittr_1.0.1      MASS_7.3-35        
+[40] munsell_0.4.2       nnet_7.3-8          OrganismDbi_1.8.0  
+[43] plyr_1.8.1          proto_0.3-10        RBGL_1.42.0        
+[46] RColorBrewer_1.0-5  Rcpp_0.11.3         RCurl_1.95-4.3     
+[49] reshape_0.8.5       reshape2_1.4        rjson_0.2.14       
+[52] rmarkdown_0.3.3     rpart_4.1-8         RSQLite_0.11.4     
+[55] sendmailR_1.2-1     splines_3.1.1       stringr_0.6.2      
+[58] survival_2.37-7     tools_3.1.1         XML_3.98-1.1       
+[61] zlibbioc_1.12.0    
 ```
 
 
