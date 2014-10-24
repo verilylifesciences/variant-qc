@@ -14,7 +14,7 @@
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
 
-Data Analyis using Google Genomics
+Data Analysis using Google Genomics
 ===================================
 
 The following example makes use of the [Phase 1 variants](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20110521/README.phase1_integrated_release_version3_20120430) from the [1,000 Genomes Project](http://www.1000genomes.org/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/1000-genomes).
@@ -54,10 +54,6 @@ Let's pull in the [supplementary information](http://ftp.1000genomes.ebi.ac.uk/v
 sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
 require(dplyr)
 pca_1kg <- inner_join(pca_1kg, sample_info)
-```
-
-```
-Joining by: "Sample"
 ```
 
 
@@ -128,13 +124,6 @@ Visualizing the results, we again see quite distinct clusters:
 
 ```r
 sample_alt_counts <- inner_join(sample_alt_counts, sample_info)
-```
-
-```
-Joining by: "Sample"
-```
-
-```r
 require(scales) # for scientific_format()
 ggplot(sample_alt_counts) +
   geom_point(aes(x=single, y=double, color=Super_Population)) +
@@ -176,13 +165,6 @@ Let's apply the sample information we do have (just gender and ethnicity) to thi
 
 ```r
 pca_1kg_brca1 <- inner_join(pca_1kg_brca1, sample_info)
-```
-
-```
-Joining by: "Sample"
-```
-
-```r
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2, color=Gender)) +
   xlab("principal component 1") +
@@ -662,14 +644,6 @@ GAlignments object with 34 alignments and 1 metadata column:
 ```r
 require(ggbio)
 strand_plot <- autoplot(readData, aes(color=strand, fill=strand))
-```
-
-```
-Scale for 'colour' is already present. Adding another scale for 'colour', which will replace the existing scale.
-Scale for 'fill' is already present. Adding another scale for 'fill', which will replace the existing scale.
-```
-
-```r
 coverage_plot <- ggplot(as(readData, "GRanges")) + stat_coverage(color="gray40",
                                                       fill="skyblue")
 tracks(strand_plot, coverage_plot, xlab="chr17")
@@ -750,5 +724,3 @@ loaded via a namespace (and not attached):
 [58] survival_2.37-7     tools_3.1.1         XML_3.98-1.1       
 [61] zlibbioc_1.12.0    
 ```
-
-

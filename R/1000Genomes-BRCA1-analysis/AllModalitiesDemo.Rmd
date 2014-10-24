@@ -14,7 +14,7 @@
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
 
-Data Analyis using Google Genomics
+Data Analysis using Google Genomics
 ===================================
 
 The following example makes use of the [Phase 1 variants](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20110521/README.phase1_integrated_release_version3_20120430) from the [1,000 Genomes Project](http://www.1000genomes.org/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/1000-genomes).
@@ -29,13 +29,13 @@ Working at Scale
 Suppose we have a new dataset.  One of the first things we might do is a basic visualization.  Let's start by projecting the relevant data into 2-dimensional space by performing a [Principal Coordinate Analysis](http://occamstypewriter.org/boboh/2012/01/17/pca_and_pcoa_explained/) based on the number of variants shared by each pair of individuals.
 
 In this example we are reading in previously computed results, but with [just a few clicks](https://cloud.google.com/solutions/hadoop/click-to-deploy), its easy to spin up a [Apache Spark](http://spark.apache.org/) cluster on [Google Compute Engine](https://cloud.google.com/hadoop/what-is-hadoop) and run this analysis.
-```{r comment=NA}
+```{r message=FALSE, comment=NA}
 pca_1kg <- read.table("./data/1kg-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 ```
 This analysis performed an `O(N^2)` computation upon the relevant fields within the *3.5 TB* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/v1beta/reference/variants) for its input.  Please see [the instructions](https://github.com/googlegenomics/spark-examples) for how to run this job and the relevant [source code](https://github.com/googlegenomics/spark-examples/blob/master/src/main/scala/com/google/cloud/genomics/spark/examples/VariantsPca.scala#L37) for implementation details.  When running upon X cores, this job typically takes Y minutes.
 
 Visualizing the results, we see quite distinct clusters:
-```{r fig.align="center", fig.width=10, comment=NA}
+```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
 require(ggplot2)
 ggplot(pca_1kg) +
   geom_point(aes(x=PC1, y=PC2)) +
@@ -45,20 +45,20 @@ ggplot(pca_1kg) +
 ```
 
 Let's pull in the [supplementary information](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/README_20130606_sample_info) we do have on these samples from [Google Cloud Storage](https://cloud.google.com/storage/):
-```{r comment=NA}
+```{r message=FALSE, comment=NA}
 sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
 require(dplyr)
 pca_1kg <- inner_join(pca_1kg, sample_info)
 ```
 
-```{r echo=FALSE, eval=FALSE, comment=NA}
+```{r echo=FALSE, eval=FALSE, message=FALSE, comment=NA}
 # We could have also gotten this data from BigQuery
 sample_info <- DisplayAndDispatchQuery("./sql/sample-info.sql")
 pca_1kg <- inner_join(pca_1kg, sample_info)
 ```
 
 Applying sample ethnicity to the plot:
-```{r fig.align="center", fig.width=10, comment=NA}
+```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(pca_1kg) +
   geom_point(aes(x=PC1, y=PC2, color=Super_Population)) +
   xlab("principal component 1") +
@@ -94,7 +94,7 @@ Number of rows returned by this query: `r nrow(sample_alt_counts)`.
 This analysis performed an `O(N)` computation via [Google BigQuery](https://cloud.google.com/bigquery/).  Since BigQuery is a columnar data store, it scans only the columns referenced by the query.  In this case, 1 TB of data was scanned, typically within 10 seconds.
 
 Visualizing the results, we again see quite distinct clusters:
-```{r fig.align="center", fig.width=10, comment=NA}
+```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
 sample_alt_counts <- inner_join(sample_alt_counts, sample_info)
 require(scales) # for scientific_format()
 ggplot(sample_alt_counts) +
@@ -112,12 +112,12 @@ Zooming-In
 Suppose we are interested in examining variants within the BRCA1 gene.  We might run our PCoA a second time, zooming-in specifically to this region within the genome.
 
 Again in this example we read in previously computed results, but since the amount of data over which we are computing is much less, it is feasible to run this Spark job on a local machine in just a few minutes.
-```{r comment=NA}
+```{r message=FALSE, comment=NA}
 pca_1kg_brca1 <- read.table("./data/1kg-brca1-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 ```
 
 Examining this data visually:
-```{r fig.align="center", fig.width=10, comment=NA}
+```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2)) +
   xlab("principal component 1") +
@@ -128,7 +128,7 @@ ggplot(pca_1kg_brca1) +
 we see distinct clusters with a structure much different than our former result upon the entire dataset.
 
 Let's apply the sample information we do have (just gender and ethnicity) to this visualization to see if any of it appears to explain the clustering.  First, we'll try gender:
-```{r fig.align="center", fig.width=10, comment=NA}
+```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
 pca_1kg_brca1 <- inner_join(pca_1kg_brca1, sample_info)
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2, color=Gender)) +
@@ -140,7 +140,7 @@ ggplot(pca_1kg_brca1) +
 which has no apparent bearing on these variants.
 
 Next, we'll try ethnicity:
-```{r fig.align="center", fig.width=10, comment=NA}
+```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2, color=Super_Population)) +
   xlab("principal component 1") +
@@ -151,12 +151,12 @@ ggplot(pca_1kg_brca1) +
 which does appear to correlate to some amount of the clustering in the second principal component axis but not in the first principal component axis.
 
 Let's split these individuals into two groups based on their position relative to the origin of the first principal component:
-```{r comment=NA}
+```{r message=FALSE, comment=NA}
 pca_1kg_brca1 <- mutate(pca_1kg_brca1, 
                         case = 0 > PC1)
 ```
 And visualize them again with their grouping:
-```{r fig.align="center", fig.width=10, comment=NA}
+```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2, color=Super_Population, shape=case), size=3) +
   xlab("principal component 1") +
@@ -165,7 +165,7 @@ ggplot(pca_1kg_brca1) +
 ```
 
 Next we perform a [simplistic GWAS](http://homes.cs.washington.edu/~suinlee/genome560/lecture7.pdf) on the BRCA1 variants to retrieve a ranked list of the variants that appear to differentiate these groups.
-```{r comment=NA}
+```{r message=FALSE, comment=NA}
 case_sample_ids <- paste("'", filter(pca_1kg_brca1, case==TRUE)$Sample, "'", sep="", collapse=",")
 result <- DisplayAndDispatchQuery("./sql/gwas-brca1-pattern.sql",
                                   list(CASE_SAMPLE_IDS__=case_sample_ids))
@@ -173,7 +173,7 @@ result <- DisplayAndDispatchQuery("./sql/gwas-brca1-pattern.sql",
 Number of rows returned by this query: `r nrow(result)`.
 
 Note that even though this query ran over a small region of the genome, with a minor change to the SQL we could have run this same GWAS query over all variants within a much larger region, over an entire chromosome, or even the full dataset; returning the ranked list of variants that differ between the two groups.
-```{r comment=NA}
+```{r message=FALSE, comment=NA}
 head(result)
 ```
 
@@ -197,7 +197,7 @@ variants[[1]]$calls[[1]]
 ```
 
 We can also convert this data to [BioConductor](http://www.bioconductor.org/) datatypes such as [GRanges data type](http://www.bioconductor.org/packages/release/bioc/vignettes/GenomicRanges/inst/doc/GenomicRangesIntroduction.pdf).
-```{r comment=NA}
+```{r message=FALSE, comment=NA}
 granges <- variantsToGRanges(variants)
 granges
 ```
@@ -230,7 +230,7 @@ readData <- getReadData(readsetId="CJDmkYn8ChDN-4LNy4TDdw", chromosome="17",
 readData
 ```
 
-```{r fig.align="center", fig.width=10, comment=NA}
+```{r fig.align="center", fig.width=10, message=FALSE, warning=FALSE, comment=NA}
 require(ggbio)
 strand_plot <- autoplot(readData, aes(color=strand, fill=strand))
 coverage_plot <- ggplot(as(readData, "GRanges")) + stat_coverage(color="gray40",
@@ -245,11 +245,6 @@ In summary, in this demo from the R prompt we were able to exercise both large s
 Provenance
 -------------------
 Lastly, let us capture version information about R and loaded packages for the sake of provenance.
-```{r comment=NA}
+```{r message=FALSE, comment=NA}
 sessionInfo()
-```
-
-```{r, include=FALSE}
-   file.rename(from="AllModalitiesDemo.md", 
-               to="README.md")
 ```
