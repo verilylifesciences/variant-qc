@@ -7,7 +7,7 @@ Data Analysis using Google Genomics
 
 ### Notes
 
-`AllModalitiesDemo.R` can be from [AllModalitiesDemo.Rmd](./AllModalitiesDemo.Rmd) via
+If you prefer, `AllModalitiesDemo.R` can be created from [AllModalitiesDemo.Rmd](./AllModalitiesDemo.Rmd) via
 ```
 require(knitr)
 purl("./AllModalitiesDemo.Rmd", documentation=1)
