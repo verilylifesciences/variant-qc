@@ -35,7 +35,7 @@ pca_1kg <- read.table("./data/1kg-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 This analysis performed an `O(N^2)` computation upon the relevant fields within the *3.5 TB* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/v1beta/reference/variants) for its input.  Please see [the instructions](https://github.com/googlegenomics/spark-examples) for how to run this job and the relevant [source code](https://github.com/googlegenomics/spark-examples/blob/master/src/main/scala/com/google/cloud/genomics/spark/examples/VariantsPca.scala#L37) for implementation details.  When running upon X cores, this job typically takes Y minutes.
 
 Visualizing the results, we see quite distinct clusters:
-```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r pca, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 require(ggplot2)
 ggplot(pca_1kg) +
   geom_point(aes(x=PC1, y=PC2)) +
@@ -51,14 +51,8 @@ require(dplyr)
 pca_1kg <- inner_join(pca_1kg, sample_info)
 ```
 
-```{r echo=FALSE, eval=FALSE, message=FALSE, comment=NA}
-# We could have also gotten this data from BigQuery
-sample_info <- DisplayAndDispatchQuery("./sql/sample-info.sql")
-pca_1kg <- inner_join(pca_1kg, sample_info)
-```
-
 Applying sample ethnicity to the plot:
-```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r pca-with-ethnicity, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(pca_1kg) +
   geom_point(aes(x=PC1, y=PC2, color=Super_Population)) +
   xlab("principal component 1") +
@@ -94,7 +88,7 @@ Number of rows returned by this query: `r nrow(sample_alt_counts)`.
 This analysis performed an `O(N)` computation via [Google BigQuery](https://cloud.google.com/bigquery/).  Since BigQuery is a columnar data store, it scans only the columns referenced by the query.  In this case, 1 TB of data was scanned, typically within 10 seconds.
 
 Visualizing the results, we again see quite distinct clusters:
-```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r alt-counts, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 sample_alt_counts <- inner_join(sample_alt_counts, sample_info)
 require(scales) # for scientific_format()
 ggplot(sample_alt_counts) +
@@ -117,7 +111,7 @@ pca_1kg_brca1 <- read.table("./data/1kg-brca1-pca.tsv", col.names=c("Sample", "P
 ```
 
 Examining this data visually:
-```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r brca1-pca, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2)) +
   xlab("principal component 1") +
@@ -128,7 +122,7 @@ ggplot(pca_1kg_brca1) +
 we see distinct clusters with a structure much different than our former result upon the entire dataset.
 
 Let's apply the sample information we do have (just gender and ethnicity) to this visualization to see if any of it appears to explain the clustering.  First, we'll try gender:
-```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r brca1-pca-with-gender, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 pca_1kg_brca1 <- inner_join(pca_1kg_brca1, sample_info)
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2, color=Gender)) +
@@ -140,7 +134,7 @@ ggplot(pca_1kg_brca1) +
 which has no apparent bearing on these variants.
 
 Next, we'll try ethnicity:
-```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r brca1-pca-with-ethnicity, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2, color=Super_Population)) +
   xlab("principal component 1") +
@@ -156,7 +150,7 @@ pca_1kg_brca1 <- mutate(pca_1kg_brca1,
                         case = 0 > PC1)
 ```
 And visualize them again with their grouping:
-```{r fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r brca1-pca-case-control, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2, color=Super_Population, shape=case), size=3) +
   xlab("principal component 1") +
@@ -208,7 +202,6 @@ require(VariantAnnotation)
 require(BSgenome.Hsapiens.UCSC.hg19)
 require(TxDb.Hsapiens.UCSC.hg19.knownGene)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
-granges <- renameSeqlevels(granges, c("17"="chr17"))
 codingVariants <- locateVariants(granges, txdb, CodingVariants())
 codingVariants
 
@@ -219,26 +212,26 @@ coding <- predictCoding(rep(granges, elementLengths(granges$ALT)),
 coding
 ```
 
-So a question for our users who have much experience in this domain: what should we examine next to determine potential explanations for the clustering we see?  Perhaps the relevant [haplotypes](http://hapmap.ncbi.nlm.nih.gov/originhaplotype.html)?
+So a question for our users who have much experience in this domain: what should we examine next to determine potential explanations for the clustering we see?  Perhaps the relevant [ancestral haplotypes](http://hapmap.ncbi.nlm.nih.gov/originhaplotype.html)?
 
 Zooming in Even Further
 ------------------------
 We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta/reference/readsets) for a given sample and examine coverage:
 ```{r message=FALSE, comment=NA}
-readData <- getReadData(readsetId="CJDmkYn8ChDN-4LNy4TDdw", chromosome="17",
-                        start=41218200, end=41218500)
-readData
+galignments <- getReads(readsetId="CMvnhpKTFhDnk4_9zcKO3_YB", chromosome="17",
+                     start=41218200, end=41218500, converter=readsToGAlignments)
+galignments
 ```
 
-```{r fig.align="center", fig.width=10, message=FALSE, warning=FALSE, comment=NA}
+```{r alignments, fig.align="center", fig.width=10, message=FALSE, warning=FALSE, comment=NA}
 require(ggbio)
-strand_plot <- autoplot(readData, aes(color=strand, fill=strand))
-coverage_plot <- ggplot(as(readData, "GRanges")) + stat_coverage(color="gray40",
+strand_plot <- autoplot(galignments, aes(color=strand, fill=strand))
+coverage_plot <- ggplot(as(galignments, "GRanges")) + stat_coverage(color="gray40",
                                                       fill="skyblue")
 tracks(strand_plot, coverage_plot, xlab="chr17")
 ```
 
-See also [GABrowse](http://gabrowse.appspot.com/#=&location=17%3A41218331&readsetId=CJDmkYn8ChDN-4LNy4TDdw&backend=GOOGLE) for an interactive Reads browser.
+See also [GABrowse](http://gabrowse.appspot.com/#=&location=17%3A41218331&readsetId=CMvnhpKTFhDnk4_9zcKO3_YB&backend=GOOGLE) for an interactive Reads browser.
 
 In summary, in this demo from the R prompt we were able to exercise both large scale and small scale data analysis using cloud-based infrastructure.
 

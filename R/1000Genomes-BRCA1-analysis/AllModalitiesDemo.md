@@ -46,7 +46,7 @@ ggplot(pca_1kg) +
   ggtitle("Principal Coordinate Analysis upon 1,000 Genomes")
 ```
 
-<img src="figure/unnamed-chunk-2-1.png" title="plot of chunk unnamed-chunk-2" alt="plot of chunk unnamed-chunk-2" style="display: block; margin: auto;" />
+<img src="figure/pca-1.png" title="plot of chunk pca" alt="plot of chunk pca" style="display: block; margin: auto;" />
 
 Let's pull in the [supplementary information](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/README_20130606_sample_info) we do have on these samples from [Google Cloud Storage](https://cloud.google.com/storage/):
 
@@ -55,8 +55,6 @@ sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/1000
 require(dplyr)
 pca_1kg <- inner_join(pca_1kg, sample_info)
 ```
-
-
 
 Applying sample ethnicity to the plot:
 
@@ -68,7 +66,7 @@ ggplot(pca_1kg) +
   ggtitle("Principal Coordinate Analysis upon 1,000 Genomes")
 ```
 
-<img src="figure/unnamed-chunk-5-1.png" title="plot of chunk unnamed-chunk-5" alt="plot of chunk unnamed-chunk-5" style="display: block; margin: auto;" />
+<img src="figure/pca-with-ethnicity-1.png" title="plot of chunk pca-with-ethnicity" alt="plot of chunk pca-with-ethnicity" style="display: block; margin: auto;" />
 
 we see that ethnicity appears to strongly correlate with the clusters.
 
@@ -134,7 +132,7 @@ ggplot(sample_alt_counts) +
   ggtitle("Heterozygosity Counts within 1,000 Genomes")
 ```
 
-<img src="figure/unnamed-chunk-8-1.png" title="plot of chunk unnamed-chunk-8" alt="plot of chunk unnamed-chunk-8" style="display: block; margin: auto;" />
+<img src="figure/alt-counts-1.png" title="plot of chunk alt-counts" alt="plot of chunk alt-counts" style="display: block; margin: auto;" />
 
 Zooming-In
 ------------------------
@@ -157,7 +155,7 @@ ggplot(pca_1kg_brca1) +
   ggtitle("Principal Coordinate Analysis upon BRCA1 within 1,000 Genomes")
 ```
 
-<img src="figure/unnamed-chunk-10-1.png" title="plot of chunk unnamed-chunk-10" alt="plot of chunk unnamed-chunk-10" style="display: block; margin: auto;" />
+<img src="figure/brca1-pca-1.png" title="plot of chunk brca1-pca" alt="plot of chunk brca1-pca" style="display: block; margin: auto;" />
 
 we see distinct clusters with a structure much different than our former result upon the entire dataset.
 
@@ -172,7 +170,7 @@ ggplot(pca_1kg_brca1) +
   ggtitle("Principal Coordinate Analysis upon BRCA1 within 1,000 Genomes")
 ```
 
-<img src="figure/unnamed-chunk-11-1.png" title="plot of chunk unnamed-chunk-11" alt="plot of chunk unnamed-chunk-11" style="display: block; margin: auto;" />
+<img src="figure/brca1-pca-with-gender-1.png" title="plot of chunk brca1-pca-with-gender" alt="plot of chunk brca1-pca-with-gender" style="display: block; margin: auto;" />
 
 which has no apparent bearing on these variants.
 
@@ -186,7 +184,7 @@ ggplot(pca_1kg_brca1) +
   ggtitle("Principal Coordinate Analysis upon BRCA1 within 1,000 Genomes")
 ```
 
-<img src="figure/unnamed-chunk-12-1.png" title="plot of chunk unnamed-chunk-12" alt="plot of chunk unnamed-chunk-12" style="display: block; margin: auto;" />
+<img src="figure/brca1-pca-with-ethnicity-1.png" title="plot of chunk brca1-pca-with-ethnicity" alt="plot of chunk brca1-pca-with-ethnicity" style="display: block; margin: auto;" />
 
 which does appear to correlate to some amount of the clustering in the second principal component axis but not in the first principal component axis.
 
@@ -206,7 +204,7 @@ ggplot(pca_1kg_brca1) +
   ggtitle("Principal Coordinate Analysis upon BRCA1 within 1,000 Genomes")
 ```
 
-<img src="figure/unnamed-chunk-14-1.png" title="plot of chunk unnamed-chunk-14" alt="plot of chunk unnamed-chunk-14" style="display: block; margin: auto;" />
+<img src="figure/brca1-pca-case-control-1.png" title="plot of chunk brca1-pca-case-control" alt="plot of chunk brca1-pca-case-control" style="display: block; margin: auto;" />
 
 Next we perform a [simplistic GWAS](http://homes.cs.washington.edu/~suinlee/genome560/lecture7.pdf) on the BRCA1 variants to retrieve a ranked list of the variants that appear to differentiate these groups.
 
@@ -432,17 +430,17 @@ granges
 GRanges object with 20 ranges and 4 metadata columns:
              seqnames               ranges strand   |            REF
                 <Rle>            <IRanges>  <Rle>   | <DNAStringSet>
-   rs4793194       17 [41218333, 41218333]      *   |              G
-   rs8176234       17 [41219780, 41219780]      *   |              T
-   rs8176233       17 [41219804, 41219804]      *   |              T
-   rs3950989       17 [41237953, 41237953]      *   |              G
-   rs8176161       17 [41241390, 41241390]      *   |              C
+   rs4793194    chr17 [41218333, 41218333]      *   |              G
+   rs8176234    chr17 [41219780, 41219780]      *   |              T
+   rs8176233    chr17 [41219804, 41219804]      *   |              T
+   rs3950989    chr17 [41237953, 41237953]      *   |              G
+   rs8176161    chr17 [41241390, 41241390]      *   |              C
          ...      ...                  ...    ... ...            ...
-  rs12936316       17 [41263044, 41263044]      *   |              A
-   rs8176109       17 [41265776, 41265776]      *   |              A
-   rs8176098       17 [41268206, 41268206]      *   |              A
-   rs8176092       17 [41270229, 41270229]      *   |              T
-   rs8176088       17 [41270463, 41270463]      *   |              G
+  rs12936316    chr17 [41263044, 41263044]      *   |              A
+   rs8176109    chr17 [41265776, 41265776]      *   |              A
+   rs8176098    chr17 [41268206, 41268206]      *   |              A
+   rs8176092    chr17 [41270229, 41270229]      *   |              T
+   rs8176088    chr17 [41270463, 41270463]      *   |              G
                             ALT      QUAL      FILTER
              <DNAStringSetList> <numeric> <character>
    rs4793194                  A       100        PASS
@@ -467,7 +465,6 @@ require(VariantAnnotation)
 require(BSgenome.Hsapiens.UCSC.hg19)
 require(TxDb.Hsapiens.UCSC.hg19.knownGene)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
-granges <- renameSeqlevels(granges, c("17"="chr17"))
 codingVariants <- locateVariants(granges, txdb, CodingVariants())
 codingVariants
 ```
@@ -596,46 +593,46 @@ GRanges object with 22 ranges and 16 metadata columns:
   seqinfo: 1 sequence from an unspecified genome; no seqlengths
 ```
 
-So a question for our users who have much experience in this domain: what should we examine next to determine potential explanations for the clustering we see?  Perhaps the relevant [haplotypes](http://hapmap.ncbi.nlm.nih.gov/originhaplotype.html)?
+So a question for our users who have much experience in this domain: what should we examine next to determine potential explanations for the clustering we see?  Perhaps the relevant [ancestral haplotypes](http://hapmap.ncbi.nlm.nih.gov/originhaplotype.html)?
 
 Zooming in Even Further
 ------------------------
 We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta/reference/readsets) for a given sample and examine coverage:
 
 ```r
-readData <- getReadData(readsetId="CJDmkYn8ChDN-4LNy4TDdw", chromosome="17",
-                        start=41218200, end=41218500)
-readData
+galignments <- getReads(readsetId="CMvnhpKTFhDnk4_9zcKO3_YB", chromosome="17",
+                     start=41218200, end=41218500, converter=readsToGAlignments)
+galignments
 ```
 
 ```
-GAlignments object with 34 alignments and 1 metadata column:
-                      seqnames strand       cigar    qwidth     start
-                         <Rle>  <Rle> <character> <integer> <integer>
-   SRR189827.23948349       17      -        102M       102  41218101
-   SRR189827.12097802       17      +        102M       102  41218149
-   SRR189827.58211729       17      +        102M       102  41218181
-   SRR189827.50887670       17      -       1S99M       100  41218183
-   SRR189827.80517451       17      +        102M       102  41218188
-                  ...      ...    ...         ...       ...       ...
-   SRR189827.58211729       17      -        100M       100  41218454
-  SRR189827.111155752       17      +      64M36S       100  41218480
-  SRR189827.127139391       17      -        102M       102  41218483
-   SRR189827.15951913       17      -        102M       102  41218483
-   SRR189827.51331899       17      +      35M65S       100  41218484
-                            end     width     njunc   |      flag
-                      <integer> <integer> <integer>   | <integer>
-   SRR189827.23948349  41218202       102         0   |        83
-   SRR189827.12097802  41218250       102         0   |        99
-   SRR189827.58211729  41218282       102         0   |        99
-   SRR189827.50887670  41218281        99         0   |       147
-   SRR189827.80517451  41218289       102         0   |        99
-                  ...       ...       ...       ... ...       ...
-   SRR189827.58211729  41218553       100         0   |       147
-  SRR189827.111155752  41218543        64         0   |       163
-  SRR189827.127139391  41218584       102         0   |        83
-   SRR189827.15951913  41218584       102         0   |        83
-   SRR189827.51331899  41218518        35         0   |       137
+GAlignments object with 38 alignments and 1 metadata column:
+                     seqnames strand       cigar    qwidth     start
+                        <Rle>  <Rle> <character> <integer> <integer>
+  ERR251040.39294893    chr17      -        100M       100  41218105
+  ERR251040.23636053    chr17      -        100M       100  41218118
+  ERR016214.20846952    chr17      -       4S77M        81  41218128
+   ERR251039.9112219    chr17      +      69M31S       100  41218140
+   ERR251040.9517733    chr17      +        100M       100  41218158
+                 ...      ...    ...         ...       ...       ...
+  ERR251039.29590756    chr17      -        100M       100  41218429
+    ERR251039.668959    chr17      +        100M       100  41218465
+   ERR016214.4338110    chr17      -      34S35M        69  41218474
+  ERR251039.41699004    chr17      +        100M       100  41218484
+   ERR016213.5228009    chr17      -         68M        68  41218496
+                           end     width     njunc   |      flag
+                     <integer> <integer> <integer>   | <integer>
+  ERR251040.39294893  41218204       100         0   |        83
+  ERR251040.23636053  41218217       100         0   |       147
+  ERR016214.20846952  41218204        77         0   |        83
+   ERR251039.9112219  41218208        69         0   |        97
+   ERR251040.9517733  41218257       100         0   |       163
+                 ...       ...       ...       ... ...       ...
+  ERR251039.29590756  41218528       100         0   |        83
+    ERR251039.668959  41218564       100         0   |       163
+   ERR016214.4338110  41218508        35         0   |       147
+  ERR251039.41699004  41218583       100         0   |        99
+   ERR016213.5228009  41218563        68         0   |       147
   -------
   seqinfo: 1 sequence from an unspecified genome; no seqlengths
 ```
@@ -643,15 +640,15 @@ GAlignments object with 34 alignments and 1 metadata column:
 
 ```r
 require(ggbio)
-strand_plot <- autoplot(readData, aes(color=strand, fill=strand))
-coverage_plot <- ggplot(as(readData, "GRanges")) + stat_coverage(color="gray40",
+strand_plot <- autoplot(galignments, aes(color=strand, fill=strand))
+coverage_plot <- ggplot(as(galignments, "GRanges")) + stat_coverage(color="gray40",
                                                       fill="skyblue")
 tracks(strand_plot, coverage_plot, xlab="chr17")
 ```
 
-<img src="figure/unnamed-chunk-21-1.png" title="plot of chunk unnamed-chunk-21" alt="plot of chunk unnamed-chunk-21" style="display: block; margin: auto;" />
+<img src="figure/alignments-1.png" title="plot of chunk alignments" alt="plot of chunk alignments" style="display: block; margin: auto;" />
 
-See also [GABrowse](http://gabrowse.appspot.com/#=&location=17%3A41218331&readsetId=CJDmkYn8ChDN-4LNy4TDdw&backend=GOOGLE) for an interactive Reads browser.
+See also [GABrowse](http://gabrowse.appspot.com/#=&location=17%3A41218331&readsetId=CMvnhpKTFhDnk4_9zcKO3_YB&backend=GOOGLE) for an interactive Reads browser.
 
 In summary, in this demo from the R prompt we were able to exercise both large scale and small scale data analysis using cloud-based infrastructure.
 
@@ -675,30 +672,30 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] ggbio_1.14.0                           
- [2] TxDb.Hsapiens.UCSC.hg19.knownGene_3.0.0
- [3] GenomicFeatures_1.18.1                 
- [4] AnnotationDbi_1.28.0                   
- [5] Biobase_2.26.0                         
- [6] BSgenome.Hsapiens.UCSC.hg19_1.3.99     
- [7] BSgenome_1.34.0                        
- [8] rtracklayer_1.26.1                     
- [9] GoogleGenomics_0.1.0                   
-[10] VariantAnnotation_1.12.1               
-[11] GenomicAlignments_1.2.0                
-[12] Rsamtools_1.18.0                       
-[13] Biostrings_2.34.0                      
-[14] XVector_0.6.0                          
-[15] GenomicRanges_1.18.1                   
-[16] GenomeInfoDb_1.2.0                     
-[17] IRanges_2.0.0                          
-[18] S4Vectors_0.4.0                        
-[19] BiocGenerics_0.12.0                    
-[20] scales_0.2.4                           
-[21] bigrquery_0.1                          
-[22] dplyr_0.3.0.2                          
-[23] ggplot2_1.0.0                          
-[24] knitr_1.7                              
+ [1] scales_0.2.4                           
+ [2] knitr_1.7                              
+ [3] ggbio_1.14.0                           
+ [4] TxDb.Hsapiens.UCSC.hg19.knownGene_3.0.0
+ [5] GenomicFeatures_1.18.1                 
+ [6] AnnotationDbi_1.28.0                   
+ [7] Biobase_2.26.0                         
+ [8] BSgenome.Hsapiens.UCSC.hg19_1.3.99     
+ [9] BSgenome_1.34.0                        
+[10] rtracklayer_1.26.1                     
+[11] GoogleGenomics_0.1.1                   
+[12] VariantAnnotation_1.12.1               
+[13] GenomicAlignments_1.2.0                
+[14] Rsamtools_1.18.0                       
+[15] Biostrings_2.34.0                      
+[16] XVector_0.6.0                          
+[17] GenomicRanges_1.18.1                   
+[18] GenomeInfoDb_1.2.0                     
+[19] IRanges_2.0.0                          
+[20] S4Vectors_0.4.0                        
+[21] BiocGenerics_0.12.0                    
+[22] bigrquery_0.1                          
+[23] dplyr_0.3.0.2                          
+[24] ggplot2_1.0.0                          
 [25] BiocInstaller_1.16.0                   
 
 loaded via a namespace (and not attached):
