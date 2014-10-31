@@ -30,10 +30,15 @@ Suppose we have a new dataset.  One of the first things we might do is a basic v
 
 In this example we are reading in previously computed results, but with [just a few clicks](https://cloud.google.com/solutions/hadoop/click-to-deploy), its easy to spin up a [Apache Spark](http://spark.apache.org/) cluster on [Google Compute Engine](https://cloud.google.com/hadoop/what-is-hadoop) and run this analysis.
 
+
+
+
 ```r
 pca_1kg <- read.table("./data/1kg-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 ```
 This analysis performed an `O(N^2)` computation upon the relevant fields within the *3.5 TB* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/v1beta/reference/variants) for its input.  Please see [the instructions](https://github.com/googlegenomics/spark-examples) for how to run this job and the relevant [source code](https://github.com/googlegenomics/spark-examples/blob/master/src/main/scala/com/google/cloud/genomics/spark/examples/VariantsPca.scala#L37) for implementation details.  When running upon X cores, this job typically takes Y minutes.
+
+
 
 Visualizing the results, we see quite distinct clusters:
 
@@ -459,6 +464,9 @@ GRanges object with 20 ranges and 4 metadata columns:
 ```
 
 This allows us to utilize the various BioConductor variant annotation packages:
+
+
+
 
 ```r
 require(VariantAnnotation)
