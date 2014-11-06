@@ -237,9 +237,9 @@ So a question for our users who have much experience in this domain: what should
 
 Zooming in Even Further
 ------------------------
-We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta/reference/readsets) for a given sample and examine coverage:
+We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta2/reference/readgroupsets) for a given sample and examine coverage:
 ```{r message=FALSE, comment=NA}
-galignments <- getReads(readsetId="CMvnhpKTFhDnk4_9zcKO3_YB", chromosome="17",
+galignments <- getReads(readGroupSetId="CMvnhpKTFhDnk4_9zcKO3_YB", chromosome="17",
                      start=41218200, end=41218500, converter=readsToGAlignments)
 galignments
 ```
