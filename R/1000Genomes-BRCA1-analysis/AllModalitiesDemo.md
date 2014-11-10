@@ -38,8 +38,6 @@ pca_1kg <- read.table("./data/1kg-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 ```
 This analysis performed an `O(N^2)` computation upon the relevant fields within the *3.5 TB* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/v1beta/reference/variants) for its input.  Please see [the instructions](https://github.com/googlegenomics/spark-examples) for how to run this job and the relevant [source code](https://github.com/googlegenomics/spark-examples/blob/master/src/main/scala/com/google/cloud/genomics/spark/examples/VariantsPca.scala#L37) for implementation details.  When running upon X cores, this job typically takes Y minutes.
 
-
-
 Visualizing the results, we see quite distinct clusters:
 
 ```r
@@ -466,8 +464,6 @@ GRanges object with 20 ranges and 4 metadata columns:
 This allows us to utilize the various BioConductor variant annotation packages:
 
 
-
-
 ```r
 require(VariantAnnotation)
 require(BSgenome.Hsapiens.UCSC.hg19)
@@ -605,10 +601,10 @@ So a question for our users who have much experience in this domain: what should
 
 Zooming in Even Further
 ------------------------
-We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta/reference/readsets) for a given sample and examine coverage:
+We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta2/reference/readgroupsets) for a given sample and examine coverage:
 
 ```r
-galignments <- getReads(readsetId="CMvnhpKTFhDnk4_9zcKO3_YB", chromosome="17",
+galignments <- getReads(readGroupSetId="CMvnhpKTFhDnk4_9zcKO3_YB", chromosome="17",
                      start=41218200, end=41218500, converter=readsToGAlignments)
 galignments
 ```
@@ -629,7 +625,7 @@ GAlignments object with 38 alignments and 1 metadata column:
   ERR251039.41699004    chr17      +        100M       100  41218484
    ERR016213.5228009    chr17      -         68M        68  41218496
                            end     width     njunc   |      flag
-                     <integer> <integer> <integer>   | <integer>
+                     <integer> <integer> <integer>   | <numeric>
   ERR251040.39294893  41218204       100         0   |        83
   ERR251040.23636053  41218217       100         0   |       147
   ERR016214.20846952  41218204        77         0   |        83
@@ -669,8 +665,8 @@ sessionInfo()
 ```
 
 ```
-R version 3.1.1 (2014-07-10)
-Platform: x86_64-apple-darwin13.1.0 (64-bit)
+R version 3.1.2 (2014-10-31)
+Platform: x86_64-apple-darwin13.4.0 (64-bit)
 
 locale:
 [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -681,51 +677,51 @@ attached base packages:
 
 other attached packages:
  [1] scales_0.2.4                           
- [2] knitr_1.7                              
- [3] ggbio_1.14.0                           
- [4] TxDb.Hsapiens.UCSC.hg19.knownGene_3.0.0
- [5] GenomicFeatures_1.18.1                 
- [6] AnnotationDbi_1.28.0                   
- [7] Biobase_2.26.0                         
- [8] BSgenome.Hsapiens.UCSC.hg19_1.3.99     
- [9] BSgenome_1.34.0                        
-[10] rtracklayer_1.26.1                     
-[11] GoogleGenomics_0.1.1                   
-[12] VariantAnnotation_1.12.1               
-[13] GenomicAlignments_1.2.0                
-[14] Rsamtools_1.18.0                       
-[15] Biostrings_2.34.0                      
-[16] XVector_0.6.0                          
-[17] GenomicRanges_1.18.1                   
-[18] GenomeInfoDb_1.2.0                     
-[19] IRanges_2.0.0                          
-[20] S4Vectors_0.4.0                        
-[21] BiocGenerics_0.12.0                    
-[22] bigrquery_0.1                          
-[23] dplyr_0.3.0.2                          
-[24] ggplot2_1.0.0                          
-[25] BiocInstaller_1.16.0                   
+ [2] bigrquery_0.1                          
+ [3] dplyr_0.3.0.2                          
+ [4] testthat_0.9.1                         
+ [5] BSgenome.Hsapiens.UCSC.hg19_1.3.99     
+ [6] BSgenome_1.34.0                        
+ [7] rtracklayer_1.26.1                     
+ [8] TxDb.Hsapiens.UCSC.hg19.knownGene_3.0.0
+ [9] GenomicFeatures_1.18.2                 
+[10] AnnotationDbi_1.28.1                   
+[11] Biobase_2.26.0                         
+[12] ggbio_1.14.0                           
+[13] ggplot2_1.0.0                          
+[14] knitr_1.7                              
+[15] GoogleGenomics_0.1.2                   
+[16] VariantAnnotation_1.12.3               
+[17] GenomicAlignments_1.2.1                
+[18] Rsamtools_1.18.1                       
+[19] Biostrings_2.34.0                      
+[20] XVector_0.6.0                          
+[21] GenomicRanges_1.18.1                   
+[22] GenomeInfoDb_1.2.2                     
+[23] IRanges_2.0.0                          
+[24] S4Vectors_0.4.0                        
+[25] BiocGenerics_0.12.0                    
+[26] BiocInstaller_1.16.1                   
 
 loaded via a namespace (and not attached):
- [1] acepack_1.3-3.3     assertthat_0.1.0.99 base64enc_0.1-2    
- [4] BatchJobs_1.4       BBmisc_1.7          BiocParallel_1.0.0 
+ [1] acepack_1.3-3.3     assertthat_0.1      base64enc_0.1-2    
+ [4] BatchJobs_1.5       BBmisc_1.8          BiocParallel_1.0.0 
  [7] biomaRt_2.22.0      biovizBase_1.14.0   bitops_1.0-6       
 [10] brew_1.0-6          checkmate_1.5.0     cluster_1.15.3     
 [13] codetools_0.2-9     colorspace_1.2-4    DBI_0.3.1          
 [16] dichromat_2.0-0     digest_0.6.4        evaluate_0.5.5     
 [19] fail_1.2            foreach_1.4.2       foreign_0.8-61     
 [22] formatR_1.0         Formula_1.1-2       GGally_0.4.8       
-[25] graph_1.44.0        grid_3.1.1          gridExtra_0.9.1    
-[28] gtable_0.1.2        Hmisc_3.14-5        htmltools_0.2.6    
-[31] httr_0.5            iterators_1.0.7     jsonlite_0.9.13    
-[34] labeling_0.3        lattice_0.20-29     latticeExtra_0.6-26
-[37] lazyeval_0.1.9      magrittr_1.0.1      MASS_7.3-35        
-[40] munsell_0.4.2       nnet_7.3-8          OrganismDbi_1.8.0  
-[43] plyr_1.8.1          proto_0.3-10        RBGL_1.42.0        
-[46] RColorBrewer_1.0-5  Rcpp_0.11.3         RCurl_1.95-4.3     
-[49] reshape_0.8.5       reshape2_1.4        rjson_0.2.14       
-[52] rmarkdown_0.3.3     rpart_4.1-8         RSQLite_0.11.4     
-[55] sendmailR_1.2-1     splines_3.1.1       stringr_0.6.2      
-[58] survival_2.37-7     tools_3.1.1         XML_3.98-1.1       
-[61] zlibbioc_1.12.0    
+[25] graph_1.44.0        grid_3.1.2          gridExtra_0.9.1    
+[28] gtable_0.1.2        Hmisc_3.14-5        httr_0.5           
+[31] iterators_1.0.7     jsonlite_0.9.13     labeling_0.3       
+[34] lattice_0.20-29     latticeExtra_0.6-26 lazyeval_0.1.9     
+[37] magrittr_1.0.1      MASS_7.3-35         munsell_0.4.2      
+[40] nnet_7.3-8          OrganismDbi_1.8.0   plyr_1.8.1         
+[43] proto_0.3-10        RBGL_1.42.0         RColorBrewer_1.0-5 
+[46] Rcpp_0.11.3         RCurl_1.95-4.3      reshape_0.8.5      
+[49] reshape2_1.4        rjson_0.2.15        rpart_4.1-8        
+[52] RSQLite_1.0.0       sendmailR_1.2-1     splines_3.1.2      
+[55] stringr_0.6.2       survival_2.37-7     tools_3.1.2        
+[58] XML_3.98-1.1        zlibbioc_1.12.0    
 ```
