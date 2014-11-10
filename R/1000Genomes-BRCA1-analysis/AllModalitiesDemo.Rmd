@@ -40,12 +40,6 @@ pca_1kg <- read.table("./data/1kg-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 ```
 This analysis performed an `O(N^2)` computation upon the relevant fields within the *3.5 TB* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/v1beta/reference/variants) for its input.  Please see [the instructions](https://github.com/googlegenomics/spark-examples) for how to run this job and the relevant [source code](https://github.com/googlegenomics/spark-examples/blob/master/src/main/scala/com/google/cloud/genomics/spark/examples/VariantsPca.scala#L37) for implementation details.  When running upon X cores, this job typically takes Y minutes.
 
-```{r echo=FALSE, eval=FALSE}
-# To install these packages (only need to do this once)
-install.packages("dplyr")
-install.packages("ggplot2")
-```
-
 Visualizing the results, we see quite distinct clusters:
 ```{r pca, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 require(ggplot2)
@@ -210,14 +204,6 @@ granges
 
 This allows us to utilize the various BioConductor variant annotation packages:
 
-```{r echo=FALSE, eval=FALSE}
-# To install these packages (only need to do this once)
-source("http://bioconductor.org/biocLite.R")
-biocLite("TxDb.Hsapiens.UCSC.hg19.knownGene")
-biocLite("BSgenome.Hsapiens.UCSC.hg19")
-biocLite("ggbio")
-```
-
 ```{r comment=NA, message=FALSE}
 require(VariantAnnotation)
 require(BSgenome.Hsapiens.UCSC.hg19)
@@ -237,9 +223,9 @@ So a question for our users who have much experience in this domain: what should
 
 Zooming in Even Further
 ------------------------
-We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta/reference/readsets) for a given sample and examine coverage:
+We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta2/reference/readgroupsets) for a given sample and examine coverage:
 ```{r message=FALSE, comment=NA}
-galignments <- getReads(readsetId="CMvnhpKTFhDnk4_9zcKO3_YB", chromosome="17",
+galignments <- getReads(readGroupSetId="CMvnhpKTFhDnk4_9zcKO3_YB", chromosome="17",
                      start=41218200, end=41218500, converter=readsToGAlignments)
 galignments
 ```

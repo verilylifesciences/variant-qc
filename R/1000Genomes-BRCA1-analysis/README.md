@@ -26,12 +26,16 @@ purl("./AllModalitiesDemo.Rmd", documentation=1)
 
 * `cannot open file './data/1kg-pca.tsv': No such file or directory`
  * The codelabs assume that the current working is the directory in which Rmd file resides.
+ * `setwd("path/to/codelabs/R/1000Genomes-BRCA1-analysis")`
 
 * `Daily Limit for Unauthenticated Use Exceeded. Continued use requires signup.`
- * Make sure you can retrieve variants and reads via the GoogleGenomics R package. Please see [Getting Started with the Google Genomics R Client](https://github.com/googlegenomics/api-client-r).
+ * This error occurs when the GoogleGenomics package has not been authenticated properly. Make sure you have followed the [prerequisites](../README.md#required) and have called the `GoogleGenomics::authenticate` method.
 
 * `oauth_listener() needs an interactive environment`
  * Run this demo *interactively* the first time around so that httr can invoke the OAuth flow and store credentials in the current working directory.
 
 * `Access Denied: Job genomics-public-data ...`
  * There's a spot in the codelab that says `# put your projectID here` and you'll want to use your Google Cloud Platform project id as the value of that variable.
+ 
+* `Error: Quota exceeded: Your project exceeded quota for concurrent query bytes scanned.`
+ * This codelab requires billing to be enabled on the BigQuery project used. Skip all calls to `DisplayAndDispatchQuery` if turning on billing isn't an option.

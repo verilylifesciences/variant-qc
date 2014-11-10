@@ -3,11 +3,45 @@
 ## Prerequisites
 
 ### Required
-1. Make sure you can execute a BigQuery query using R package `bigrquery`.  Please see (1) [Getting Started with BigQuery](https://github.com/googlegenomics/getting-started-bigquery) and (2) [Getting Started with RMarkdown and BigQuery](https://github.com/googlegenomics/getting-started-bigquery/tree/master/RMarkdown).
-1. Make sure you can retrieve variants and reads via the GoogleGenomics R package. Please see [Getting Started with the Google Genomics R Client](https://github.com/googlegenomics/api-client-r).
+1. Install the `bigrquery` package
+  ```
+  install.packages("devtools")
+  devtools::install_github("hadley/bigrquery")
+  ```
+  
+1. Create a [BigQuery enabled project](https://console.developers.google.com/flows/enableapi?apiid=bigquery)
+   in the Google Developers Console and save the resulting Project ID for later use.
+
+1. Install the GoogleGenomics R package. 
+  ```
+  source("http://bioconductor.org/biocLite.R") 
+  biocLite() 
+  options(repos=biocinstallRepos())
+  devtools::install_github("googlegenomics/api-client-r")
+  library(GoogleGenomics)
+  ```
+  
+1. Follow the first step on https://cloud.google.com/genomics to set up
+   credentials for a "Client ID for native application" and download a `client_secrets.json` file.
+
+1. Now use that file to authenticate the GoogleGenomics library:
+  ```
+  GoogleGenomics::authenticate("/path/to/client_secrets.json")
+  ```
+
 
 ### Optional
 1. The codelabs load results of previously run Spark jobs.  If you would like to run the Spark jobs yourself, please see [Getting Started with Spark](https://github.com/googlegenomics/spark-examples).
+
+1. pre-install additional R packages referenced by the codelabs:
+  ```
+  install.packages("dplyr")
+  install.packages("ggplot2")
+  biocLite("TxDb.Hsapiens.UCSC.hg19.knownGene")
+  biocLite("BSgenome.Hsapiens.UCSC.hg19")
+  biocLite("ggbio")
+  ```
+
 
 ## Tips
 
@@ -15,3 +49,8 @@ The [httr](https://github.com/hadley/httr) package is used for the OAuth flow fo
 ```
 options("httr_oauth_cache"="~/.httr-oauth")
 ```
+
+## Further reading
+* [Getting Started with BigQuery](https://github.com/googlegenomics/getting-started-bigquery)
+* [Getting Started with RMarkdown and BigQuery](https://github.com/googlegenomics/getting-started-bigquery/tree/master/RMarkdown)
+* [Getting Started with the Google Genomics R Client](https://github.com/googlegenomics/api-client-r)

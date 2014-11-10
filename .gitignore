@@ -1,5 +1,7 @@
 .Rproj.user
 .Rhistory
 .RData
+.Rapp.history
 *.Rproj
 client_secrets.json
+.idea
