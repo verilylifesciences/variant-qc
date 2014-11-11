@@ -13,7 +13,7 @@ In this codelab, you will use [Google Genomics](https://cloud.google.com/genomic
 
 2. Read the rendered version of the RMarkdown [AllModalitiesDemo.md](./AllModalitiesDemo.md)
 
-3. Execute the code *chunk by chunk* in RStudio [AllModalitiesDemo.Rmd](./AllModalitiesDemo.Rmd) or *line by line* in R.  _Note:_ there are a few additional R packages used by this demo but you'll see the necessary lines to install them as you execute this step by step from the [unrendered code](./AllModalitiesDemo.Rmd).
+3. Execute the code *chunk by chunk* in RStudio [AllModalitiesDemo.Rmd](./AllModalitiesDemo.Rmd) or *line by line* in R.
 
 ### Notes
 
