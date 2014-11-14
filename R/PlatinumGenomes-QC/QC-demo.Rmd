@@ -1,0 +1,86 @@
+<!-- R Markdown Documentation, DO NOT EDIT THE PLAIN MARKDOWN VERSION OF THIS FILE -->
+
+<!-- Copyright 2014 Google Inc. All rights reserved. -->
+
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
+<!-- you may not use this file except in compliance with the License. -->
+<!-- You may obtain a copy of the License at -->
+
+<!--     http://www.apache.org/licenses/LICENSE-2.0 -->
+
+<!-- Unless required by applicable law or agreed to in writing, software -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS, -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
+<!-- See the License for the specific language governing permissions and -->
+<!-- limitations under the License. -->
+
+Performing QC using Google Genomics
+===================================
+
+The following example makes use of [Illumina Platinum Genomes](http://www.illumina.com/platinumgenomes/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/platinum-genomes).
+
+DISCLAIMER: this is a work-in-progress, don't expect this to make sense just yet :-)
+
+For provenance details of the results being reproduced in this codelab, see <coming soon>.
+
+```{r echo=FALSE, eval=FALSE}
+# This codelab assumes that the current working directory is where the Rmd file resides
+setwd("/YOUR/PATH/TO/codelabs/R/PlatinumGenomes-QC")
+```
+
+Setting Up
+-----------
+```{r comment=NA, message=FALSE, warning=FALSE}
+# Setup for BigQuery access
+require(bigrquery)
+require(RCurl)
+project <- "genomics-public-data"                   # put your projectID here
+DisplayAndDispatchQuery <- function(queryUri, replacements=list()) {
+  if(grepl("^https.*", queryUri)) {
+    querySql <- getURL(queryUri, ssl.verifypeer=FALSE)
+  } else {
+    querySql <- readChar(queryUri, nchars=1e6)
+  }
+  for(replacement in names(replacements)) {
+    querySql <- sub(replacement, replacements[[replacement]], querySql, fixed=TRUE)
+  }
+  cat(querySql)
+  query_exec(querySql, project)
+}
+table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants")
+```
+
+Comparing Source Data
+--------------------- 
+Number of rows in our multi-sample VCF [platinum_genomes_brca1_merged.vcf.gz](./data/platinum_genomes_brca1_merged.vcf.gz)
+```
+> zcat platinum_genomes_brca1_merged.vcf.gz | grep -v '#' | cut -f 5 | grep -v '\.' | wc -l
+332
+```
+
+Compare to [BRCA1 variants in BigQuery](https://github.com/googlegenomics/getting-started-bigquery/blob/master/RMarkdown/literate-programming-demo.md#data-visualization)
+```{r message=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("https://raw.githubusercontent.com/googlegenomics/getting-started-bigquery/master/sql/variant-level-data-for-brca1.sql",
+                                  replacements=table_replacement)
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+The differences are due to:
+* how the alternates for the same genomic position are nested
+* any gVCF reference-matching blocks overlapping the start of BRCA1 are included by the region filter for bcftools merge
+* Google Genomics uses a 0-based coordinate system but VCF files are 1-based
+
+Singletons
+----------
+```{r message=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/private-variants-brca1.sql",
+                                  replacements=table_replacement)
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+require(xtable)
+print(xtable(result), type="html", include.rownames=F)
+```
+
+Compare to [brca1.singletons](./data/singletons/brca1.singletons) which has 12,384 entries.  The majority of those are for 0/0 genotypes from reference matching blocks.  Should those actually be considered singletons?
