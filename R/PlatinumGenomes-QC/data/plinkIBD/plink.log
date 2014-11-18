@@ -1,0 +1,22 @@
+PLINK v1.90b2n 64-bit (2 Nov 2014) 
+3 arguments: --genome --vcf ../platinum_genomes_brca1_merged.vcf.gz
+Hostname: qc
+Working directory: /mnt/data/plinkIBD
+Start time: Thu Nov 13 19:46:45 2014
+
+Random number seed: 1415908005
+3714 MB RAM detected; reserving 1857 MB for main workspace.
+--vcf: plink-temporary.bed + plink-temporary.bim + plink-temporary.fam written.
+15246 variants loaded from .bim file.
+17 people (0 males, 0 females, 17 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to plink.nosex .
+Using 1 thread.
+Before main variant filters, 17 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate is 0.0945359.
+15246 variants and 17 people pass filters and QC.
+Note: No phenotypes present.
+IBD calculations complete.
+Finished writing plink.genome .
+
+End time: Thu Nov 13 19:46:46 2014
