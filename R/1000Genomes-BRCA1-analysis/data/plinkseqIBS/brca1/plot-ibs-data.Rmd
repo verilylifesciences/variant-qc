@@ -6,8 +6,8 @@
 setwd("/YOUR/PATH/TO/codelabs/R/1000Genomes-BRCA1-analysis/data/plinkseqIBS/brca1")
 ```
 
-The input IBS matrix is an $N\times N$ matrix, where $N$ is the size of the
-population. First, transform this matrix into a $N^2 \times 3$ matrix, where
+The input IBS matrix is an N * N matrix, where N is the size of the
+population. First, transform this matrix into a N^2 * 3 matrix, where
 each row represents the IBS score for a pair of individuals.
 
 ```{r message=FALSE, comment=NA}
