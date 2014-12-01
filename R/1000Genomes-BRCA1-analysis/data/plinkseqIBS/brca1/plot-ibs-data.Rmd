@@ -1,4 +1,4 @@
-# Identity By State (IBS) for 1000 Genomes BRAC1
+# Identity By State (IBS) for 1000 Genomes BRCA1
 
 ```{r echo=FALSE, eval=FALSE}
 # This codelab assumes that the current working directory is where the Rmd file
