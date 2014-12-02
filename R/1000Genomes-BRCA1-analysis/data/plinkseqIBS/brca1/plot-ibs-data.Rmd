@@ -12,36 +12,36 @@ each row represents the IBS score for a pair of individuals.
 
 ```{r message=FALSE, comment=NA}
 library(reshape2)
-ibs_data <- read.table("./1000genomes_phase1_brca1.ibs", header=TRUE,
+ibsData <- read.table("./1000genomes_phase1_brca1.ibs", header=TRUE,
                        row.names=1, stringsAsFactors=FALSE)
-ibs_matrix <- data.matrix(ibs_data)
-ibs_pairs <- melt(ibs_matrix)
-colnames(ibs_pairs) <- c("sample1", "sample2", "ibs_score")
-write.table(ibs_pairs, file="1000genomes_phase1_brca1_melted.ibs")
+ibsMatrix <- data.matrix(ibsData)
+ibsPairs <- melt(ibsMatrix)
+colnames(ibsPairs) <- c("sample1", "sample2", "ibs_score")
+write.table(ibsPairs, file="1000genomes_phase1_brca1_melted.ibs")
 ```
 
 Extract the IBS matrix for a random sample of individuals.
 
 ```{r message=FALSE, comment=NA}
-individuals <- unique(ibs_pairs$sample1)
-sample_size <- 50
-sample <- sample(individuals, sample_size)
-ibs_pairs <- subset(ibs_pairs, ibs_pairs$sample1 %in% sample)
-ibs_pairs <- subset(ibs_pairs, ibs_pairs$sample2 %in% sample)
-ibs_pairs <- subset(ibs_pairs, ibs_pairs$sample1 != ibs_pairs$sample2)
+individuals <- unique(ibsPairs$sample1)
+sampleSize <- 50
+sample <- sample(individuals, sampleSize)
+ibsPairs <- subset(ibsPairs, ibsPairs$sample1 %in% sample)
+ibsPairs <- subset(ibsPairs, ibsPairs$sample2 %in% sample)
+ibsPairs <- subset(ibsPairs, ibsPairs$sample1 != ibsPairs$sample2)
 ```
 
 Exclude the IBS values for a genome and itself, because that's always 1.0 and
 skews the heat map.
 
 ```{r message=FALSE, comment=NA}
-ibs_pairs <- subset(ibs_pairs, ibs_pairs$sample1 != ibs_pairs$sample2)
+ibsPairs <- subset(ibsPairs, ibsPairs$sample1 != ibsPairs$sample2)
 ```
 Draw a heat map based on the IBS scores.
 
 ```{r ibs-heat-map, fig.align="center", fig.width=10, fig.height=10, message=FALSE, comment=NA}
 require(ggplot2)
-p <- ggplot(data=ibs_pairs, aes(x=sample1, y=sample2)) +
+p <- ggplot(data=ibsPairs, aes(x=sample1, y=sample2)) +
      theme(axis.ticks=element_blank(), axis.text=element_blank()) +
      geom_tile(aes(fill=ibs_score), colour="white") +
      scale_fill_gradient(low="white", high="steelblue",
