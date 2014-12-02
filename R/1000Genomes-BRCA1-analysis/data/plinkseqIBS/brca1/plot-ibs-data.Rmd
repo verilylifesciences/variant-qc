@@ -16,7 +16,7 @@ ibsData <- read.table("./1000genomes_phase1_brca1.ibs", header=TRUE,
                        row.names=1, stringsAsFactors=FALSE)
 ibsMatrix <- data.matrix(ibsData)
 ibsPairs <- melt(ibsMatrix)
-colnames(ibsPairs) <- c("sample1", "sample2", "ibs_score")
+colnames(ibsPairs) <- c("sample1", "sample2", "ibsScore")
 write.table(ibsPairs, file="1000genomes_phase1_brca1_melted.ibs")
 ```
 
@@ -43,7 +43,7 @@ Draw a heat map based on the IBS scores.
 require(ggplot2)
 p <- ggplot(data=ibsPairs, aes(x=sample1, y=sample2)) +
      theme(axis.ticks=element_blank(), axis.text=element_blank()) +
-     geom_tile(aes(fill=ibs_score), colour="white") +
+     geom_tile(aes(fill=ibsScore), colour="white") +
      scale_fill_gradient(low="white", high="steelblue",
                          guide=guide_colourbar(title="IBS Score")) +
      labs(list(title="IBS Heat Map", x="Sample", y="Sample"))
