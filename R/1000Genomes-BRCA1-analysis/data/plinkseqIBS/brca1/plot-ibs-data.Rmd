@@ -30,8 +30,8 @@ ibsPairs <- subset(ibsPairs, ibsPairs$sample1 %in% sample)
 ibsPairs <- subset(ibsPairs, ibsPairs$sample2 %in% sample)
 ```
 
-Exclude the IBS values for a genome and itself, because that's always 1.0 and
-skews the heat map.
+Exclude the IBS values for a genome and itself, because those values are always
+1.0 and skew the heat map.
 
 ```{r message=FALSE, comment=NA}
 ibsPairs <- subset(ibsPairs, ibsPairs$sample1 != ibsPairs$sample2)
