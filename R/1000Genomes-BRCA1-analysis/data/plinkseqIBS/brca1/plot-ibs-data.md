@@ -26,7 +26,6 @@ sampleSize <- 50
 sample <- sample(individuals, sampleSize)
 ibsPairs <- subset(ibsPairs, ibsPairs$sample1 %in% sample)
 ibsPairs <- subset(ibsPairs, ibsPairs$sample2 %in% sample)
-ibsPairs <- subset(ibsPairs, ibsPairs$sample1 != ibsPairs$sample2)
 ```
 
 Exclude the IBS values for a genome and itself, because that's always 1.0 and
