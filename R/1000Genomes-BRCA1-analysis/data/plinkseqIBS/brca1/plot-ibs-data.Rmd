@@ -28,9 +28,16 @@ sample_size <- 50
 sample <- sample(individuals, sample_size)
 ibs_pairs <- subset(ibs_pairs, ibs_pairs$sample1 %in% sample)
 ibs_pairs <- subset(ibs_pairs, ibs_pairs$sample2 %in% sample)
-
+ibs_pairs <- subset(ibs_pairs, ibs_pairs$sample1 != ibs_pairs$sample2)
 ```
-Then, draw a heat map based on the IBS scores.
+
+Exclude the IBS values for a genome and itself, because that's always 1.0 and
+skews the heat map.
+
+```{r message=FALSE, comment=NA}
+ibs_pairs <- subset(ibs_pairs, ibs_pairs$sample1 != ibs_pairs$sample2)
+```
+Draw a heat map based on the IBS scores.
 
 ```{r ibs-heat-map, fig.align="center", fig.width=10, fig.height=10, message=FALSE, comment=NA}
 require(ggplot2)

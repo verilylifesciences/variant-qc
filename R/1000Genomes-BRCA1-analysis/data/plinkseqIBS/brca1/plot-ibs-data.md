@@ -1,9 +1,9 @@
-# Identity By State (IBS) for 1000 Genomes BRAC1
+# Identity By State (IBS) for 1000 Genomes BRCA1
 
 
 
-The input IBS matrix is an $N\times N$ matrix, where $N$ is the size of the
-population. First, transform this matrix into a $N^2 \times 3$ matrix, where
+The input IBS matrix is an N * N matrix, where N is the size of the
+population. First, transform this matrix into a N^2 * 3 matrix, where
 each row represents the IBS score for a pair of individuals.
 
 
@@ -26,8 +26,17 @@ sample_size <- 50
 sample <- sample(individuals, sample_size)
 ibs_pairs <- subset(ibs_pairs, ibs_pairs$sample1 %in% sample)
 ibs_pairs <- subset(ibs_pairs, ibs_pairs$sample2 %in% sample)
+ibs_pairs <- subset(ibs_pairs, ibs_pairs$sample1 != ibs_pairs$sample2)
 ```
-Then, draw a heat map based on the IBS scores.
+
+Exclude the IBS values for a genome and itself, because that's always 1.0 and
+skews the heat map.
+
+
+```r
+ibs_pairs <- subset(ibs_pairs, ibs_pairs$sample1 != ibs_pairs$sample2)
+```
+Draw a heat map based on the IBS scores.
 
 
 ```r
