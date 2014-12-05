@@ -6,7 +6,7 @@ SELECT
   WHEN cnt = 2 THEN 'D'
   ELSE STRING(cnt) END AS SINGLETON_DOUBLETON,
   reference_bases AS REF,
-  alternate_bases AS ALLELE,
+  alternate_bases AS ALT,
   call.call_set_name AS INDV,
   alt_num,
   genotype,
@@ -38,6 +38,7 @@ FROM (
           reference_name = 'chr17'
           AND start BETWEEN 41196311
           AND 41277499
+        OMIT call IF EVERY(call.genotype = -1)
           ),
         alternate_bases)
       )

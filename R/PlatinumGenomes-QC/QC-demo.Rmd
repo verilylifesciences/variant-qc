@@ -65,7 +65,6 @@ Notes about this particular dataset:
 * It is in gVCF format which adds complexity above and beyond [similar examples for the 1,000 Genomes dataset](https://github.com/googlegenomics/bigquery-examples/blob/master/1000genomes/sql/README.md).
 * It is comprised only of SNPs and INDELs (contains no structural variants).
 * The values for `alternate_bases` are just comprised of the letters A,C,G,T (e.g., contains no `<DEL>` values).
-* It contains some contradictory calls.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
@@ -76,18 +75,6 @@ result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
 print(xtable(result), type="html", include.rownames=F)
 ```
 We see from the query results that there are no special charaters in alternate_bases and the maximum length is ~50 base pairs.
-
-
-Here is one specific example of a contradictory call.
-```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/contradictory-data.sql",
-                                  replacements=table_replacement)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(result), type="html", include.rownames=F)
-```
-We see that NA12883 matches the reference for both alleles at position 41198773 and also has an insertion is one allele.  Which is the correct call?
 
 Check Singletons
 ----------------
@@ -100,6 +87,52 @@ Number of rows returned by this query: `r nrow(result)`.
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
 print(xtable(result), type="html", include.rownames=F)
 ```
+
+Compare to [brca1.singletons](./data/singletons/brca1.singletons) which has 85 some of which are for 0/0 genotypes from reference matching blocks.  This file was created with [vcftools](./data/singletons/brca1.log).
+
+```{r}
+require(dplyr)
+expectedResult <- read.table("./data/singletons/brca1.singletons", header=TRUE)
+# Convert to zero-based coordinates
+expectedResult <- mutate(expectedResult, POS = POS - 1)
+# Clean colnames to match
+colnames(expectedResult) <- gsub('\\.+', '_', colnames(expectedResult))
+```
+
+How many singletons do the two results have in common?
+```{r}
+dim(inner_join(result, expectedResult))
+```
+
+Which singletons were only identified by BigQuery?
+```{r}
+onlyBQ <- anti_join(result, expectedResult)
+onlyBQ
+```
+
+Which singletons were only identified by vcftools?
+```{r}
+onlyVcftools <- anti_join(expectedResult, result)
+onlyVcftools
+```
+
+Retrieving the gVCF data for the singletons identified only by vcftools:
+```{r message=FALSE, warning=FALSE, comment=NA}
+having <- paste("start = ", onlyVcftools$POS,
+                sep="", collapse=" OR ")
+result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
+                                  replacements=c(table_replacement,
+                                                 "_HAVING_"=having))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(result), type="html", include.rownames=F)
+```
+
+It appears that they correspond either to 
+* a reference-matching block, so not actually a singleton and just perhaps violating an assumption in the vcftools code
+* or a non-singleon variant, perhaps due to a problem in converting the gVCF data to all-positions VCF via gvcftools?
+
 
 Check Hardy-Weinberg Equilibrium
 -----------------------------------

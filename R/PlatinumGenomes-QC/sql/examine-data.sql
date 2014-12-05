@@ -1,4 +1,4 @@
-# An example of contradictory data.
+# Examine the data for particular calls.
 SELECT
   reference_name,
   start,
@@ -11,13 +11,11 @@ SELECT
   GROUP_CONCAT(filter) WITHIN RECORD AS filter,
   GROUP_CONCAT(STRING(call.pl)) WITHIN call AS likelihood,
 FROM
-  [genomics-public-data:platinum_genomes.variants]
+  [_THE_TABLE_]
 WHERE
   reference_name = 'chr17'
-  AND start <= 41198773
-  AND END >= 41198774
 HAVING
-  call.call_set_name = 'NA12883'
+  _HAVING_
 ORDER BY
   start,
   END

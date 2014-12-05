@@ -82,7 +82,7 @@ Number of rows returned by this query: 335.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Nov 20 18:54:14 2014 -->
+<!-- Fri Dec  5 15:00:50 2014 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
@@ -97,7 +97,6 @@ Notes about this particular dataset:
 * It is in gVCF format which adds complexity above and beyond [similar examples for the 1,000 Genomes dataset](https://github.com/googlegenomics/bigquery-examples/blob/master/1000genomes/sql/README.md).
 * It is comprised only of SNPs and INDELs (contains no structural variants).
 * The values for `alternate_bases` are just comprised of the letters A,C,G,T (e.g., contains no `<DEL>` values).
-* It contains some contradictory calls.
 
 
 ```r
@@ -122,55 +121,12 @@ GROUP BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Nov 20 18:54:16 2014 -->
+<!-- Fri Dec  5 15:00:52 2014 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
    </table>
 We see from the query results that there are no special charaters in alternate_bases and the maximum length is ~50 base pairs.
-
-
-Here is one specific example of a contradictory call.
-
-```r
-result <- DisplayAndDispatchQuery("./sql/contradictory-data.sql",
-                                  replacements=table_replacement)
-```
-
-```
-# An example of contradictory data.
-SELECT
-  reference_name,
-  start,
-  END,
-  reference_bases,
-  GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-  call.call_set_name,
-  GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS gt,
-  quality,
-  GROUP_CONCAT(filter) WITHIN RECORD AS filter,
-  GROUP_CONCAT(STRING(call.pl)) WITHIN call AS likelihood,
-FROM
-  [genomics-public-data:platinum_genomes.variants]
-WHERE
-  reference_name = 'chr17'
-  AND start <= 41198773
-  AND END >= 41198774
-HAVING
-  call.call_set_name = 'NA12883'
-ORDER BY
-  start,
-  END
-```
-
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Nov 20 18:54:18 2014 -->
-<table border=1>
-<tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198773 </td> <td align="right"> 41198774 </td> <td> C </td> <td> CA </td> <td> NA12883 </td> <td> 0,1 </td> <td align="right"> 317.76 </td> <td> PASS </td> <td> 165,0,334 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198773 </td> <td align="right"> 41198774 </td> <td> C </td> <td>  </td> <td> NA12883 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
-   </table>
-We see that NA12883 matches the reference for both alleles at position 41198773 and also has an insertion is one allele.  Which is the correct call?
 
 Check Singletons
 ----------------
@@ -189,7 +145,7 @@ SELECT
   WHEN cnt = 2 THEN 'D'
   ELSE STRING(cnt) END AS SINGLETON_DOUBLETON,
   reference_bases AS REF,
-  alternate_bases AS ALLELE,
+  alternate_bases AS ALT,
   call.call_set_name AS INDV,
   alt_num,
   genotype,
@@ -221,6 +177,7 @@ FROM (
           reference_name = 'chr17'
           AND start BETWEEN 41196311
           AND 41277499
+        OMIT call IF EVERY(call.genotype = -1)
           ),
         alternate_bases)
       )
@@ -233,12 +190,12 @@ FROM (
 ORDER BY
   POS, INDV
 ```
-Number of rows returned by this query: 63.
+Number of rows returned by this query: 64.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Nov 20 18:54:23 2014 -->
+<!-- Fri Dec  5 15:00:56 2014 -->
 <table border=1>
-<tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALLELE </th> <th> INDV </th> <th> alt_num </th> <th> genotype </th> <th> cnt </th>  </tr>
+<tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> alt_num </th> <th> genotype </th> <th> cnt </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> S </td> <td> CT </td> <td> C </td> <td> NA12883 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41197958 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12884 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41198195 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12893 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
@@ -270,6 +227,7 @@ Number of rows returned by this query: 63.
   <tr> <td> chr17 </td> <td align="right"> 41236026 </td> <td> S </td> <td> A </td> <td> C </td> <td> NA12893 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41238125 </td> <td> S </td> <td> T </td> <td> TACACAC </td> <td> NA12880 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41239705 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12891 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41242077 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12880 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41250046 </td> <td> S </td> <td> C </td> <td> T </td> <td> NA12888 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41250220 </td> <td> S </td> <td> AT </td> <td> A </td> <td> NA12892 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252576 </td> <td> S </td> <td> A </td> <td> G </td> <td> NA12891 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
@@ -303,6 +261,157 @@ Number of rows returned by this query: 63.
   <tr> <td> chr17 </td> <td align="right"> 41275080 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12887 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41276517 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12880 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
    </table>
+
+Compare to [brca1.singletons](./data/singletons/brca1.singletons) which has 85 some of which are for 0/0 genotypes from reference matching blocks.  This file was created with [vcftools](./data/singletons/brca1.log).
+
+
+```r
+require(dplyr)
+expectedResult <- read.table("./data/singletons/brca1.singletons", header=TRUE)
+# Convert to zero-based coordinates
+expectedResult <- mutate(expectedResult, POS = POS - 1)
+# Clean colnames to match
+colnames(expectedResult) <- gsub('\\.+', '_', colnames(expectedResult))
+```
+
+How many singletons do the two results have in common?
+
+```r
+dim(inner_join(result, expectedResult))
+```
+
+```
+## Joining by: c("CHROM", "POS", "SINGLETON_DOUBLETON", "INDV")
+```
+
+```
+## [1] 75 10
+```
+
+Which singletons were only identified by BigQuery?
+
+```r
+onlyBQ <- anti_join(result, expectedResult)
+```
+
+```
+## Joining by: c("CHROM", "POS", "SINGLETON_DOUBLETON", "INDV")
+```
+
+```r
+onlyBQ
+```
+
+```
+##   CHROM      POS SINGLETON_DOUBLETON  REF     ALT    INDV alt_num genotype
+## 1 chr17 41211485                   S CACA CACAACA NA12878       2      1,2
+## 2 chr17 41211485                   S CACA       C NA12878       1      1,2
+##   cnt
+## 1   1
+## 2   1
+```
+
+Which singletons were only identified by vcftools?
+
+```r
+onlyVcftools <- anti_join(expectedResult, result)
+```
+
+```
+## Joining by: c("CHROM", "POS", "SINGLETON_DOUBLETON", "INDV")
+```
+
+```r
+onlyVcftools
+```
+
+```
+##    CHROM      POS SINGLETON_DOUBLETON ALLELE    INDV
+## 1  chr17 41252694                   S    AAT NA12886
+## 2  chr17 41204841                   S      T NA12888
+## 3  chr17 41196320                   D      T NA12886
+## 4  chr17 41196319                   D      T NA12886
+## 5  chr17 41196318                   D      G NA12886
+## 6  chr17 41196317                   D      T NA12886
+## 7  chr17 41196316                   D      G NA12886
+## 8  chr17 41196315                   D      A NA12886
+## 9  chr17 41196314                   D      A NA12886
+## 10 chr17 41196313                   D      G NA12886
+```
+
+Retrieving the gVCF data for the singletons identified only by vcftools:
+
+```r
+having <- paste("start = ", onlyVcftools$POS,
+                sep="", collapse=" OR ")
+result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
+                                  replacements=c(table_replacement,
+                                                 "_HAVING_"=having))
+```
+
+```
+# Examine the data for particular calls.
+SELECT
+  reference_name,
+  start,
+  END,
+  reference_bases,
+  GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+  call.call_set_name,
+  GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS gt,
+  quality,
+  GROUP_CONCAT(filter) WITHIN RECORD AS filter,
+  GROUP_CONCAT(STRING(call.pl)) WITHIN call AS likelihood,
+FROM
+  [genomics-public-data:platinum_genomes.variants]
+WHERE
+  reference_name = 'chr17'
+HAVING
+  start = 41252694 OR start = 41204841 OR start = 41196320 OR start = 41196319 OR start = 41196318 OR start = 41196317 OR start = 41196316 OR start = 41196315 OR start = 41196314 OR start = 41196313
+ORDER BY
+  start,
+  END
+```
+
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Fri Dec  5 15:00:57 2014 -->
+<table border=1>
+<tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td> NA12886 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12889 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 815,54,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12881 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 725,63,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12892 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12878 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 1025,63,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12893 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 859,72,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12890 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12884 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 943,81,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12886 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 785,38,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12888 </td> <td> 0,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 359,0,25 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12891 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 877,78,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12880 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12879 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 1175,48,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12883 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12887 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 754,39,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12885 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 809,69,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12877 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 793,44,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12882 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 917,54,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td> T </td> <td> NA12877 </td> <td> 0,1 </td> <td align="right"> 143.44 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 173,0,874 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12881 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12892 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12878 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12890 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12884 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12880 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12883 </td> <td> 0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12889 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252697 </td> <td> AAT </td> <td> A </td> <td> NA12886 </td> <td> 0,1 </td> <td align="right"> 648.06 </td> <td> LowGQX </td> <td> 823,0,38 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252697 </td> <td> AAT </td> <td> A </td> <td> NA12884 </td> <td> 1,1 </td> <td align="right"> 648.06 </td> <td> LowGQX </td> <td> 690,17,0 </td> </tr>
+   </table>
+
+It appears that they correspond either to 
+* a reference-matching block, so not actually a singleton and just perhaps violating an assumption in the vcftools code
+* or a non-singleon variant, perhaps due to a problem in converting the gVCF data to all-positions VCF via gvcftools?
+
 
 Check Hardy-Weinberg Equilibrium
 -----------------------------------
@@ -388,7 +497,7 @@ ORDER BY
 Number of rows returned by this query: 271.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Nov 20 18:54:27 2014 -->
+<!-- Fri Dec  5 15:01:00 2014 -->
 <table border=1>
 <tr> <th> vars_reference_name </th> <th> vars_start </th> <th> vars_end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> ref_freq </th> <th> alt_freq </th> <th> num_sample_alleles </th> <th> ref_count </th> <th> alt_count </th> <th> called_allele_count </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
@@ -707,7 +816,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Nov 20 18:54:29 2014 -->
+<!-- Fri Dec  5 15:01:02 2014 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> N_SITES </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right">   3 </td> <td align="right">  27 </td> </tr>
