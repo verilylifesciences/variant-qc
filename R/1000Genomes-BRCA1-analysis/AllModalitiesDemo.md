@@ -19,7 +19,7 @@ Data Analysis using Google Genomics
 
 The following example makes use of the [Phase 1 variants](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20110521/README.phase1_integrated_release_version3_20120430) from the [1,000 Genomes Project](http://www.1000genomes.org/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/1000-genomes).
 
-The VCFs comprising this dataset are **3.5 TB** when uncompressed and provide information about **39,706,715** variants for **1,092** individuals.
+The VCFs comprising this dataset are **1.12 TB** when uncompressed and provide information about **39,706,715** variants for **1,092** individuals.
 
 Working at Scale
 -------------------
