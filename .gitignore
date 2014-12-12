@@ -5,3 +5,4 @@
 *.Rproj
 client_secrets.json
 .idea
+*.pyc
