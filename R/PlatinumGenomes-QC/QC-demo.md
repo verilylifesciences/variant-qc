@@ -77,12 +77,13 @@ HAVING
 ORDER BY
   start,
   alternate_bases
+Running query:   RUNNING  2.1s
 ```
 Number of rows returned by this query: 335.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec  5 15:00:50 2014 -->
+<!-- Thu Dec 11 17:34:39 2014 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
@@ -97,6 +98,7 @@ Notes about this particular dataset:
 * It is in gVCF format which adds complexity above and beyond [similar examples for the 1,000 Genomes dataset](https://github.com/googlegenomics/bigquery-examples/blob/master/1000genomes/sql/README.md).
 * It is comprised only of SNPs and INDELs (contains no structural variants).
 * The values for `alternate_bases` are just comprised of the letters A,C,G,T (e.g., contains no `<DEL>` values).
+* It contains some single-allele and 1/2 genotypes.
 
 
 ```r
@@ -121,12 +123,55 @@ GROUP BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec  5 15:00:52 2014 -->
+<!-- Thu Dec 11 17:34:42 2014 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
    </table>
 We see from the query results that there are no special charaters in alternate_bases and the maximum length is ~50 base pairs.
+
+
+```r
+result <- DisplayAndDispatchQuery("./sql/genotypes-brca1.sql",
+                                  replacements=table_replacement)
+```
+
+```
+# Query to show the variety of genotypes within BRCA1, such as
+# single allele genotypes.
+SELECT
+  genotype,
+  COUNT(genotype) AS genotype_count
+FROM (
+  SELECT
+    GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
+  FROM
+  [genomics-public-data:platinum_genomes.variants]
+  WHERE
+    reference_name = 'chr17'
+    AND start BETWEEN 41196311
+    AND 41277499
+    )
+GROUP BY
+  genotype
+ORDER BY
+  genotype_count DESC
+```
+
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Thu Dec 11 17:34:44 2014 -->
+<table border=1>
+<tr> <th> genotype </th> <th> genotype_count </th>  </tr>
+  <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>
+  <tr> <td> 0,1 </td> <td align="right"> 1677 </td> </tr>
+  <tr> <td> 0 </td> <td align="right"> 226 </td> </tr>
+  <tr> <td> 1,1 </td> <td align="right">  73 </td> </tr>
+  <tr> <td> -1 </td> <td align="right">  50 </td> </tr>
+  <tr> <td> -1,-1 </td> <td align="right">   5 </td> </tr>
+  <tr> <td> 1,2 </td> <td align="right">   4 </td> </tr>
+   </table>
+We see from the query results the variety of genotypes within BRCA1.
+
 
 Check Singletons
 ----------------
@@ -193,7 +238,7 @@ ORDER BY
 Number of rows returned by this query: 64.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec  5 15:00:56 2014 -->
+<!-- Thu Dec 11 17:34:49 2014 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> alt_num </th> <th> genotype </th> <th> cnt </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> S </td> <td> CT </td> <td> C </td> <td> NA12883 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
@@ -371,14 +416,15 @@ HAVING
 ORDER BY
   start,
   END
+Running query:   RUNNING  2.6s
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec  5 15:00:57 2014 -->
+<!-- Thu Dec 11 17:34:54 2014 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td> NA12886 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12889 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 815,54,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12877 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 793,44,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12881 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 725,63,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12892 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12878 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 1025,63,0 </td> </tr>
@@ -386,16 +432,15 @@ ORDER BY
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12890 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12884 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 943,81,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12886 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 785,38,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12888 </td> <td> 0,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 359,0,25 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12891 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 877,78,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12880 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12879 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 1175,48,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12883 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12887 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 754,39,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12885 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 809,69,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12877 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 793,44,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12889 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 815,54,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12882 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 917,54,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td> T </td> <td> NA12877 </td> <td> 0,1 </td> <td align="right"> 143.44 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 173,0,874 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12888 </td> <td> 0,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 359,0,25 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12881 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12892 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12878 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
@@ -404,8 +449,9 @@ ORDER BY
   <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12880 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12883 </td> <td> 0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12889 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252697 </td> <td> AAT </td> <td> A </td> <td> NA12886 </td> <td> 0,1 </td> <td align="right"> 648.06 </td> <td> LowGQX </td> <td> 823,0,38 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td> T </td> <td> NA12877 </td> <td> 0,1 </td> <td align="right"> 143.44 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 173,0,874 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252697 </td> <td> AAT </td> <td> A </td> <td> NA12884 </td> <td> 1,1 </td> <td align="right"> 648.06 </td> <td> LowGQX </td> <td> 690,17,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252697 </td> <td> AAT </td> <td> A </td> <td> NA12886 </td> <td> 0,1 </td> <td align="right"> 648.06 </td> <td> LowGQX </td> <td> 823,0,38 </td> </tr>
    </table>
 
 It appears that they correspond either to 
@@ -416,35 +462,28 @@ It appears that they correspond either to
 Check Hardy-Weinberg Equilibrium
 -----------------------------------
 
-More calculations needed here . . . this is just allelic frequency.
-
-
 ```r
-result <- DisplayAndDispatchQuery("./sql/allelic-frequency-brca1.sql",
+result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1.sql",
                                   replacements=table_replacement)
 ```
 
 ```
 # The following query computes the allelic frequency for BRCA1 SNPs.
 SELECT
-  vars.reference_name,
-  vars.start,
-  vars.end,
-  reference_bases,
-  alternate_bases,
-  (ref_count + SUM(called_allele_count))/(ref_count + SUM(called_allele_count) + alt_count) AS ref_freq,
-  alt_count/(ref_count + SUM(called_allele_count) + alt_count) AS alt_freq,
-  ref_count + alt_count + SUM(called_allele_count) AS num_sample_alleles,
-  ref_count,
-  alt_count,
-  SUM(called_allele_count) AS called_allele_count,
+  vars.reference_name AS CHR,
+  vars.start AS POS,
+  reference_bases AS ref,
+  alternate_bases AS alt,
+  SUM(refs.HOM_REF) + vars.HOM_REF AS OBS_HOM1,
+  vars.HET AS OBS_HET,
+  vars.HOM_ALT AS OBS_HOM2,
 FROM (
     # Constrain the left hand side of the _join to reference-matching blocks.
   SELECT
     reference_name,
     start,
     END,
-    SUM(0 = call.genotype) WITHIN RECORD AS called_allele_count,
+    SUM(EVERY(0 = call.genotype)) WITHIN call AS HOM_REF,
   FROM
     [genomics-public-data:platinum_genomes.variants]
   WHERE
@@ -460,14 +499,16 @@ JOIN (
     reference_bases,
     GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
     COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-    SUM(0 = call.genotype) WITHIN RECORD AS ref_count,
-    SUM(1 = call.genotype) WITHIN RECORD AS alt_count,
+    SUM(EVERY(0 = call.genotype)) WITHIN call AS HOM_REF,
+    SUM(EVERY(1 = call.genotype)) WITHIN call AS HOM_ALT,
+    SUM(SOME(0 = call.genotype) AND SOME(1 = call.genotype)) WITHIN call AS HET,
   FROM
     [genomics-public-data:platinum_genomes.variants]
   WHERE
     reference_name = 'chr17'
     AND start BETWEEN 41196311
     AND 41277499
+#  OMIT call IF 2 != COUNT(call.genotype)
   HAVING
     # Skip ref-matching blocks, 1/2 genotypes, and non-SNP variants
     num_alts = 1
@@ -482,296 +523,201 @@ WHERE
   refs.start <= vars.start
   AND refs.END >= vars.start+1
 GROUP BY
-  vars.reference_name,
-  vars.start,
-  vars.end,
-  reference_bases,
-  alternate_bases,
-  ref_count,
-  alt_count
+  CHR,
+  POS,
+  ref,
+  alt,
+  vars.HOM_REF,
+  OBS_HET,
+  OBS_HOM2
 ORDER BY
-  vars.reference_name,
-  vars.start,
-  reference_bases
+  CHR,
+  POS,
+  ref
 ```
 Number of rows returned by this query: 271.
 
+Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec  5 15:01:00 2014 -->
+<!-- Thu Dec 11 17:34:57 2014 -->
 <table border=1>
-<tr> <th> vars_reference_name </th> <th> vars_start </th> <th> vars_end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> ref_freq </th> <th> alt_freq </th> <th> num_sample_alleles </th> <th> ref_count </th> <th> alt_count </th> <th> called_allele_count </th>  </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196840 </td> <td align="right"> 41196841 </td> <td> G </td> <td> T </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41197273 </td> <td align="right"> 41197274 </td> <td> C </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41197957 </td> <td align="right"> 41197958 </td> <td> G </td> <td> T </td> <td align="right"> 0.65 </td> <td align="right"> 0.35 </td> <td align="right">  34 </td> <td align="right">  12 </td> <td align="right">  12 </td> <td align="right">  10 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41197958 </td> <td align="right"> 41197959 </td> <td> A </td> <td> T </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198182 </td> <td align="right"> 41198183 </td> <td> A </td> <td> C </td> <td align="right"> 0.82 </td> <td align="right"> 0.18 </td> <td align="right">  34 </td> <td align="right">   6 </td> <td align="right">   6 </td> <td align="right">  22 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198186 </td> <td align="right"> 41198187 </td> <td> A </td> <td> C </td> <td align="right"> 0.74 </td> <td align="right"> 0.26 </td> <td align="right">  34 </td> <td align="right">   9 </td> <td align="right">   9 </td> <td align="right">  16 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198195 </td> <td align="right"> 41198196 </td> <td> T </td> <td> C </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198220 </td> <td align="right"> 41198221 </td> <td> T </td> <td> G </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198226 </td> <td align="right"> 41198227 </td> <td> A </td> <td> C </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198231 </td> <td align="right"> 41198232 </td> <td> A </td> <td> C </td> <td align="right"> 0.74 </td> <td align="right"> 0.26 </td> <td align="right">  34 </td> <td align="right">   9 </td> <td align="right">   9 </td> <td align="right">  16 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198264 </td> <td align="right"> 41198265 </td> <td> G </td> <td> T </td> <td align="right"> 0.88 </td> <td align="right"> 0.12 </td> <td align="right">  34 </td> <td align="right">   4 </td> <td align="right">   4 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198620 </td> <td align="right"> 41198621 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198769 </td> <td align="right"> 41198770 </td> <td> A </td> <td> C </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198773 </td> <td align="right"> 41198774 </td> <td> C </td> <td> A </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41199912 </td> <td align="right"> 41199913 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41200108 </td> <td align="right"> 41200109 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41200536 </td> <td align="right"> 41200537 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41201701 </td> <td align="right"> 41201702 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41202634 </td> <td align="right"> 41202635 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41202687 </td> <td align="right"> 41202688 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41203324 </td> <td align="right"> 41203325 </td> <td> T </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41203590 </td> <td align="right"> 41203591 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41203671 </td> <td align="right"> 41203672 </td> <td> G </td> <td> T </td> <td align="right"> 0.88 </td> <td align="right"> 0.12 </td> <td align="right">  34 </td> <td align="right">   4 </td> <td align="right">   4 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204376 </td> <td align="right"> 41204377 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204389 </td> <td align="right"> 41204390 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204796 </td> <td align="right"> 41204797 </td> <td> A </td> <td> C </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204837 </td> <td align="right"> 41204838 </td> <td> A </td> <td> T </td> <td align="right"> 1.00 </td> <td align="right"> 0.00 </td> <td align="right">  28 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204839 </td> <td align="right"> 41204840 </td> <td> A </td> <td> T </td> <td align="right"> 1.00 </td> <td align="right"> 0.00 </td> <td align="right">  28 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204855 </td> <td align="right"> 41204856 </td> <td> G </td> <td> A </td> <td align="right"> 0.74 </td> <td align="right"> 0.26 </td> <td align="right">  34 </td> <td align="right">   9 </td> <td align="right">   9 </td> <td align="right">  16 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204862 </td> <td align="right"> 41204863 </td> <td> T </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41205771 </td> <td align="right"> 41205772 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41205940 </td> <td align="right"> 41205941 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41206055 </td> <td align="right"> 41206056 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41208206 </td> <td align="right"> 41208207 </td> <td> T </td> <td> C </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41208207 </td> <td align="right"> 41208208 </td> <td> C </td> <td> T </td> <td align="right"> 0.68 </td> <td align="right"> 0.32 </td> <td align="right">  34 </td> <td align="right">  11 </td> <td align="right">  11 </td> <td align="right">  12 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41209577 </td> <td align="right"> 41209578 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41210033 </td> <td align="right"> 41210034 </td> <td> C </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41210034 </td> <td align="right"> 41210035 </td> <td> T </td> <td> A </td> <td align="right"> 0.85 </td> <td align="right"> 0.15 </td> <td align="right">  34 </td> <td align="right">   5 </td> <td align="right">   5 </td> <td align="right">  24 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41210035 </td> <td align="right"> 41210036 </td> <td> C </td> <td> A </td> <td align="right"> 0.68 </td> <td align="right"> 0.32 </td> <td align="right">  34 </td> <td align="right">  11 </td> <td align="right">  11 </td> <td align="right">  12 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41210062 </td> <td align="right"> 41210063 </td> <td> T </td> <td> A </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41210395 </td> <td align="right"> 41210396 </td> <td> A </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41211352 </td> <td align="right"> 41211353 </td> <td> T </td> <td> G </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41211652 </td> <td align="right"> 41211653 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41212168 </td> <td align="right"> 41212169 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41212180 </td> <td align="right"> 41212181 </td> <td> G </td> <td> A </td> <td align="right"> 0.74 </td> <td align="right"> 0.26 </td> <td align="right">  34 </td> <td align="right">   9 </td> <td align="right">   9 </td> <td align="right">  16 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41212337 </td> <td align="right"> 41212338 </td> <td> A </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41212546 </td> <td align="right"> 41212547 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41212804 </td> <td align="right"> 41212805 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41213625 </td> <td align="right"> 41213626 </td> <td> G </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41213659 </td> <td align="right"> 41213660 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41213747 </td> <td align="right"> 41213748 </td> <td> T </td> <td> C </td> <td align="right"> 0.74 </td> <td align="right"> 0.26 </td> <td align="right">  34 </td> <td align="right">   9 </td> <td align="right">   9 </td> <td align="right">  16 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41213892 </td> <td align="right"> 41213893 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41213995 </td> <td align="right"> 41213996 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41214209 </td> <td align="right"> 41214210 </td> <td> A </td> <td> T </td> <td align="right"> 1.00 </td> <td align="right"> 0.00 </td> <td align="right">  26 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41214210 </td> <td align="right"> 41214211 </td> <td> A </td> <td> C </td> <td align="right"> 1.00 </td> <td align="right"> 0.00 </td> <td align="right">  26 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41215824 </td> <td align="right"> 41215825 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41216204 </td> <td align="right"> 41216205 </td> <td> G </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41216865 </td> <td align="right"> 41216866 </td> <td> G </td> <td> T </td> <td align="right"> 0.74 </td> <td align="right"> 0.26 </td> <td align="right">  34 </td> <td align="right">   9 </td> <td align="right">   9 </td> <td align="right">  16 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41216932 </td> <td align="right"> 41216933 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41217551 </td> <td align="right"> 41217552 </td> <td> A </td> <td> C </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41217873 </td> <td align="right"> 41217874 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218332 </td> <td align="right"> 41218333 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218571 </td> <td align="right"> 41218572 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218814 </td> <td align="right"> 41218815 </td> <td> A </td> <td> C </td> <td align="right"> 0.82 </td> <td align="right"> 0.18 </td> <td align="right">  34 </td> <td align="right">   6 </td> <td align="right">   6 </td> <td align="right">  22 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218821 </td> <td align="right"> 41218822 </td> <td> T </td> <td> C </td> <td align="right"> 0.68 </td> <td align="right"> 0.32 </td> <td align="right">  34 </td> <td align="right">  11 </td> <td align="right">  11 </td> <td align="right">  12 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218851 </td> <td align="right"> 41218852 </td> <td> G </td> <td> T </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218855 </td> <td align="right"> 41218856 </td> <td> C </td> <td> A </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218858 </td> <td align="right"> 41218859 </td> <td> G </td> <td> A </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218884 </td> <td align="right"> 41218885 </td> <td> A </td> <td> G </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219261 </td> <td align="right"> 41219262 </td> <td> A </td> <td> T </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219290 </td> <td align="right"> 41219291 </td> <td> G </td> <td> T </td> <td align="right"> 0.76 </td> <td align="right"> 0.24 </td> <td align="right">  34 </td> <td align="right">   8 </td> <td align="right">   8 </td> <td align="right">  18 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219340 </td> <td align="right"> 41219341 </td> <td> G </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219559 </td> <td align="right"> 41219560 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219779 </td> <td align="right"> 41219780 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219803 </td> <td align="right"> 41219804 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219872 </td> <td align="right"> 41219873 </td> <td> A </td> <td> T </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219873 </td> <td align="right"> 41219874 </td> <td> G </td> <td> T </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219892 </td> <td align="right"> 41219893 </td> <td> A </td> <td> C </td> <td align="right"> 0.65 </td> <td align="right"> 0.35 </td> <td align="right">  34 </td> <td align="right">  12 </td> <td align="right">  12 </td> <td align="right">  10 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219900 </td> <td align="right"> 41219901 </td> <td> T </td> <td> G </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219903 </td> <td align="right"> 41219904 </td> <td> A </td> <td> G </td> <td align="right"> 0.56 </td> <td align="right"> 0.44 </td> <td align="right">  34 </td> <td align="right">  15 </td> <td align="right">  15 </td> <td align="right">   4 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219905 </td> <td align="right"> 41219906 </td> <td> G </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219929 </td> <td align="right"> 41219930 </td> <td> T </td> <td> A </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41220222 </td> <td align="right"> 41220223 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41222461 </td> <td align="right"> 41222462 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41222722 </td> <td align="right"> 41222723 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41223093 </td> <td align="right"> 41223094 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41224832 </td> <td align="right"> 41224833 </td> <td> G </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41224867 </td> <td align="right"> 41224868 </td> <td> A </td> <td> C </td> <td align="right"> 0.76 </td> <td align="right"> 0.24 </td> <td align="right">  34 </td> <td align="right">   8 </td> <td align="right">   8 </td> <td align="right">  18 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41224871 </td> <td align="right"> 41224872 </td> <td> A </td> <td> C </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41224891 </td> <td align="right"> 41224892 </td> <td> G </td> <td> T </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41224907 </td> <td align="right"> 41224908 </td> <td> A </td> <td> T </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41225578 </td> <td align="right"> 41225579 </td> <td> C </td> <td> A </td> <td align="right"> 0.68 </td> <td align="right"> 0.32 </td> <td align="right">  34 </td> <td align="right">  11 </td> <td align="right">  11 </td> <td align="right">  12 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41225780 </td> <td align="right"> 41225781 </td> <td> A </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41225782 </td> <td align="right"> 41225783 </td> <td> A </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41225838 </td> <td align="right"> 41225839 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41226600 </td> <td align="right"> 41226601 </td> <td> G </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41226674 </td> <td align="right"> 41226675 </td> <td> A </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41226740 </td> <td align="right"> 41226741 </td> <td> T </td> <td> G </td> <td align="right"> 1.00 </td> <td align="right"> 0.00 </td> <td align="right">  26 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41227082 </td> <td align="right"> 41227083 </td> <td> C </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41227103 </td> <td align="right"> 41227104 </td> <td> A </td> <td> G </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41227105 </td> <td align="right"> 41227106 </td> <td> G </td> <td> A </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41229351 </td> <td align="right"> 41229352 </td> <td> C </td> <td> T </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41229365 </td> <td align="right"> 41229366 </td> <td> G </td> <td> T </td> <td align="right"> 0.88 </td> <td align="right"> 0.12 </td> <td align="right">  34 </td> <td align="right">   4 </td> <td align="right">   4 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41229385 </td> <td align="right"> 41229386 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41229761 </td> <td align="right"> 41229762 </td> <td> T </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41229762 </td> <td align="right"> 41229763 </td> <td> T </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41229772 </td> <td align="right"> 41229773 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41229811 </td> <td align="right"> 41229812 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41229856 </td> <td align="right"> 41229857 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41229907 </td> <td align="right"> 41229908 </td> <td> T </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41230227 </td> <td align="right"> 41230228 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41230335 </td> <td align="right"> 41230336 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41230375 </td> <td align="right"> 41230376 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41230523 </td> <td align="right"> 41230524 </td> <td> T </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41230536 </td> <td align="right"> 41230537 </td> <td> A </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41230989 </td> <td align="right"> 41230990 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41231220 </td> <td align="right"> 41231221 </td> <td> A </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41231515 </td> <td align="right"> 41231516 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41231901 </td> <td align="right"> 41231902 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232485 </td> <td align="right"> 41232486 </td> <td> T </td> <td> G </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232566 </td> <td align="right"> 41232567 </td> <td> A </td> <td> C </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232697 </td> <td align="right"> 41232698 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41234469 </td> <td align="right"> 41234470 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41235798 </td> <td align="right"> 41235799 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41236026 </td> <td align="right"> 41236027 </td> <td> A </td> <td> C </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41237952 </td> <td align="right"> 41237953 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41238125 </td> <td align="right"> 41238126 </td> <td> T </td> <td> C </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41239471 </td> <td align="right"> 41239472 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41239490 </td> <td align="right"> 41239491 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41239627 </td> <td align="right"> 41239628 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41239680 </td> <td align="right"> 41239681 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41239698 </td> <td align="right"> 41239699 </td> <td> G </td> <td> A </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41239705 </td> <td align="right"> 41239706 </td> <td> G </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41239915 </td> <td align="right"> 41239916 </td> <td> T </td> <td> A </td> <td align="right"> 1.00 </td> <td align="right"> 0.00 </td> <td align="right">  26 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41240276 </td> <td align="right"> 41240277 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41241389 </td> <td align="right"> 41241390 </td> <td> C </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41241502 </td> <td align="right"> 41241503 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41241568 </td> <td align="right"> 41241569 </td> <td> T </td> <td> C </td> <td align="right"> 0.85 </td> <td align="right"> 0.15 </td> <td align="right">  34 </td> <td align="right">   5 </td> <td align="right">   5 </td> <td align="right">  24 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41241581 </td> <td align="right"> 41241582 </td> <td> G </td> <td> T </td> <td align="right"> 0.85 </td> <td align="right"> 0.15 </td> <td align="right">  34 </td> <td align="right">   5 </td> <td align="right">   5 </td> <td align="right">  24 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41242077 </td> <td align="right"> 41242078 </td> <td> G </td> <td> A </td> <td align="right"> 0.96 </td> <td align="right"> 0.04 </td> <td align="right">  25 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  23 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41242284 </td> <td align="right"> 41242285 </td> <td> T </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41243189 </td> <td align="right"> 41243190 </td> <td> T </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41243999 </td> <td align="right"> 41244000 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41244434 </td> <td align="right"> 41244435 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41244935 </td> <td align="right"> 41244936 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41245236 </td> <td align="right"> 41245237 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41245465 </td> <td align="right"> 41245466 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41247603 </td> <td align="right"> 41247604 </td> <td> A </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41248163 </td> <td align="right"> 41248164 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41248392 </td> <td align="right"> 41248393 </td> <td> C </td> <td> A </td> <td align="right"> 0.88 </td> <td align="right"> 0.12 </td> <td align="right">  34 </td> <td align="right">   4 </td> <td align="right">   4 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41248411 </td> <td align="right"> 41248412 </td> <td> G </td> <td> A </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41248413 </td> <td align="right"> 41248414 </td> <td> G </td> <td> A </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41248415 </td> <td align="right"> 41248416 </td> <td> G </td> <td> A </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41248419 </td> <td align="right"> 41248420 </td> <td> G </td> <td> A </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41248483 </td> <td align="right"> 41248484 </td> <td> G </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41249093 </td> <td align="right"> 41249094 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41250046 </td> <td align="right"> 41250047 </td> <td> C </td> <td> T </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41250063 </td> <td align="right"> 41250064 </td> <td> G </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41250065 </td> <td align="right"> 41250066 </td> <td> A </td> <td> G </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41250259 </td> <td align="right"> 41250260 </td> <td> C </td> <td> G </td> <td align="right"> 0.74 </td> <td align="right"> 0.26 </td> <td align="right">  34 </td> <td align="right">   9 </td> <td align="right">   9 </td> <td align="right">  16 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41250851 </td> <td align="right"> 41250852 </td> <td> G </td> <td> T </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41250922 </td> <td align="right"> 41250923 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41250986 </td> <td align="right"> 41250987 </td> <td> A </td> <td> C </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41250989 </td> <td align="right"> 41250990 </td> <td> A </td> <td> C </td> <td align="right"> 0.71 </td> <td align="right"> 0.29 </td> <td align="right">  34 </td> <td align="right">  10 </td> <td align="right">  10 </td> <td align="right">  14 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41251494 </td> <td align="right"> 41251495 </td> <td> C </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41251645 </td> <td align="right"> 41251646 </td> <td> T </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41251930 </td> <td align="right"> 41251931 </td> <td> G </td> <td> A </td> <td align="right"> 0.71 </td> <td align="right"> 0.29 </td> <td align="right">  34 </td> <td align="right">  10 </td> <td align="right">  10 </td> <td align="right">  14 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252574 </td> <td align="right"> 41252575 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252576 </td> <td align="right"> 41252577 </td> <td> A </td> <td> G </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252611 </td> <td align="right"> 41252612 </td> <td> T </td> <td> A </td> <td align="right"> 0.82 </td> <td align="right"> 0.18 </td> <td align="right">  34 </td> <td align="right">   6 </td> <td align="right">   6 </td> <td align="right">  22 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252612 </td> <td align="right"> 41252613 </td> <td> T </td> <td> C </td> <td align="right"> 0.82 </td> <td align="right"> 0.18 </td> <td align="right">  34 </td> <td align="right">   6 </td> <td align="right">   6 </td> <td align="right">  22 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252648 </td> <td align="right"> 41252649 </td> <td> T </td> <td> A </td> <td align="right"> 0.96 </td> <td align="right"> 0.04 </td> <td align="right">  27 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  25 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252649 </td> <td align="right"> 41252650 </td> <td> T </td> <td> C </td> <td align="right"> 0.93 </td> <td align="right"> 0.07 </td> <td align="right">  28 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  24 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252657 </td> <td align="right"> 41252658 </td> <td> T </td> <td> C </td> <td align="right"> 0.89 </td> <td align="right"> 0.11 </td> <td align="right">  28 </td> <td align="right">   1 </td> <td align="right">   3 </td> <td align="right">  24 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252675 </td> <td align="right"> 41252676 </td> <td> T </td> <td> C </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  32 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252683 </td> <td align="right"> 41252684 </td> <td> T </td> <td> C </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  32 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252693 </td> <td align="right"> 41252694 </td> <td> T </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  33 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  31 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td> T </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  33 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  31 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252695 </td> <td align="right"> 41252696 </td> <td> A </td> <td> T </td> <td align="right"> 0.50 </td> <td align="right"> 0.50 </td> <td align="right">  28 </td> <td align="right">  10 </td> <td align="right">  14 </td> <td align="right">   4 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td align="right"> 41252697 </td> <td> T </td> <td> A </td> <td align="right"> 0.42 </td> <td align="right"> 0.58 </td> <td align="right">  26 </td> <td align="right">   9 </td> <td align="right">  15 </td> <td align="right">   2 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td align="right"> 41252697 </td> <td> T </td> <td> C </td> <td align="right"> 0.75 </td> <td align="right"> 0.25 </td> <td align="right">   4 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">   2 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41254173 </td> <td align="right"> 41254174 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41254373 </td> <td align="right"> 41254374 </td> <td> C </td> <td> T </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41254392 </td> <td align="right"> 41254393 </td> <td> G </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41254393 </td> <td align="right"> 41254394 </td> <td> A </td> <td> T </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41254404 </td> <td align="right"> 41254405 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41254485 </td> <td align="right"> 41254486 </td> <td> T </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41254979 </td> <td align="right"> 41254980 </td> <td> A </td> <td> T </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41255101 </td> <td align="right"> 41255102 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41255110 </td> <td align="right"> 41255111 </td> <td> A </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41255482 </td> <td align="right"> 41255483 </td> <td> C </td> <td> A </td> <td align="right"> 0.68 </td> <td align="right"> 0.32 </td> <td align="right">  34 </td> <td align="right">  11 </td> <td align="right">  11 </td> <td align="right">  12 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41256086 </td> <td align="right"> 41256087 </td> <td> G </td> <td> A </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41256091 </td> <td align="right"> 41256092 </td> <td> A </td> <td> G </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  33 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  31 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41256094 </td> <td align="right"> 41256095 </td> <td> A </td> <td> G </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  33 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  31 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41256097 </td> <td align="right"> 41256098 </td> <td> G </td> <td> A </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  32 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41256100 </td> <td align="right"> 41256101 </td> <td> A </td> <td> G </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  32 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41256102 </td> <td align="right"> 41256103 </td> <td> G </td> <td> A </td> <td align="right"> 0.88 </td> <td align="right"> 0.12 </td> <td align="right">  32 </td> <td align="right">   4 </td> <td align="right">   4 </td> <td align="right">  24 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41257133 </td> <td align="right"> 41257134 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41257457 </td> <td align="right"> 41257458 </td> <td> A </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41258042 </td> <td align="right"> 41258043 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41258152 </td> <td align="right"> 41258153 </td> <td> G </td> <td> A </td> <td align="right"> 0.88 </td> <td align="right"> 0.12 </td> <td align="right">  34 </td> <td align="right">   4 </td> <td align="right">   4 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41258182 </td> <td align="right"> 41258183 </td> <td> C </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41259048 </td> <td align="right"> 41259049 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41259064 </td> <td align="right"> 41259065 </td> <td> T </td> <td> A </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41259099 </td> <td align="right"> 41259100 </td> <td> G </td> <td> T </td> <td align="right"> 0.68 </td> <td align="right"> 0.32 </td> <td align="right">  34 </td> <td align="right">  11 </td> <td align="right">  11 </td> <td align="right">  12 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41259100 </td> <td align="right"> 41259101 </td> <td> A </td> <td> T </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41259112 </td> <td align="right"> 41259113 </td> <td> G </td> <td> A </td> <td align="right"> 0.82 </td> <td align="right"> 0.18 </td> <td align="right">  34 </td> <td align="right">   6 </td> <td align="right">   6 </td> <td align="right">  22 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41259417 </td> <td align="right"> 41259418 </td> <td> G </td> <td> T </td> <td align="right"> 0.88 </td> <td align="right"> 0.12 </td> <td align="right">  34 </td> <td align="right">   4 </td> <td align="right">   4 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41260351 </td> <td align="right"> 41260352 </td> <td> C </td> <td> A </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41260693 </td> <td align="right"> 41260694 </td> <td> A </td> <td> C </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41260721 </td> <td align="right"> 41260722 </td> <td> T </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41260722 </td> <td align="right"> 41260723 </td> <td> C </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41260761 </td> <td align="right"> 41260762 </td> <td> T </td> <td> G </td> <td align="right"> 0.88 </td> <td align="right"> 0.12 </td> <td align="right">  34 </td> <td align="right">   4 </td> <td align="right">   4 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41260807 </td> <td align="right"> 41260808 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41260984 </td> <td align="right"> 41260985 </td> <td> G </td> <td> C </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41261053 </td> <td align="right"> 41261054 </td> <td> T </td> <td> C </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41261054 </td> <td align="right"> 41261055 </td> <td> A </td> <td> C </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41261056 </td> <td align="right"> 41261057 </td> <td> C </td> <td> A </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41261057 </td> <td align="right"> 41261058 </td> <td> T </td> <td> C </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41261084 </td> <td align="right"> 41261085 </td> <td> G </td> <td> A </td> <td align="right"> 0.88 </td> <td align="right"> 0.12 </td> <td align="right">  34 </td> <td align="right">   4 </td> <td align="right">   4 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41261085 </td> <td align="right"> 41261086 </td> <td> T </td> <td> C </td> <td align="right"> 0.88 </td> <td align="right"> 0.12 </td> <td align="right">  34 </td> <td align="right">   4 </td> <td align="right">   4 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41261232 </td> <td align="right"> 41261233 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41262105 </td> <td align="right"> 41262106 </td> <td> T </td> <td> G </td> <td align="right"> 0.88 </td> <td align="right"> 0.12 </td> <td align="right">  34 </td> <td align="right">   4 </td> <td align="right">   4 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41262357 </td> <td align="right"> 41262358 </td> <td> C </td> <td> T </td> <td align="right"> 0.82 </td> <td align="right"> 0.18 </td> <td align="right">  34 </td> <td align="right">   6 </td> <td align="right">   6 </td> <td align="right">  22 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41263043 </td> <td align="right"> 41263044 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41263116 </td> <td align="right"> 41263117 </td> <td> C </td> <td> A </td> <td align="right"> 0.82 </td> <td align="right"> 0.18 </td> <td align="right">  34 </td> <td align="right">   6 </td> <td align="right">   6 </td> <td align="right">  22 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41263429 </td> <td align="right"> 41263430 </td> <td> G </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41263565 </td> <td align="right"> 41263566 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41264145 </td> <td align="right"> 41264146 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41264363 </td> <td align="right"> 41264364 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41264738 </td> <td align="right"> 41264739 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41264748 </td> <td align="right"> 41264749 </td> <td> C </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41264749 </td> <td align="right"> 41264750 </td> <td> A </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41264752 </td> <td align="right"> 41264753 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41265775 </td> <td align="right"> 41265776 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41266423 </td> <td align="right"> 41266424 </td> <td> G </td> <td> T </td> <td align="right"> 0.85 </td> <td align="right"> 0.15 </td> <td align="right">  34 </td> <td align="right">   5 </td> <td align="right">   5 </td> <td align="right">  24 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41267049 </td> <td align="right"> 41267050 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41268205 </td> <td align="right"> 41268206 </td> <td> A </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41270228 </td> <td align="right"> 41270229 </td> <td> T </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41270276 </td> <td align="right"> 41270277 </td> <td> C </td> <td> T </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41270462 </td> <td align="right"> 41270463 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41270665 </td> <td align="right"> 41270666 </td> <td> C </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41270793 </td> <td align="right"> 41270794 </td> <td> G </td> <td> T </td> <td align="right"> 0.88 </td> <td align="right"> 0.12 </td> <td align="right">  34 </td> <td align="right">   4 </td> <td align="right">   4 </td> <td align="right">  26 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41271292 </td> <td align="right"> 41271293 </td> <td> G </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41271293 </td> <td align="right"> 41271294 </td> <td> A </td> <td> G </td> <td align="right"> 1.00 </td> <td align="right"> 0.00 </td> <td align="right">  27 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right">  27 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td align="right"> 41273095 </td> <td> G </td> <td> C </td> <td align="right"> 0.95 </td> <td align="right"> 0.05 </td> <td align="right">  22 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td align="right"> 41273095 </td> <td> G </td> <td> A </td> <td align="right"> 0.81 </td> <td align="right"> 0.19 </td> <td align="right">  32 </td> <td align="right">   6 </td> <td align="right">   6 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273347 </td> <td align="right"> 41273348 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273378 </td> <td align="right"> 41273379 </td> <td> G </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273536 </td> <td align="right"> 41273537 </td> <td> A </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273697 </td> <td align="right"> 41273698 </td> <td> C </td> <td> A </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273698 </td> <td align="right"> 41273699 </td> <td> T </td> <td> A </td> <td align="right"> 0.91 </td> <td align="right"> 0.09 </td> <td align="right">  34 </td> <td align="right">   3 </td> <td align="right">   3 </td> <td align="right">  28 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273699 </td> <td align="right"> 41273700 </td> <td> C </td> <td> A </td> <td align="right"> 0.62 </td> <td align="right"> 0.38 </td> <td align="right">  34 </td> <td align="right">  13 </td> <td align="right">  13 </td> <td align="right">   8 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273725 </td> <td align="right"> 41273726 </td> <td> G </td> <td> A </td> <td align="right"> 0.62 </td> <td align="right"> 0.38 </td> <td align="right">  34 </td> <td align="right">  13 </td> <td align="right">  13 </td> <td align="right">   8 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273739 </td> <td align="right"> 41273740 </td> <td> C </td> <td> A </td> <td align="right"> 0.85 </td> <td align="right"> 0.15 </td> <td align="right">  34 </td> <td align="right">   5 </td> <td align="right">   5 </td> <td align="right">  24 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273746 </td> <td align="right"> 41273747 </td> <td> C </td> <td> A </td> <td align="right"> 0.68 </td> <td align="right"> 0.32 </td> <td align="right">  34 </td> <td align="right">  11 </td> <td align="right">  11 </td> <td align="right">  12 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273748 </td> <td align="right"> 41273749 </td> <td> G </td> <td> A </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273774 </td> <td align="right"> 41273775 </td> <td> C </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273793 </td> <td align="right"> 41273794 </td> <td> T </td> <td> A </td> <td align="right"> 0.94 </td> <td align="right"> 0.06 </td> <td align="right">  34 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td align="right">  30 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41274777 </td> <td align="right"> 41274778 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41274876 </td> <td align="right"> 41274877 </td> <td> C </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41274905 </td> <td align="right"> 41274906 </td> <td> G </td> <td> A </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41275080 </td> <td align="right"> 41275081 </td> <td> G </td> <td> A </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41275150 </td> <td align="right"> 41275151 </td> <td> G </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41275391 </td> <td align="right"> 41275392 </td> <td> G </td> <td> T </td> <td align="right"> 0.62 </td> <td align="right"> 0.38 </td> <td align="right">  34 </td> <td align="right">  13 </td> <td align="right">  13 </td> <td align="right">   8 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41275644 </td> <td align="right"> 41275645 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41276246 </td> <td align="right"> 41276247 </td> <td> A </td> <td> G </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41276347 </td> <td align="right"> 41276348 </td> <td> T </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41276517 </td> <td align="right"> 41276518 </td> <td> T </td> <td> C </td> <td align="right"> 0.97 </td> <td align="right"> 0.03 </td> <td align="right">  34 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">  32 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41277186 </td> <td align="right"> 41277187 </td> <td> G </td> <td> C </td> <td align="right"> 0.79 </td> <td align="right"> 0.21 </td> <td align="right">  34 </td> <td align="right">   7 </td> <td align="right">   7 </td> <td align="right">  20 </td> </tr>
+<tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th>  </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41196840 </td> <td> G </td> <td> T </td> <td align="right">  15 </td> <td align="right">   2 </td> <td align="right">   0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41197273 </td> <td> C </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41197957 </td> <td> G </td> <td> T </td> <td align="right">   5 </td> <td align="right">  12 </td> <td align="right">   0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41197958 </td> <td> A </td> <td> T </td> <td align="right">  16 </td> <td align="right">   1 </td> <td align="right">   0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41198182 </td> <td> A </td> <td> C </td> <td align="right">  11 </td> <td align="right">   6 </td> <td align="right">   0 </td> </tr>
    </table>
+
+Compare to [brca1.hwe](./data/singletons/brca1.hwe).  This file was created with [vcftools](./data/hwe/brca1.log).
+
+
+```r
+require(dplyr)
+df <- read.table("./data/hwe/brca1.hwe", header=TRUE)
+obsSplitCol <- "OBS.HOM1.HET.HOM2."
+obsTemp <- read.table(text=as.character(df[, obsSplitCol]), sep = "/")
+names(obsTemp) <- c("OBS_HOM1", "OBS_HET", "OBS_HOM2")
+eSplitCol <- "E.HOM1.HET.HOM2."
+eTemp <- read.table(text=as.character(df[, eSplitCol]), sep = "/")
+names(eTemp) <- c("E_HOM1", "E_HET", "E_HOM2")
+expectedResult <- cbind(cbind(df[setdiff(names(df), c(obsSplitCol,eSplitCol))], obsTemp), eTemp)
+# Convert to zero-based coordinates
+expectedResult <- mutate(expectedResult, POS = POS - 1)
+```
+
+How many results do the two results have in common?
+
+```r
+dim(inner_join(result, expectedResult))
+```
+
+```
+## Joining by: c("CHR", "POS", "OBS_HOM1", "OBS_HET", "OBS_HOM2")
+```
+
+```
+## [1] 249  12
+```
+
+Which results were only identified by BigQuery?
+
+```r
+onlyBQ <- anti_join(result, expectedResult, by=c("CHR", "POS"))
+onlyBQ
+```
+
+```
+##      CHR      POS ref alt OBS_HOM1 OBS_HET OBS_HOM2
+## 1  chr17 41273094   G   A       10       6        0
+## 2  chr17 41273094   G   C       10       1        0
+## 3  chr17 41271293   A   G       16       0        0
+## 4  chr17 41256102   G   A       12       4        0
+## 5  chr17 41256100   A   G       14       2        0
+## 6  chr17 41256097   G   A       13       3        0
+## 7  chr17 41252696   T   C        1       1        0
+## 8  chr17 41252696   T   A        1       9        3
+## 9  chr17 41252695   A   T        2      10        2
+## 10 chr17 41252648   T   A       13       1        0
+## 11 chr17 41242077   G   A       13       1        0
+## 12 chr17 41256091   A   G       16       1        0
+## 13 chr17 41226740   T   G       16       0        0
+## 14 chr17 41214210   A   C       16       0        0
+## 15 chr17 41239915   T   A       16       0        0
+## 16 chr17 41214209   A   T       16       0        0
+## 17 chr17 41252693   T   A       16       1        0
+## 18 chr17 41204837   A   T       14       0        0
+## 19 chr17 41256094   A   G       16       1        0
+```
+
+Which results were only identified by vcftools?
+
+```r
+onlyVcftools <- anti_join(expectedResult, result, by=c("CHR", "POS"))
+onlyVcftools
+```
+
+```
+##      CHR      POS     ChiSq        P OBS_HOM1 OBS_HET OBS_HOM2 E_HOM1
+## 1  chr17 41270777  1.000000 1.000000        0       1        0   0.25
+## 2  chr17 41268207  7.000000 0.037296        0       7        0   1.75
+## 3  chr17 41267517  5.000000 0.126984        0       5        0   1.25
+## 4  chr17 41266406  4.000000 0.314286        0       4        0   1.00
+## 5  chr17 41264754  7.000000 0.037296        0       7        0   1.75
+## 6  chr17 41264750  7.000000 0.037296        0       7        0   1.75
+## 7  chr17 41264742  7.000000 0.037296        0       7        0   1.75
+## 8  chr17 41264110  1.000000 1.000000        0       1        0   0.25
+## 9  chr17 41259078  1.000000 1.000000        0       1        0   0.25
+## 10 chr17 41258134  3.000000 0.400000        0       3        0   0.75
+## 11 chr17 41256073  5.000000 0.126984        0       5        0   1.25
+## 12 chr17 41252692  1.000000 1.000000        0       1        0   0.25
+## 13 chr17 41252645  1.000000 1.000000        0       1        0   0.25
+## 14 chr17 41252590  3.000000 0.400000        0       3        0   0.75
+## 15 chr17 41250220  1.000000 1.000000        0       1        0   0.25
+## 16 chr17 41249362  7.000000 0.037296        0       7        0   1.75
+## 17 chr17 41247121  7.000000 0.037296        0       7        0   1.75
+## 18 chr17 41242074  6.000000 0.090909        0       6        0   1.50
+## 19 chr17 41241567  4.000000 0.314286        0       4        0   1.00
+## 20 chr17 41239914  7.000000 0.037296        0       7        0   1.75
+## 21 chr17 41250677  7.000000 0.037296        0       7        0   1.75
+## 22 chr17 41232343       NaN 1.000000        0       0       17   0.00
+## 23 chr17 41230104  5.000000 0.126984        0       5        0   1.25
+## 24 chr17 41229776       NaN 1.000000        0       0       17   0.00
+## 25 chr17 41226735  7.000000 0.037296        0       7        0   1.75
+## 26 chr17 41223537  1.000000 1.000000        0       1        0   0.25
+## 27 chr17 41219906 17.000000 0.000056        0      17        0   4.25
+## 28 chr17 41219852  1.000000 1.000000        0       1        0   0.25
+## 29 chr17 41256088  1.000000 1.000000        0       1        0   0.25
+## 30 chr17 41218817 17.000000 0.000056        0      17        0   4.25
+## 31 chr17 41254964  3.644628 0.176471        0       7        2   1.36
+## 32 chr17 41214208  7.000000 0.037296        0       7        0   1.75
+## 33 chr17 41229759  7.000000 0.037296        0       7        0   1.75
+## 34 chr17 41213601  5.000000 0.126984        0       5        0   1.25
+## 35 chr17 41264739  7.000000 0.037296        0       7        0   1.75
+## 36 chr17 41225653 10.000000 0.006906        0      10        0   2.50
+## 37 chr17 41208190  2.000000 1.000000        0       2        0   0.50
+## 38 chr17 41206760  6.000000 0.090909        0       6        0   1.50
+## 39 chr17 41204835       NaN 1.000000        0       0        2   0.00
+## 40 chr17 41204831       NaN 1.000000        0       0        1   0.00
+## 41 chr17 41200703  6.000000 0.090909        0       6        0   1.50
+## 42 chr17 41197938  3.000000 0.400000        0       3        0   0.75
+##    E_HET E_HOM2
+## 1   0.50   0.25
+## 2   3.50   1.75
+## 3   2.50   1.25
+## 4   2.00   1.00
+## 5   3.50   1.75
+## 6   3.50   1.75
+## 7   3.50   1.75
+## 8   0.50   0.25
+## 9   0.50   0.25
+## 10  1.50   0.75
+## 11  2.50   1.25
+## 12  0.50   0.25
+## 13  0.50   0.25
+## 14  1.50   0.75
+## 15  0.50   0.25
+## 16  3.50   1.75
+## 17  3.50   1.75
+## 18  3.00   1.50
+## 19  2.00   1.00
+## 20  3.50   1.75
+## 21  3.50   1.75
+## 22  0.00  17.00
+## 23  2.50   1.25
+## 24  0.00  17.00
+## 25  3.50   1.75
+## 26  0.50   0.25
+## 27  8.50   4.25
+## 28  0.50   0.25
+## 29  0.50   0.25
+## 30  8.50   4.25
+## 31  4.28   3.36
+## 32  3.50   1.75
+## 33  3.50   1.75
+## 34  2.50   1.25
+## 35  3.50   1.75
+## 36  5.00   2.50
+## 37  1.00   0.50
+## 38  3.00   1.50
+## 39  0.00   2.00
+## 40  0.00   1.00
+## 41  3.00   1.50
+## 42  1.50   0.75
+```
+
+TODO(deflaux):
+* investigate differences in counts
+* add Chi-Squared test to query from [this sample](https://github.com/googlegenomics/bigquery-examples/tree/master/1000genomes/data-stories/reproducing-hardy-weinberg-equilibrium)
+
+Note:
+(1) we have some single allele genotypes (see query)
+(2) vcftools seems to skip those
+```
+zgrep 41242078 platinum_genomes_brca1_expanded_merged.vcf.gz 
+chr17  41242078  .	G	A	143	LowGQX;TruthSensitivityTranche99.90to100.00;LowQD;SiteConflict	BLOCKAVG_min30p3a;MQ=57;MQ0=0;BaseQRankSum=0.781;Dels=0.3;FS=1.561;HRun=11;HaplotypeScore=77.7361;MQRankSum=0.093;QD=2.01;ReadPosRankSum=-2.871;SB=-45.67;VQSLOD=-1.8762;culprit=QD;set=FilteredInAll;DP=425;AF=0.5;AN=25;AC=1	GT:DP:GQX:MQ:AD:GQ:PL:VF	0/0:57:99:59:.:.:.:.	0:27:25:57:26:25.38:.:.	0/0:51:99:57:.:.:.:.	0/1:50:99:59:42,8:99:173,0,1238:0.16	0/0:46:99:59:.:.:.:.	0/0:44:99:60:.:.:.:.	.:46:.:59:40,6:.:.:.	0/0:40:85:59:.:.:.:.	0/0:40:85:59:.:.:.:.	0/0:63:99:58:.:.:.:.	0:42:2:58:37:1.58:.:.	0:33:0:57:29:0.03:.:.	.:44:.:58:31,12:.:.:.	0/0:44:90:58:.:.:.:.	0/0:40:87:58:.:.:.:.	.:44:.:57:39,5:.:.:.	0/0:55:99:59:.:.:.:.
+```
 
 Check Individual Heterozygosity
 -----------------------------------
@@ -816,7 +762,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec  5 15:01:02 2014 -->
+<!-- Thu Dec 11 17:35:00 2014 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> N_SITES </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right">   3 </td> <td align="right">  27 </td> </tr>

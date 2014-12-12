@@ -65,6 +65,7 @@ Notes about this particular dataset:
 * It is in gVCF format which adds complexity above and beyond [similar examples for the 1,000 Genomes dataset](https://github.com/googlegenomics/bigquery-examples/blob/master/1000genomes/sql/README.md).
 * It is comprised only of SNPs and INDELs (contains no structural variants).
 * The values for `alternate_bases` are just comprised of the letters A,C,G,T (e.g., contains no `<DEL>` values).
+* It contains some single-allele and 1/2 genotypes.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
@@ -75,6 +76,17 @@ result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
 print(xtable(result), type="html", include.rownames=F)
 ```
 We see from the query results that there are no special charaters in alternate_bases and the maximum length is ~50 base pairs.
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/genotypes-brca1.sql",
+                                  replacements=table_replacement)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(result), type="html", include.rownames=F)
+```
+We see from the query results the variety of genotypes within BRCA1.
+
 
 Check Singletons
 ----------------
@@ -136,17 +148,60 @@ It appears that they correspond either to
 
 Check Hardy-Weinberg Equilibrium
 -----------------------------------
-
-More calculations needed here . . . this is just allelic frequency.
-
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/allelic-frequency-brca1.sql",
+result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1.sql",
                                   replacements=table_replacement)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
+Displaying the first few results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(result), type="html", include.rownames=F)
+print(xtable(head(result)), type="html", include.rownames=F)
+```
+
+Compare to [brca1.hwe](./data/singletons/brca1.hwe).  This file was created with [vcftools](./data/hwe/brca1.log).
+
+```{r}
+require(dplyr)
+df <- read.table("./data/hwe/brca1.hwe", header=TRUE)
+obsSplitCol <- "OBS.HOM1.HET.HOM2."
+obsTemp <- read.table(text=as.character(df[, obsSplitCol]), sep = "/")
+names(obsTemp) <- c("OBS_HOM1", "OBS_HET", "OBS_HOM2")
+eSplitCol <- "E.HOM1.HET.HOM2."
+eTemp <- read.table(text=as.character(df[, eSplitCol]), sep = "/")
+names(eTemp) <- c("E_HOM1", "E_HET", "E_HOM2")
+expectedResult <- cbind(cbind(df[setdiff(names(df), c(obsSplitCol,eSplitCol))], obsTemp), eTemp)
+# Convert to zero-based coordinates
+expectedResult <- mutate(expectedResult, POS = POS - 1)
+```
+
+How many results do the two results have in common?
+```{r}
+dim(inner_join(result, expectedResult))
+```
+
+Which results were only identified by BigQuery?
+```{r}
+onlyBQ <- anti_join(result, expectedResult, by=c("CHR", "POS"))
+onlyBQ
+```
+
+Which results were only identified by vcftools?
+```{r}
+onlyVcftools <- anti_join(expectedResult, result, by=c("CHR", "POS"))
+onlyVcftools
+```
+
+TODO(deflaux):
+* investigate differences in counts
+* add Chi-Squared test to query from [this sample](https://github.com/googlegenomics/bigquery-examples/tree/master/1000genomes/data-stories/reproducing-hardy-weinberg-equilibrium)
+
+Note:
+(1) we have some single allele genotypes (see query)
+(2) vcftools seems to skip those
+```
+zgrep 41242078 platinum_genomes_brca1_expanded_merged.vcf.gz 
+chr17  41242078  .	G	A	143	LowGQX;TruthSensitivityTranche99.90to100.00;LowQD;SiteConflict	BLOCKAVG_min30p3a;MQ=57;MQ0=0;BaseQRankSum=0.781;Dels=0.3;FS=1.561;HRun=11;HaplotypeScore=77.7361;MQRankSum=0.093;QD=2.01;ReadPosRankSum=-2.871;SB=-45.67;VQSLOD=-1.8762;culprit=QD;set=FilteredInAll;DP=425;AF=0.5;AN=25;AC=1	GT:DP:GQX:MQ:AD:GQ:PL:VF	0/0:57:99:59:.:.:.:.	0:27:25:57:26:25.38:.:.	0/0:51:99:57:.:.:.:.	0/1:50:99:59:42,8:99:173,0,1238:0.16	0/0:46:99:59:.:.:.:.	0/0:44:99:60:.:.:.:.	.:46:.:59:40,6:.:.:.	0/0:40:85:59:.:.:.:.	0/0:40:85:59:.:.:.:.	0/0:63:99:58:.:.:.:.	0:42:2:58:37:1.58:.:.	0:33:0:57:29:0.03:.:.	.:44:.:58:31,12:.:.:.	0/0:44:90:58:.:.:.:.	0/0:40:87:58:.:.:.:.	.:44:.:57:39,5:.:.:.	0/0:55:99:59:.:.:.:.
 ```
 
 Check Individual Heterozygosity
