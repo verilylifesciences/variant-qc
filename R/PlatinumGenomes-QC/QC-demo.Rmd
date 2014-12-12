@@ -61,12 +61,7 @@ Displaying the first few rows of the dataframe of results:
 print(xtable(head(result)), type="html", include.rownames=F)
 ```
 
-Notes about this particular dataset:
-* It is in gVCF format which adds complexity above and beyond [similar examples for the 1,000 Genomes dataset](https://github.com/googlegenomics/bigquery-examples/blob/master/1000genomes/sql/README.md).
-* It is comprised only of SNPs and INDELs (contains no structural variants).
-* The values for `alternate_bases` are just comprised of the letters A,C,G,T (e.g., contains no `<DEL>` values).
-* It contains some single-allele and 1/2 genotypes.
-
+And then let's take a look at the domain and range of values for alternate_bases:
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
                                   replacements=table_replacement)
@@ -77,6 +72,7 @@ print(xtable(result), type="html", include.rownames=F)
 ```
 We see from the query results that there are no special charaters in alternate_bases and the maximum length is ~50 base pairs.
 
+And finally let's take a look at the domain and range of values for genotype:
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/genotypes-brca1.sql",
                                   replacements=table_replacement)
@@ -87,6 +83,11 @@ print(xtable(result), type="html", include.rownames=F)
 ```
 We see from the query results the variety of genotypes within BRCA1.
 
+To summarize attributes of this particular dataset that we need to consider when performing QC:
+* It is in gVCF format which adds complexity above and beyond [similar examples for the 1,000 Genomes dataset](https://github.com/googlegenomics/bigquery-examples/blob/master/1000genomes/sql/README.md).
+* It is comprised only of SNPs and INDELs (contains no structural variants).
+* The values for `alternate_bases` are just comprised of the letters A,C,G,T (e.g., contains no `<DEL>` values).
+* It contains some single-allele and 1/2 genotypes.
 
 Check Singletons
 ----------------
@@ -100,7 +101,7 @@ Number of rows returned by this query: `r nrow(result)`.
 print(xtable(result), type="html", include.rownames=F)
 ```
 
-Compare to [brca1.singletons](./data/singletons/brca1.singletons) which has 85 some of which are for 0/0 genotypes from reference matching blocks.  This file was created with [vcftools](./data/singletons/brca1.log).
+Compare to [brca1.singletons](./data/singletons/brca1.singletons) which has 85 some of which are for 0/0 genotypes from reference matching blocks (see the [vcftools command line](./data/singletons/brca1.log) used to create this file).
 
 ```{r}
 require(dplyr)
@@ -113,7 +114,7 @@ colnames(expectedResult) <- gsub('\\.+', '_', colnames(expectedResult))
 
 How many singletons do the two results have in common?
 ```{r}
-dim(inner_join(result, expectedResult))
+nrow(inner_join(result, expectedResult))
 ```
 
 Which singletons were only identified by BigQuery?
@@ -141,10 +142,9 @@ result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
 print(xtable(result), type="html", include.rownames=F)
 ```
 
-It appears that they correspond either to 
+It appears that they correspond either to:
 * a reference-matching block, so not actually a singleton and just perhaps violating an assumption in the vcftools code
 * or a non-singleon variant, perhaps due to a problem in converting the gVCF data to all-positions VCF via gvcftools?
-
 
 Check Hardy-Weinberg Equilibrium
 -----------------------------------
@@ -159,7 +159,7 @@ Displaying the first few results:
 print(xtable(head(result)), type="html", include.rownames=F)
 ```
 
-Compare to [brca1.hwe](./data/singletons/brca1.hwe).  This file was created with [vcftools](./data/hwe/brca1.log).
+Compare to [brca1.hwe](./data/singletons/brca1.hwe) (see the [vcftools command line](./data/hwe/brca1.log) used to create this file).
 
 ```{r}
 require(dplyr)
@@ -177,7 +177,7 @@ expectedResult <- mutate(expectedResult, POS = POS - 1)
 
 How many results do the two results have in common?
 ```{r}
-dim(inner_join(result, expectedResult))
+nrow(inner_join(result, expectedResult))
 ```
 
 Which results were only identified by BigQuery?
@@ -186,23 +186,43 @@ onlyBQ <- anti_join(result, expectedResult, by=c("CHR", "POS"))
 onlyBQ
 ```
 
+Note vcftools appears to skip variants with single allele genotypes:
+```
+zgrep 41242078 platinum_genomes_brca1_expanded_merged.vcf.gz 
+chr17  41242078  .  G	A	143	LowGQX;TruthSensitivityTranche99.90to100.00;LowQD;SiteConflict	BLOCKAVG_min30p3a;MQ=57;MQ0=0;BaseQRankSum=0.781;Dels=0.3;FS=1.561;HRun=11;HaplotypeScore=77.7361;MQRankSum=0.093;QD=2.01;ReadPosRankSum=-2.871;SB=-45.67;VQSLOD=-1.8762;culprit=QD;set=FilteredInAll;DP=425;AF=0.5;AN=25;AC=1	GT:DP:GQX:MQ:AD:GQ:PL:VF	0/0:57:99:59:.:.:.:.	0:27:25:57:26:25.38:.:.	0/0:51:99:57:.:.:.:.	0/1:50:99:59:42,8:99:173,0,1238:0.16	0/0:46:99:59:.:.:.:.	0/0:44:99:60:.:.:.:.	.:46:.:59:40,6:.:.:.	0/0:40:85:59:.:.:.:.	0/0:40:85:59:.:.:.:.	0/0:63:99:58:.:.:.:.	0:42:2:58:37:1.58:.:.	0:33:0:57:29:0.03:.:.	.:44:.:58:31,12:.:.:.	0/0:44:90:58:.:.:.:.	0/0:40:87:58:.:.:.:.	.:44:.:57:39,5:.:.:.	0/0:55:99:59:.:.:.:.
+```
+
 Which results were only identified by vcftools?
 ```{r}
 onlyVcftools <- anti_join(expectedResult, result, by=c("CHR", "POS"))
 onlyVcftools
 ```
 
-TODO(deflaux):
-* investigate differences in counts
-* add Chi-Squared test to query from [this sample](https://github.com/googlegenomics/bigquery-examples/tree/master/1000genomes/data-stories/reproducing-hardy-weinberg-equilibrium)
+Retrieving the gVCF data for the results identified only by vcftools:
+```{r message=FALSE, warning=FALSE, comment=NA}
+having <- paste("start = ", onlyVcftools$POS,
+                sep="", collapse=" OR ")
+result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
+                                  replacements=c(table_replacement,
+                                                 "_HAVING_"=having))
+```
 
-Note:
-(1) we have some single allele genotypes (see query)
-(2) vcftools seems to skip those
+Let's filter out indels and reference-matching blocks from this result:
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- filter(result, reference_bases %in% c('A','C','G','T') & alternate_bases %in% c('A','C','G','T'))
 ```
-zgrep 41242078 platinum_genomes_brca1_expanded_merged.vcf.gz 
-chr17  41242078  .	G	A	143	LowGQX;TruthSensitivityTranche99.90to100.00;LowQD;SiteConflict	BLOCKAVG_min30p3a;MQ=57;MQ0=0;BaseQRankSum=0.781;Dels=0.3;FS=1.561;HRun=11;HaplotypeScore=77.7361;MQRankSum=0.093;QD=2.01;ReadPosRankSum=-2.871;SB=-45.67;VQSLOD=-1.8762;culprit=QD;set=FilteredInAll;DP=425;AF=0.5;AN=25;AC=1	GT:DP:GQX:MQ:AD:GQ:PL:VF	0/0:57:99:59:.:.:.:.	0:27:25:57:26:25.38:.:.	0/0:51:99:57:.:.:.:.	0/1:50:99:59:42,8:99:173,0,1238:0.16	0/0:46:99:59:.:.:.:.	0/0:44:99:60:.:.:.:.	.:46:.:59:40,6:.:.:.	0/0:40:85:59:.:.:.:.	0/0:40:85:59:.:.:.:.	0/0:63:99:58:.:.:.:.	0:42:2:58:37:1.58:.:.	0:33:0:57:29:0.03:.:.	.:44:.:58:31,12:.:.:.	0/0:44:90:58:.:.:.:.	0/0:40:87:58:.:.:.:.	.:44:.:57:39,5:.:.:.	0/0:55:99:59:.:.:.:.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(result), type="html", include.rownames=F)
 ```
+
+It appears that the difference in results only returned by vcftools correspond either to:
+* indels, which we are not examining here
+* or variants for which all samples have the alternate for one or both alleles -> a RIGHT OUTER JOIN is needed in this query
+
+TODO(deflaux):
+* find a a way to work around the lack of RIGHT OUTER JOIN
+* add Chi-Squared test to query from [this sample](https://github.com/googlegenomics/bigquery-examples/tree/master/1000genomes/data-stories/reproducing-hardy-weinberg-equilibrium)
 
 Check Individual Heterozygosity
 -----------------------------------
