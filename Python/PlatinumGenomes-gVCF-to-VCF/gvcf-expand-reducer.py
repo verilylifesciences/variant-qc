@@ -74,7 +74,7 @@ def emit(fields):
   Side Effects:
     a value is written to stdout
   """
-  print "%s" % (json.dumps(fields))
+  print "0\t%s" % (json.dumps(fields))
 
 
 if __name__ == "__main__":

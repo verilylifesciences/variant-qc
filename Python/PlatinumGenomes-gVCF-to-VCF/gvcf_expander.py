@@ -121,7 +121,7 @@ class GvcfExpander(object):
 
     if True == self.filter_ref_matches:
       # Get the sample_ids already called in this variant
-      variant_sample_names = [call['callset_name'] for call in
+      variant_sample_names = [call['call_set_name'] for call in
                               variant_call['call']]
 
       # Filter out ref_calls for samples called in this variant; this
@@ -130,7 +130,7 @@ class GvcfExpander(object):
       # the sample in question
       variant_call['call'].extend(
           [call for call in expansion_calls
-           if call['callset_name'] not in variant_sample_names]
+           if call['call_set_name'] not in variant_sample_names]
           )
     else:
       variant_call['call'].extend(expansion_calls)
@@ -140,7 +140,7 @@ class GvcfExpander(object):
   def accumulate_block(self, ref_call):
     # Since everything is sorted by start, we only need to stash
     # at most one ref block per sample in the ref block at a time
-    self.sample_refs[ref_call['call'][0]['callset_name']] = ref_call
+    self.sample_refs[ref_call['call'][0]['call_set_name']] = ref_call
 
 
 class GvcfExpanderTest(unittest.TestCase):
@@ -314,13 +314,13 @@ class GvcfExpanderTest(unittest.TestCase):
   "call": [
     {
       "callset_id": "1",
-      "callset_name": "same_start",
+      "call_set_name": "same_start",
       "gt": "0/0",
       "ps": "."
     },
     {
       "callset_id": "2",
-      "callset_name": "same_start_second_sample",
+      "call_set_name": "same_start_second_sample",
       "gt": "0/0",
       "ps": "."
     }
@@ -337,7 +337,7 @@ class GvcfExpanderTest(unittest.TestCase):
   "call": [
     {
       "callset_id": "1",
-      "callset_name": "different_start",
+      "call_set_name": "different_start",
       "gt": "0/0",
       "ps": "."
     }
@@ -354,7 +354,7 @@ class GvcfExpanderTest(unittest.TestCase):
   "call": [
     {
       "callset_id": "3",
-      "callset_name": "ambiguous",
+      "call_set_name": "ambiguous",
       "gt": "0/0",
       "ps": "."
     }
@@ -371,7 +371,7 @@ class GvcfExpanderTest(unittest.TestCase):
   "call": [
     {
       "callset_id": "1",
-      "callset_name": "does_not_overlap_var_1",
+      "call_set_name": "does_not_overlap_var_1",
       "gt": "0/0",
       "ps": "."
     }
@@ -401,7 +401,7 @@ class GvcfExpanderTest(unittest.TestCase):
   "call": [
     {
       "callset_id": "715080930289-10",
-      "callset_name": "foo1",
+      "call_set_name": "foo1",
       "ad": [
       ],
       "dp": "44",
@@ -411,7 +411,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "715080930289-14",
-      "callset_name": "foo2",
+      "call_set_name": "foo2",
       "ad": [
       ],
       "dp": "35",
@@ -475,7 +475,7 @@ class GvcfExpanderTest(unittest.TestCase):
       ],
       "FILTER": "True",
       "QUAL":0,
-      "callset_name":"no_call",
+      "call_set_name":"no_call",
       "genotype_likelihood":[
 
       ],
@@ -534,7 +534,7 @@ class GvcfExpanderTest(unittest.TestCase):
   "call": [
     {
       "callset_id": "383928317087-12",
-      "callset_name": "hu52B7E5",
+      "call_set_name": "hu52B7E5",
       "ad": [
         "3",
         "22"
@@ -561,7 +561,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "383928317087-34",
-      "callset_name": "hu1187FF",
+      "call_set_name": "hu1187FF",
       "ad": [
         "2",
         "27"
@@ -588,7 +588,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "383928317087-38",
-      "callset_name": "huC434ED",
+      "call_set_name": "huC434ED",
       "ad": [
         "3",
         "29"
@@ -615,7 +615,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "3",
-      "callset_name": "ambiguous",
+      "call_set_name": "ambiguous",
       "ad": [
         "3",
         "12"
@@ -685,7 +685,7 @@ class GvcfExpanderTest(unittest.TestCase):
   "call": [
     {
       "callset_id": "383928317087-12",
-      "callset_name": "hu52B7E5",
+      "call_set_name": "hu52B7E5",
       "ad": [
         "3",
         "22"
@@ -712,7 +712,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "383928317087-34",
-      "callset_name": "hu1187FF",
+      "call_set_name": "hu1187FF",
       "ad": [
         "2",
         "27"
@@ -739,7 +739,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "383928317087-38",
-      "callset_name": "huC434ED",
+      "call_set_name": "huC434ED",
       "ad": [
         "3",
         "29"
@@ -766,7 +766,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "3",
-      "callset_name": "ambiguous",
+      "call_set_name": "ambiguous",
       "ad": [
         "3",
         "12"
@@ -793,19 +793,19 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "1",
-      "callset_name": "different_start",
+      "call_set_name": "different_start",
       "gt": "0/0",
       "ps": "."
     },
     {
       "callset_id": "1",
-      "callset_name": "same_start",
+      "call_set_name": "same_start",
       "gt": "0/0",
       "ps": "."
     },
     {
       "callset_id": "2",
-      "callset_name": "same_start_second_sample",
+      "call_set_name": "same_start_second_sample",
       "gt": "0/0",
       "ps": "."
     },
@@ -826,7 +826,7 @@ class GvcfExpanderTest(unittest.TestCase):
       ],
       "FILTER": "True",
       "QUAL":0,
-      "callset_name":"no_call",
+      "call_set_name":"no_call",
       "genotype_likelihood":[
 
       ],
@@ -838,7 +838,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "3",
-      "callset_name": "ambiguous",
+      "call_set_name": "ambiguous",
       "gt": "0/0",
       "ps": "."
     }
@@ -887,7 +887,7 @@ class GvcfExpanderTest(unittest.TestCase):
   "call": [
     {
       "callset_id": "383928317087-12",
-      "callset_name": "hu52B7E5",
+      "call_set_name": "hu52B7E5",
       "ad": [
         "3",
         "22"
@@ -914,7 +914,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "383928317087-34",
-      "callset_name": "hu1187FF",
+      "call_set_name": "hu1187FF",
       "ad": [
         "2",
         "27"
@@ -941,7 +941,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "383928317087-38",
-      "callset_name": "huC434ED",
+      "call_set_name": "huC434ED",
       "ad": [
         "3",
         "29"
@@ -968,7 +968,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "3",
-      "callset_name": "ambiguous",
+      "call_set_name": "ambiguous",
       "ad": [
         "3",
         "12"
@@ -995,19 +995,19 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "1",
-      "callset_name": "different_start",
+      "call_set_name": "different_start",
       "gt": "0/0",
       "ps": "."
     },
     {
       "callset_id": "1",
-      "callset_name": "same_start",
+      "call_set_name": "same_start",
       "gt": "0/0",
       "ps": "."
     },
     {
       "callset_id": "2",
-      "callset_name": "same_start_second_sample",
+      "call_set_name": "same_start_second_sample",
       "gt": "0/0",
       "ps": "."
     },
@@ -1028,7 +1028,7 @@ class GvcfExpanderTest(unittest.TestCase):
       ],
       "FILTER": "True",
       "QUAL":0,
-      "callset_name":"no_call",
+      "call_set_name":"no_call",
       "genotype_likelihood":[
 
       ],
@@ -1083,7 +1083,7 @@ class GvcfExpanderTest(unittest.TestCase):
   "call": [
     {
       "callset_id": "383928317087-12",
-      "callset_name": "hu52B7E5",
+      "call_set_name": "hu52B7E5",
       "ad": [
         "3",
         "22"
@@ -1110,7 +1110,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "383928317087-34",
-      "callset_name": "hu1187FF",
+      "call_set_name": "hu1187FF",
       "ad": [
         "2",
         "27"
@@ -1137,7 +1137,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "383928317087-38",
-      "callset_name": "huC434ED",
+      "call_set_name": "huC434ED",
       "ad": [
         "3",
         "29"
@@ -1164,7 +1164,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "383928317087-48",
-      "callset_name": "hu0211D6",
+      "call_set_name": "hu0211D6",
       "ad": [
         "3",
         "12"
@@ -1234,7 +1234,7 @@ class GvcfExpanderTest(unittest.TestCase):
   "call": [
     {
       "callset_id": "383928317087-12",
-      "callset_name": "hu52B7E5",
+      "call_set_name": "hu52B7E5",
       "ad": [
         "3",
         "22"
@@ -1261,7 +1261,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "383928317087-34",
-      "callset_name": "hu1187FF",
+      "call_set_name": "hu1187FF",
       "ad": [
         "2",
         "27"
@@ -1288,7 +1288,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "383928317087-38",
-      "callset_name": "huC434ED",
+      "call_set_name": "huC434ED",
       "ad": [
         "3",
         "29"
@@ -1315,7 +1315,7 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "383928317087-48",
-      "callset_name": "hu0211D6",
+      "call_set_name": "hu0211D6",
       "ad": [
         "3",
         "12"
@@ -1342,13 +1342,13 @@ class GvcfExpanderTest(unittest.TestCase):
     },
     {
       "callset_id": "1",
-      "callset_name": "different_start",
+      "call_set_name": "different_start",
       "gt": "0/0",
       "ps": "."
     },
     {
       "callset_id": "1",
-      "callset_name": "does_not_overlap_var_1",
+      "call_set_name": "does_not_overlap_var_1",
       "gt": "0/0",
       "ps": "."
     }

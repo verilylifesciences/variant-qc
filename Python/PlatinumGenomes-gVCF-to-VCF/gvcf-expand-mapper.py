@@ -41,7 +41,8 @@ def main():
       line = file_handle.readline()
       continue
 
-    fields = json.loads(line)
+    (key, value) = line.split("\t")
+    fields = json.loads(value)
 
     pairs = expander.map(fields=fields)
     for pair in pairs:
