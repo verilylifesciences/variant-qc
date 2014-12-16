@@ -28,9 +28,10 @@ Pair = namedtuple('Pair', 'k v')
 class GvcfExpander(object):
   """Common logic for gVCF expansion."""
 
-  def __init__(self, bin_size=100, filter_ref_matches=True):
+  def __init__(self, bin_size=100, filter_ref_matches=True, emit_ref_blocks=True):
     self.bin_size = bin_size
     self.filter_ref_matches = filter_ref_matches
+    self.emit_ref_blocks = emit_ref_blocks
     self.current_key = None
     self.binned_calls = []
     self.sample_refs = {}
@@ -94,16 +95,20 @@ class GvcfExpander(object):
     expanded_calls = []
     current_bin = int(self.current_key.split(':')[1])
 
-    calls = sorted(self.binned_calls, key=lambda k: int(k['start']))
+    # Sort by start position descending and ensure that if a variant and a
+    # ref-matching block are at the same position, the ref-matching block comes first.
+    calls = sorted(self.binned_calls,
+                   key=lambda k: int(k['start']) if 'alternate_bases' not in k else (int(k['start']) + len(k['alternate_bases'])))
 
     for call in calls:
       if self.is_variant(call):
         expanded_calls.append(self.expand_variant(call))
       else:
         self.accumulate_block(call)
-        # Don't output ref-matches that we already output
-        if self.compute_start_bin(call) == current_bin:
-          expanded_calls.append(call)
+        if self.emit_ref_blocks:
+          # Don't output ref-matches that we already output
+          if self.compute_start_bin(call) == current_bin:
+            expanded_calls.append(call)
 
     return expanded_calls
 
@@ -302,6 +307,18 @@ class GvcfExpanderTest(unittest.TestCase):
         result = expander.reduce(pairs[i])
         self.assertEqual(0, len(result))
 
+  def test_same_start(self):
+    expander = GvcfExpander(emit_ref_blocks=False)
+    expander.reduce(expander.map(fields=json.loads('{"reference_name":"chr17","start":"41196840","end":"41196843","reference_bases":"G","alternate_bases":[],"quality":0,"filter":["PASS"],"names":[],"call":[{"call_set_id":"3049512673186936334-2","call_set_name":"NA12889","genotype":[0,0],"genotype_likelihood":[],"AD":[],"DP":"27","FILTER":["PASS"],"GQX":"63","MQ":"54","PL":[],"QUAL":0}],"AC":[],"AF":[],"BLOCKAVG_min30p3a":true}'))[0])
+    expander.reduce(expander.map(fields=json.loads('{"reference_name":"chr17","start":"41196840","end":"41196841","reference_bases":"G","alternate_bases":[],"quality":91.489999999999995,"filter":["PASS"],"names":[],"call":[{"call_set_id":"3049512673186936334-0","call_set_name":"NA12882","genotype":[0,0],"genotype_likelihood":[],"AD":[],"DP":"40","FILTER":["LowGQX"],"GQX":"1","MQ":"53","PL":[],"QUAL":0},{"call_set_id":"3049512673186936334-1","call_set_name":"NA12877","genotype":[0,0],"genotype_likelihood":[],"AD":["40"],"DP":"48","FILTER":["PASS"],"GQ":61.490000000000002,"GQX":"61","MQ":"52","PL":[],"QUAL":91.489999999999995},{"call_set_id":"3049512673186936334-3","call_set_name":"NA12885","genotype":[0,0],"genotype_likelihood":[],"AD":["34"],"DP":"43","FILTER":["PASS"],"GQ":62.57,"GQX":"63","MQ":"48","PL":[],"QUAL":92.560000000000002},{"call_set_id":"3049512673186936334-8","call_set_name":"NA12891","genotype":[0,0],"genotype_likelihood":[],"AD":["31"],"DP":"39","FILTER":["LowGQX"],"GQ":0.01,"GQX":"0","MQ":"51","PL":[],"QUAL":6.4699999999999998},{"call_set_id":"3049512673186936334-10","call_set_name":"NA12886","genotype":[0,0],"genotype_likelihood":[],"AD":["34"],"DP":"42","FILTER":["PASS"],"GQ":93.260000000000005,"GQX":"93","MQ":"48","PL":[],"QUAL":123.26000000000001},{"call_set_id":"3049512673186936334-11","call_set_name":"NA12884","genotype":[0,0],"genotype_likelihood":[],"AD":["23"],"DP":"29","FILTER":["LowGQX"],"GQ":0.22,"GQX":"0","MQ":"49","PL":[],"QUAL":17.329999999999998},{"call_set_id":"3049512673186936334-12","call_set_name":"NA12890","genotype":[0,0],"genotype_likelihood":[],"AD":[],"DP":"28","FILTER":["PASS"],"GQX":"39","MQ":"55","PL":[],"QUAL":0},{"call_set_id":"3049512673186936334-14","call_set_name":"NA12878","genotype":[0,0],"genotype_likelihood":[],"AD":["33"],"DP":"41","FILTER":["LowGQX"],"GQ":0.34999999999999998,"GQX":"0","MQ":"49","PL":[],"QUAL":19.309999999999999},{"call_set_id":"3049512673186936334-16","call_set_name":"NA12881","genotype":[0,0],"genotype_likelihood":[],"AD":["33"],"DP":"43","FILTER":["PASS"],"GQ":93.260000000000005,"GQX":"93","MQ":"50","PL":[],"QUAL":123.26000000000001}],"AC":[],"AF":[],"DP":"50","MQ":"52","MQ0":"0"}'))[0])
+    expander.reduce(expander.map(fields=json.loads('{"reference_name":"chr17","start":"41196840","end":"41196844","reference_bases":"G","alternate_bases":[],"quality":0,"filter":["PASS"],"names":[],"call":[{"call_set_id":"3049512673186936334-9","call_set_name":"NA12888","genotype":[0,0],"genotype_likelihood":[],"AD":[],"DP":"24","FILTER":["PASS"],"GQX":"66","MQ":"50","PL":[],"QUAL":0}],"AC":[],"AF":[],"BLOCKAVG_min30p3a":true}'))[0])
+    expander.reduce(expander.map(fields=json.loads('{"reference_name":"chr17","start":"41196840","end":"41196841","reference_bases":"G","alternate_bases":["T"],"quality":85.680000000000007,"filter":["TruthSensitivityTranche99.90to100.00","LowQD"],"names":[],"call":[{"call_set_id":"3049512673186936334-6","call_set_name":"NA12879","genotype":[0,1],"genotype_likelihood":[],"AD":["30","13"],"DP":"44","FILTER":["TruthSensitivityTranche99.90to100.00","LowQD"],"GQ":99,"GQX":"86","MQ":"49","PL":["116","0","744"],"QUAL":85.680000000000007,"VF":0.30199999999999999},{"call_set_id":"3049512673186936334-13","call_set_name":"NA12893","genotype":[0,1],"genotype_likelihood":[],"AD":["31","6"],"DP":"37","FILTER":["TruthSensitivityTranche99.90to100.00","LowQD"],"GQ":74.269999999999996,"GQX":"44","MQ":"57","PL":["74","0","1010"],"QUAL":44.280000000000001,"VF":0.16200000000000001}],"AC":["1"],"AF":[0.5],"AN":"2","BaseQRankSum":-2.2509999999999999,"DP":"48","Dels":0.080000000000000002,"FS":36.518000000000001,"HRun":"19","HaplotypeScore":23.5017,"MQ":"49","MQ0":"0","MQRankSum":0.51500000000000001,"QD":1.79,"ReadPosRankSum":-2.8980000000000001,"SB":-0.01,"VQSLOD":-1.5014000000000001,"culprit":"QD","set":"FilteredInAll"}'))[0])
+    expander.reduce(expander.map(fields=json.loads('{"reference_name":"chr17","start":"41196840","end":"41196845","reference_bases":"G","alternate_bases":[],"quality":0,"filter":["PASS"],"names":[],"call":[{"call_set_id":"3049512673186936334-4","call_set_name":"NA12887","genotype":[0,0],"genotype_likelihood":[],"AD":[],"DP":"37","FILTER":["PASS"],"GQX":"81","MQ":"50","PL":[],"QUAL":0}],"AC":[],"AF":[],"BLOCKAVG_min30p3a":true}'))[0])
+
+    result = expander.finalize()
+    self.assertEqual(1, len(result))
+    self.assertEqual(14, len(result[0]['call']))
+
   def setUp(self):
     self.maxDiff = None
 
@@ -315,14 +332,12 @@ class GvcfExpanderTest(unittest.TestCase):
     {
       "callset_id": "1",
       "call_set_name": "same_start",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     },
     {
       "callset_id": "2",
       "call_set_name": "same_start_second_sample",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     }
   ]
 }
@@ -338,8 +353,7 @@ class GvcfExpanderTest(unittest.TestCase):
     {
       "callset_id": "1",
       "call_set_name": "different_start",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     }
   ]
 }
@@ -355,8 +369,7 @@ class GvcfExpanderTest(unittest.TestCase):
     {
       "callset_id": "3",
       "call_set_name": "ambiguous",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     }
   ]
 }
@@ -372,8 +385,7 @@ class GvcfExpanderTest(unittest.TestCase):
     {
       "callset_id": "1",
       "call_set_name": "does_not_overlap_var_1",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     }
   ]
 }
@@ -387,37 +399,17 @@ class GvcfExpanderTest(unittest.TestCase):
   "reference_bases": "A",
   "alternate_bases": [
   ],
-  "ac": [
-  ],
-  "af": [
-  ],
   "END": "22973211",
-  "mleac": [
-  ],
-  "mleaf": [
-  ],
-  "rpa": [
-  ],
   "call": [
     {
       "callset_id": "715080930289-10",
       "call_set_name": "foo1",
-      "ad": [
-      ],
-      "dp": "44",
-      "gt": "0\/0",
-      "pl": [
-      ]
+      "gt": "0\/0"
     },
     {
       "callset_id": "715080930289-14",
       "call_set_name": "foo2",
-      "ad": [
-      ],
-      "dp": "35",
-      "gt": "0\/0",
-      "pl": [
-      ]
+      "gt": "0\/0"
     }
   ]
 }
@@ -425,34 +417,8 @@ class GvcfExpanderTest(unittest.TestCase):
 
     self.no_call_1 = """
 {
-  "AC":[
-
-  ],
-  "CGA_FI":[
-
-  ],
-  "MEINFO":[
-
-  ],
   "reference_bases":"TGA",
-  "CGA_MIRB":[
-
-  ],
-  "NS":"1",
   "alternate_bases":[
-
-  ],
-  "CGA_RPT":[
-
-  ],
-  "CIPOS":[
-
-  ],
-  "AN":"0",
-  "CGA_XR":[
-
-  ],
-  "CGA_PFAM":[
 
   ],
   "reference_name": "13",
@@ -460,36 +426,15 @@ class GvcfExpanderTest(unittest.TestCase):
   "call":[
     {
       "callset_id":"7122130836277736291-116",
-      "CGA_RDP":"14",
-      "FT":"PASS",
-      "AD":[
-        "10",
-        "14"
-      ],
       "phaseset":"7278593",
-      "EHQ":[
-
-      ],
-      "HQ":[
-
-      ],
-      "FILTER": "True",
-      "QUAL":0,
       "call_set_name":"no_call",
-      "genotype_likelihood":[
-
-      ],
-      "DP":"30",
       "genotype":[
         -1,
         -1
       ]
     }
   ],
-  "end": "102265645",
-  "CGA_MEDEL":[
-
-  ]
+  "end": "102265645"
 }
 """
 
@@ -502,143 +447,26 @@ class GvcfExpanderTest(unittest.TestCase):
   "alternate_bases": [
     "G"
   ],
-  "ac": [
-    "1"
-  ],
-  "an": "2",
-  "cga_fi": [
-    "9358|NM_004791.1|ITGBL1|INTRON|UNKNOWN-INC"
-  ],
-  "cga_medel": [
-
-  ],
-  "cga_mirb": [
-
-  ],
-  "cga_pfam": [
-
-  ],
-  "cga_rpt": [
-    "(TTCA)n|Simple_repeat|0.0"
-  ],
-  "cga_xr": [
-
-  ],
-  "cipos": [
-
-  ],
-  "meinfo": [
-
-  ],
-  "ns": "1",
   "call": [
     {
       "callset_id": "383928317087-12",
       "call_set_name": "hu52B7E5",
-      "ad": [
-        "3",
-        "22"
-      ],
-      "cga_rdp": "22",
-      "dp": "25",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "VQLOW",
-      "gl": [
-        "-33",
-        "0",
-        "-33"
-      ],
-      "gq": "33",
-      "gt": "1/0",
-      "hq": [
-        "33",
-        "33"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "383928317087-34",
       "call_set_name": "hu1187FF",
-      "ad": [
-        "2",
-        "27"
-      ],
-      "cga_rdp": "27",
-      "dp": "29",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "VQLOW",
-      "gl": [
-        "-36",
-        "0",
-        "-36"
-      ],
-      "gq": "36",
-      "gt": "1/0",
-      "hq": [
-        "36",
-        "36"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "383928317087-38",
       "call_set_name": "huC434ED",
-      "ad": [
-        "3",
-        "29"
-      ],
-      "cga_rdp": "29",
-      "dp": "32",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "PASS",
-      "gl": [
-        "-42",
-        "0",
-        "-42"
-      ],
-      "gq": "42",
-      "gt": "1/0",
-      "hq": [
-        "42",
-        "42"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "3",
       "call_set_name": "ambiguous",
-      "ad": [
-        "3",
-        "12"
-      ],
-      "cga_rdp": "12",
-      "dp": "15",
-      "ehq": [
-        "75",
-        "75"
-      ],
-      "ft": "PASS",
-      "gl": [
-        "-86",
-        "0",
-        "-86"
-      ],
-      "gq": "86",
-      "gt": "1/0",
-      "hq": [
-        "86",
-        "86"
-      ],
-      "ps": "."
+      "gt": "1/0"
     }
   ]
 }
@@ -653,184 +481,46 @@ class GvcfExpanderTest(unittest.TestCase):
   "alternate_bases": [
     "G"
   ],
-  "ac": [
-    "1"
-  ],
-  "an": "2",
-  "cga_fi": [
-    "9358|NM_004791.1|ITGBL1|INTRON|UNKNOWN-INC"
-  ],
-  "cga_medel": [
-
-  ],
-  "cga_mirb": [
-
-  ],
-  "cga_pfam": [
-
-  ],
-  "cga_rpt": [
-    "(TTCA)n|Simple_repeat|0.0"
-  ],
-  "cga_xr": [
-
-  ],
-  "cipos": [
-
-  ],
-  "meinfo": [
-
-  ],
-  "ns": "1",
   "call": [
     {
       "callset_id": "383928317087-12",
       "call_set_name": "hu52B7E5",
-      "ad": [
-        "3",
-        "22"
-      ],
-      "cga_rdp": "22",
-      "dp": "25",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "VQLOW",
-      "gl": [
-        "-33",
-        "0",
-        "-33"
-      ],
-      "gq": "33",
-      "gt": "1/0",
-      "hq": [
-        "33",
-        "33"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "383928317087-34",
       "call_set_name": "hu1187FF",
-      "ad": [
-        "2",
-        "27"
-      ],
-      "cga_rdp": "27",
-      "dp": "29",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "VQLOW",
-      "gl": [
-        "-36",
-        "0",
-        "-36"
-      ],
-      "gq": "36",
-      "gt": "1/0",
-      "hq": [
-        "36",
-        "36"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "383928317087-38",
       "call_set_name": "huC434ED",
-      "ad": [
-        "3",
-        "29"
-      ],
-      "cga_rdp": "29",
-      "dp": "32",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "PASS",
-      "gl": [
-        "-42",
-        "0",
-        "-42"
-      ],
-      "gq": "42",
-      "gt": "1/0",
-      "hq": [
-        "42",
-        "42"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "3",
       "call_set_name": "ambiguous",
-      "ad": [
-        "3",
-        "12"
-      ],
-      "cga_rdp": "12",
-      "dp": "15",
-      "ehq": [
-        "75",
-        "75"
-      ],
-      "ft": "PASS",
-      "gl": [
-        "-86",
-        "0",
-        "-86"
-      ],
-      "gq": "86",
-      "gt": "1/0",
-      "hq": [
-        "86",
-        "86"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "1",
       "call_set_name": "different_start",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     },
     {
       "callset_id": "1",
       "call_set_name": "same_start",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     },
     {
       "callset_id": "2",
       "call_set_name": "same_start_second_sample",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     },
     {
       "callset_id":"7122130836277736291-116",
-      "CGA_RDP":"14",
-      "FT":"PASS",
-      "AD":[
-        "10",
-        "14"
-      ],
-      "EHQ":[
-
-      ],
       "phaseset":"7278593",
-      "HQ":[
-
-      ],
-      "FILTER": "True",
-      "QUAL":0,
       "call_set_name":"no_call",
-      "genotype_likelihood":[
-
-      ],
-      "DP":"30",
       "genotype":[
         -1,
         -1
@@ -839,8 +529,7 @@ class GvcfExpanderTest(unittest.TestCase):
     {
       "callset_id": "3",
       "call_set_name": "ambiguous",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     }
   ]
 }
@@ -855,184 +544,46 @@ class GvcfExpanderTest(unittest.TestCase):
   "alternate_bases": [
     "G"
   ],
-  "ac": [
-    "1"
-  ],
-  "an": "2",
-  "cga_fi": [
-    "9358|NM_004791.1|ITGBL1|INTRON|UNKNOWN-INC"
-  ],
-  "cga_medel": [
-
-  ],
-  "cga_mirb": [
-
-  ],
-  "cga_pfam": [
-
-  ],
-  "cga_rpt": [
-    "(TTCA)n|Simple_repeat|0.0"
-  ],
-  "cga_xr": [
-
-  ],
-  "cipos": [
-
-  ],
-  "meinfo": [
-
-  ],
-  "ns": "1",
   "call": [
     {
       "callset_id": "383928317087-12",
       "call_set_name": "hu52B7E5",
-      "ad": [
-        "3",
-        "22"
-      ],
-      "cga_rdp": "22",
-      "dp": "25",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "VQLOW",
-      "gl": [
-        "-33",
-        "0",
-        "-33"
-      ],
-      "gq": "33",
-      "gt": "1/0",
-      "hq": [
-        "33",
-        "33"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "383928317087-34",
       "call_set_name": "hu1187FF",
-      "ad": [
-        "2",
-        "27"
-      ],
-      "cga_rdp": "27",
-      "dp": "29",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "VQLOW",
-      "gl": [
-        "-36",
-        "0",
-        "-36"
-      ],
-      "gq": "36",
-      "gt": "1/0",
-      "hq": [
-        "36",
-        "36"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "383928317087-38",
       "call_set_name": "huC434ED",
-      "ad": [
-        "3",
-        "29"
-      ],
-      "cga_rdp": "29",
-      "dp": "32",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "PASS",
-      "gl": [
-        "-42",
-        "0",
-        "-42"
-      ],
-      "gq": "42",
-      "gt": "1/0",
-      "hq": [
-        "42",
-        "42"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "3",
       "call_set_name": "ambiguous",
-      "ad": [
-        "3",
-        "12"
-      ],
-      "cga_rdp": "12",
-      "dp": "15",
-      "ehq": [
-        "75",
-        "75"
-      ],
-      "ft": "PASS",
-      "gl": [
-        "-86",
-        "0",
-        "-86"
-      ],
-      "gq": "86",
-      "gt": "1/0",
-      "hq": [
-        "86",
-        "86"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "1",
       "call_set_name": "different_start",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     },
     {
       "callset_id": "1",
       "call_set_name": "same_start",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     },
     {
       "callset_id": "2",
       "call_set_name": "same_start_second_sample",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     },
     {
       "callset_id":"7122130836277736291-116",
-      "CGA_RDP":"14",
-      "FT":"PASS",
-      "AD":[
-        "10",
-        "14"
-      ],
-      "EHQ":[
-
-      ],
       "phaseset":"7278593",
-      "HQ":[
-
-      ],
-      "FILTER": "True",
-      "QUAL":0,
       "call_set_name":"no_call",
-      "genotype_likelihood":[
-
-      ],
-      "DP":"30",
       "genotype":[
         -1,
         -1
@@ -1051,143 +602,26 @@ class GvcfExpanderTest(unittest.TestCase):
   "alternate_bases": [
     "A"
   ],
-  "ac": [
-    "1"
-  ],
-  "an": "2",
-  "cga_fi": [
-    "9358|NM_004791.1|ITGBL1|INTRON|UNKNOWN-INC"
-  ],
-  "cga_medel": [
-
-  ],
-  "cga_mirb": [
-
-  ],
-  "cga_pfam": [
-
-  ],
-  "cga_rpt": [
-    "(TTCA)n|Simple_repeat|0.0"
-  ],
-  "cga_xr": [
-
-  ],
-  "cipos": [
-
-  ],
-  "meinfo": [
-
-  ],
-  "ns": "1",
   "call": [
     {
       "callset_id": "383928317087-12",
       "call_set_name": "hu52B7E5",
-      "ad": [
-        "3",
-        "22"
-      ],
-      "cga_rdp": "22",
-      "dp": "25",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "VQLOW",
-      "gl": [
-        "-33",
-        "0",
-        "-33"
-      ],
-      "gq": "33",
-      "gt": "1/0",
-      "hq": [
-        "33",
-        "33"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "383928317087-34",
       "call_set_name": "hu1187FF",
-      "ad": [
-        "2",
-        "27"
-      ],
-      "cga_rdp": "27",
-      "dp": "29",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "VQLOW",
-      "gl": [
-        "-36",
-        "0",
-        "-36"
-      ],
-      "gq": "36",
-      "gt": "1/0",
-      "hq": [
-        "36",
-        "36"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "383928317087-38",
       "call_set_name": "huC434ED",
-      "ad": [
-        "3",
-        "29"
-      ],
-      "cga_rdp": "29",
-      "dp": "32",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "PASS",
-      "gl": [
-        "-42",
-        "0",
-        "-42"
-      ],
-      "gq": "42",
-      "gt": "1/0",
-      "hq": [
-        "42",
-        "42"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "383928317087-48",
       "call_set_name": "hu0211D6",
-      "ad": [
-        "3",
-        "12"
-      ],
-      "cga_rdp": "12",
-      "dp": "15",
-      "ehq": [
-        "75",
-        "75"
-      ],
-      "ft": "PASS",
-      "gl": [
-        "-86",
-        "0",
-        "-86"
-      ],
-      "gq": "86",
-      "gt": "1/0",
-      "hq": [
-        "86",
-        "86"
-      ],
-      "ps": "."
+      "gt": "1/0"
     }
   ]
 }
@@ -1202,155 +636,36 @@ class GvcfExpanderTest(unittest.TestCase):
   "alternate_bases": [
     "A"
   ],
-  "ac": [
-    "1"
-  ],
-  "an": "2",
-  "cga_fi": [
-    "9358|NM_004791.1|ITGBL1|INTRON|UNKNOWN-INC"
-  ],
-  "cga_medel": [
-
-  ],
-  "cga_mirb": [
-
-  ],
-  "cga_pfam": [
-
-  ],
-  "cga_rpt": [
-    "(TTCA)n|Simple_repeat|0.0"
-  ],
-  "cga_xr": [
-
-  ],
-  "cipos": [
-
-  ],
-  "meinfo": [
-
-  ],
-  "ns": "1",
   "call": [
     {
       "callset_id": "383928317087-12",
       "call_set_name": "hu52B7E5",
-      "ad": [
-        "3",
-        "22"
-      ],
-      "cga_rdp": "22",
-      "dp": "25",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "VQLOW",
-      "gl": [
-        "-33",
-        "0",
-        "-33"
-      ],
-      "gq": "33",
-      "gt": "1/0",
-      "hq": [
-        "33",
-        "33"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "383928317087-34",
       "call_set_name": "hu1187FF",
-      "ad": [
-        "2",
-        "27"
-      ],
-      "cga_rdp": "27",
-      "dp": "29",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "VQLOW",
-      "gl": [
-        "-36",
-        "0",
-        "-36"
-      ],
-      "gq": "36",
-      "gt": "1/0",
-      "hq": [
-        "36",
-        "36"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "383928317087-38",
       "call_set_name": "huC434ED",
-      "ad": [
-        "3",
-        "29"
-      ],
-      "cga_rdp": "29",
-      "dp": "32",
-      "ehq": [
-        "0",
-        "0"
-      ],
-      "ft": "PASS",
-      "gl": [
-        "-42",
-        "0",
-        "-42"
-      ],
-      "gq": "42",
-      "gt": "1/0",
-      "hq": [
-        "42",
-        "42"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "383928317087-48",
       "call_set_name": "hu0211D6",
-      "ad": [
-        "3",
-        "12"
-      ],
-      "cga_rdp": "12",
-      "dp": "15",
-      "ehq": [
-        "75",
-        "75"
-      ],
-      "ft": "PASS",
-      "gl": [
-        "-86",
-        "0",
-        "-86"
-      ],
-      "gq": "86",
-      "gt": "1/0",
-      "hq": [
-        "86",
-        "86"
-      ],
-      "ps": "."
+      "gt": "1/0"
     },
     {
       "callset_id": "1",
       "call_set_name": "different_start",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     },
     {
       "callset_id": "1",
       "call_set_name": "does_not_overlap_var_1",
-      "gt": "0/0",
-      "ps": "."
+      "gt": "0/0"
     }
   ]
 }
