@@ -82,7 +82,7 @@ Number of rows returned by this query: 335.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec 12 10:55:10 2014 -->
+<!-- Mon Dec 15 18:28:01 2014 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
@@ -117,7 +117,7 @@ GROUP BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec 12 10:55:12 2014 -->
+<!-- Mon Dec 15 18:28:03 2014 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
@@ -154,7 +154,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec 12 10:55:14 2014 -->
+<!-- Mon Dec 15 18:28:04 2014 -->
 <table border=1>
 <tr> <th> genotype </th> <th> genotype_count </th>  </tr>
   <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>
@@ -182,19 +182,18 @@ result <- DisplayAndDispatchQuery("./sql/private-variants-brca1.sql",
 ```
 
 ```
-# Private variants within BRCA1
+# Private variants within BRCA1.
 SELECT
   reference_name AS CHROM,
   start AS POS,
-  CASE WHEN cnt = 1 THEN 'S'
-  WHEN cnt = 2 THEN 'D'
-  ELSE STRING(cnt) END AS SINGLETON_DOUBLETON,
+  GROUP_CONCAT(CASE WHEN cnt = 1 THEN 'S'
+    WHEN cnt = 2 THEN 'D'
+    ELSE STRING(cnt) END) AS SINGLETON_DOUBLETON,
   reference_bases AS REF,
   alternate_bases AS ALT,
-  call.call_set_name AS INDV,
-  alt_num,
-  genotype,
-  cnt
+  GROUP_CONCAT(call.call_set_name) AS INDV,
+  GROUP_CONCAT(genotype) AS genotype,
+  SUM(num_samples_with_variant) AS num_samples_with_variant
 FROM (
   SELECT
     reference_name,
@@ -222,89 +221,96 @@ FROM (
           reference_name = 'chr17'
           AND start BETWEEN 41196311
           AND 41277499
-        OMIT call IF EVERY(call.genotype = -1)
+        OMIT
+          call IF EVERY(call.genotype = -1)
           ),
         alternate_bases)
       )
   OMIT
     RECORD IF alternate_bases IS NULL
   HAVING
-    num_samples_with_variant = 1
-    AND cnt > 0
+    cnt > 0
     )
+GROUP BY
+  chrom,
+  pos,
+  ref,
+  alt
+HAVING
+  num_samples_with_variant = 1
 ORDER BY
-  POS, INDV
+  POS,
+  INDV
 ```
-Number of rows returned by this query: 64.
+Number of rows returned by this query: 63.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec 12 10:55:18 2014 -->
+<!-- Mon Dec 15 18:28:08 2014 -->
 <table border=1>
-<tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> alt_num </th> <th> genotype </th> <th> cnt </th>  </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> S </td> <td> CT </td> <td> C </td> <td> NA12883 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41197958 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12884 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198195 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12893 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198220 </td> <td> S </td> <td> T </td> <td> G </td> <td> NA12883 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198226 </td> <td> S </td> <td> A </td> <td> C </td> <td> NA12890 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204831 </td> <td> D </td> <td> ACACACACACT </td> <td> A </td> <td> NA12890 </td> <td align="right">   1 </td> <td> 1,1 </td> <td align="right">   2 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204839 </td> <td> D </td> <td> ACT </td> <td> A </td> <td> NA12892 </td> <td align="right">   1 </td> <td> 1,1 </td> <td align="right">   2 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204862 </td> <td> S </td> <td> T </td> <td> A </td> <td> NA12882 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41208206 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12880 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41210033 </td> <td> S </td> <td> C </td> <td> A </td> <td> NA12888 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41211352 </td> <td> S </td> <td> T </td> <td> G </td> <td> NA12892 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> S </td> <td> CACA </td> <td> CACAACA </td> <td> NA12878 </td> <td align="right">   2 </td> <td> 1,2 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> S </td> <td> CACA </td> <td> C </td> <td> NA12878 </td> <td align="right">   1 </td> <td> 1,2 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41217551 </td> <td> S </td> <td> A </td> <td> C </td> <td> NA12889 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218851 </td> <td> S </td> <td> G </td> <td> T </td> <td> NA12883 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218884 </td> <td> S </td> <td> A </td> <td> G </td> <td> NA12893 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219261 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12889 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219852 </td> <td> S </td> <td> AT </td> <td> A </td> <td> NA12890 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219872 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12887 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219873 </td> <td> S </td> <td> G </td> <td> T </td> <td> NA12887 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219905 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12880 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41223537 </td> <td> S </td> <td> G </td> <td> GAATGTTCACTGTAACAATGCTTGT </td> <td> NA12883 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41224871 </td> <td> S </td> <td> A </td> <td> C </td> <td> NA12893 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41227082 </td> <td> S </td> <td> C </td> <td> A </td> <td> NA12887 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41227082 </td> <td> S </td> <td> C </td> <td> CGGAA </td> <td> NA12892 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41229351 </td> <td> S </td> <td> C </td> <td> T </td> <td> NA12883 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41229761 </td> <td> S </td> <td> T </td> <td> A </td> <td> NA12878 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232485 </td> <td> S </td> <td> T </td> <td> G </td> <td> NA12881 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41236026 </td> <td> S </td> <td> A </td> <td> C </td> <td> NA12893 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41238125 </td> <td> S </td> <td> T </td> <td> TACACAC </td> <td> NA12880 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41239705 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12891 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41242077 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12880 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41250046 </td> <td> S </td> <td> C </td> <td> T </td> <td> NA12888 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41250220 </td> <td> S </td> <td> AT </td> <td> A </td> <td> NA12892 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252576 </td> <td> S </td> <td> A </td> <td> G </td> <td> NA12891 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252645 </td> <td> S </td> <td> ATGT </td> <td> A </td> <td> NA12883 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252648 </td> <td> S </td> <td> T </td> <td> A </td> <td> NA12878 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252675 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12890 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252683 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12878 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252692 </td> <td> S </td> <td> ATAAT </td> <td> A </td> <td> NA12883 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252693 </td> <td> S </td> <td> T </td> <td> A </td> <td> NA12877 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12877 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12878 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41254373 </td> <td> S </td> <td> C </td> <td> T </td> <td> NA12892 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41254393 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12884 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41254979 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12887 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41256088 </td> <td> S </td> <td> AAAAAAAAAGAAAAG </td> <td> A </td> <td> NA12883 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41256091 </td> <td> S </td> <td> A </td> <td> G </td> <td> NA12878 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41256094 </td> <td> S </td> <td> A </td> <td> G </td> <td> NA12878 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41258182 </td> <td> S </td> <td> C </td> <td> A </td> <td> NA12887 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41259078 </td> <td> S </td> <td> A </td> <td> ATT </td> <td> NA12892 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41260721 </td> <td> S </td> <td> T </td> <td> A </td> <td> NA12891 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41260984 </td> <td> S </td> <td> G </td> <td> C </td> <td> NA12892 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41263116 </td> <td> S </td> <td> C </td> <td> CA </td> <td> NA12878 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41263429 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12891 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41264110 </td> <td> S </td> <td> C </td> <td> CT </td> <td> NA12891 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41270777 </td> <td> S </td> <td> C </td> <td> CT </td> <td> NA12878 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41271292 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12887 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> S </td> <td> G </td> <td> C </td> <td> NA12889 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273699 </td> <td> S </td> <td> C </td> <td> CAAAA </td> <td> NA12888 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273774 </td> <td> S </td> <td> C </td> <td> A </td> <td> NA12892 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41274876 </td> <td> S </td> <td> C </td> <td> A </td> <td> NA12883 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41275080 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12887 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41276517 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12880 </td> <td align="right">   1 </td> <td> 0,1 </td> <td align="right">   1 </td> </tr>
+<tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> S </td> <td> CT </td> <td> C </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41197958 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12884 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41198195 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12893 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41198220 </td> <td> S </td> <td> T </td> <td> G </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41198226 </td> <td> S </td> <td> A </td> <td> C </td> <td> NA12890 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204831 </td> <td> D </td> <td> ACACACACACT </td> <td> A </td> <td> NA12890 </td> <td> "1,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204839 </td> <td> D </td> <td> ACT </td> <td> A </td> <td> NA12892 </td> <td> "1,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204862 </td> <td> S </td> <td> T </td> <td> A </td> <td> NA12882 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41208206 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12880 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41210033 </td> <td> S </td> <td> C </td> <td> A </td> <td> NA12888 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41211352 </td> <td> S </td> <td> T </td> <td> G </td> <td> NA12892 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> S </td> <td> CACA </td> <td> CACAACA </td> <td> NA12878 </td> <td> "1,2" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41217551 </td> <td> S </td> <td> A </td> <td> C </td> <td> NA12889 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218851 </td> <td> S </td> <td> G </td> <td> T </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218884 </td> <td> S </td> <td> A </td> <td> G </td> <td> NA12893 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219261 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12889 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219852 </td> <td> S </td> <td> AT </td> <td> A </td> <td> NA12890 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219872 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12887 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219873 </td> <td> S </td> <td> G </td> <td> T </td> <td> NA12887 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219905 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12880 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41223537 </td> <td> S </td> <td> G </td> <td> GAATGTTCACTGTAACAATGCTTGT </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41224871 </td> <td> S </td> <td> A </td> <td> C </td> <td> NA12893 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41227082 </td> <td> S </td> <td> C </td> <td> A </td> <td> NA12887 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41227082 </td> <td> S </td> <td> C </td> <td> CGGAA </td> <td> NA12892 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41229351 </td> <td> S </td> <td> C </td> <td> T </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41229761 </td> <td> S </td> <td> T </td> <td> A </td> <td> NA12878 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232485 </td> <td> S </td> <td> T </td> <td> G </td> <td> NA12881 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41236026 </td> <td> S </td> <td> A </td> <td> C </td> <td> NA12893 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41238125 </td> <td> S </td> <td> T </td> <td> TACACAC </td> <td> NA12880 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41239705 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12891 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41242077 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12880 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41250046 </td> <td> S </td> <td> C </td> <td> T </td> <td> NA12888 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41250220 </td> <td> S </td> <td> AT </td> <td> A </td> <td> NA12892 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252576 </td> <td> S </td> <td> A </td> <td> G </td> <td> NA12891 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252645 </td> <td> S </td> <td> ATGT </td> <td> A </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252648 </td> <td> S </td> <td> T </td> <td> A </td> <td> NA12878 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252675 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12890 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252683 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12878 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252692 </td> <td> S </td> <td> ATAAT </td> <td> A </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252693 </td> <td> S </td> <td> T </td> <td> A </td> <td> NA12877 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12877 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12878 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41254373 </td> <td> S </td> <td> C </td> <td> T </td> <td> NA12892 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41254393 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12884 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41254979 </td> <td> S </td> <td> A </td> <td> T </td> <td> NA12887 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41256088 </td> <td> S </td> <td> AAAAAAAAAGAAAAG </td> <td> A </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41256091 </td> <td> S </td> <td> A </td> <td> G </td> <td> NA12878 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41256094 </td> <td> S </td> <td> A </td> <td> G </td> <td> NA12878 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41258182 </td> <td> S </td> <td> C </td> <td> A </td> <td> NA12887 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41259078 </td> <td> S </td> <td> A </td> <td> ATT </td> <td> NA12892 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41260721 </td> <td> S </td> <td> T </td> <td> A </td> <td> NA12891 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41260984 </td> <td> S </td> <td> G </td> <td> C </td> <td> NA12892 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41263116 </td> <td> S </td> <td> C </td> <td> CA </td> <td> NA12878 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41263429 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12891 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41264110 </td> <td> S </td> <td> C </td> <td> CT </td> <td> NA12891 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41270777 </td> <td> S </td> <td> C </td> <td> CT </td> <td> NA12878 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41271292 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12887 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> S </td> <td> G </td> <td> C </td> <td> NA12889 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41273699 </td> <td> S </td> <td> C </td> <td> CAAAA </td> <td> NA12888 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41273774 </td> <td> S </td> <td> C </td> <td> A </td> <td> NA12892 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41274876 </td> <td> S </td> <td> C </td> <td> A </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41275080 </td> <td> S </td> <td> G </td> <td> A </td> <td> NA12887 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41276517 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12880 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
    </table>
 
 Compare to [brca1.singletons](./data/singletons/brca1.singletons) which has 85 some of which are for 0/0 genotypes from reference matching blocks (see the [vcftools command line](./data/singletons/brca1.log) used to create this file).
@@ -348,12 +354,10 @@ onlyBQ
 ```
 
 ```
-##   CHROM      POS SINGLETON_DOUBLETON  REF     ALT    INDV alt_num genotype
-## 1 chr17 41211485                   S CACA CACAACA NA12878       2      1,2
-## 2 chr17 41211485                   S CACA       C NA12878       1      1,2
-##   cnt
-## 1   1
-## 2   1
+##   CHROM      POS SINGLETON_DOUBLETON  REF     ALT    INDV genotype
+## 1 chr17 41211485                   S CACA CACAACA NA12878    "1,2"
+##   num_samples_with_variant
+## 1                        1
 ```
 
 Which singletons were only identified by vcftools?
@@ -399,7 +403,7 @@ result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
 SELECT
   reference_name,
   start,
-  END,
+  end,
   reference_bases,
   GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
   call.call_set_name,
@@ -415,40 +419,41 @@ HAVING
   start = 41252694 OR start = 41204841 OR start = 41196320 OR start = 41196319 OR start = 41196318 OR start = 41196317 OR start = 41196316 OR start = 41196315 OR start = 41196314 OR start = 41196313
 ORDER BY
   start,
-  END
+  end,
+  call.call_set_name
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec 12 10:55:20 2014 -->
+<!-- Mon Dec 15 18:28:10 2014 -->
 <table border=1>
-<tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
+<tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td> NA12886 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12877 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 793,44,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12881 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 725,63,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12892 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12878 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 1025,63,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12893 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 859,72,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12890 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12884 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 943,81,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12886 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 785,38,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12891 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 877,78,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12880 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12879 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 1175,48,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12883 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12887 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 754,39,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12885 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 809,69,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12889 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 815,54,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12880 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12881 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 725,63,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12882 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 917,54,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12883 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12884 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 943,81,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12885 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 809,69,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12886 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 785,38,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12887 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 754,39,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12888 </td> <td> 0,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 359,0,25 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12881 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12892 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12878 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12890 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12884 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12880 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12883 </td> <td> 0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12889 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12889 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 815,54,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12890 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12891 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 877,78,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12892 </td> <td> -1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td align="right"> 41204842 </td> <td> T </td> <td> A </td> <td> NA12893 </td> <td> 1,1 </td> <td align="right"> 759.64 </td> <td> TruthSensitivityTranche99.90to100.00 </td> <td> 859,72,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td> T </td> <td> NA12877 </td> <td> 0,1 </td> <td align="right"> 143.44 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 173,0,874 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12878 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12880 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12881 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12883 </td> <td> 0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12884 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12889 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12890 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252695 </td> <td> A </td> <td>  </td> <td> NA12892 </td> <td> 0,0 </td> <td align="right"> 48.05 </td> <td> LowGQX </td> <td>  </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252697 </td> <td> AAT </td> <td> A </td> <td> NA12884 </td> <td> 1,1 </td> <td align="right"> 648.06 </td> <td> LowGQX </td> <td> 690,17,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td align="right"> 41252697 </td> <td> AAT </td> <td> A </td> <td> NA12886 </td> <td> 0,1 </td> <td align="right"> 648.06 </td> <td> LowGQX </td> <td> 823,0,38 </td> </tr>
    </table>
@@ -531,13 +536,14 @@ GROUP BY
 ORDER BY
   CHR,
   POS,
-  ref
+  ref,
+  alt
 ```
 Number of rows returned by this query: 271.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec 12 10:55:23 2014 -->
+<!-- Mon Dec 15 18:28:14 2014 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> </tr>
@@ -594,19 +600,19 @@ onlyBQ
 ## 4  chr17 41256102   G   A       12       4        0
 ## 5  chr17 41256100   A   G       14       2        0
 ## 6  chr17 41256097   G   A       13       3        0
-## 7  chr17 41252696   T   C        1       1        0
-## 8  chr17 41252696   T   A        1       9        3
+## 7  chr17 41256094   A   G       16       1        0
+## 8  chr17 41256091   A   G       16       1        0
 ## 9  chr17 41252695   A   T        2      10        2
-## 10 chr17 41252648   T   A       13       1        0
-## 11 chr17 41242077   G   A       13       1        0
-## 12 chr17 41256091   A   G       16       1        0
-## 13 chr17 41226740   T   G       16       0        0
-## 14 chr17 41214210   A   C       16       0        0
-## 15 chr17 41239915   T   A       16       0        0
-## 16 chr17 41214209   A   T       16       0        0
-## 17 chr17 41252693   T   A       16       1        0
-## 18 chr17 41204837   A   T       14       0        0
-## 19 chr17 41256094   A   G       16       1        0
+## 10 chr17 41252693   T   A       16       1        0
+## 11 chr17 41252648   T   A       13       1        0
+## 12 chr17 41242077   G   A       13       1        0
+## 13 chr17 41252696   T   A        1       9        3
+## 14 chr17 41252696   T   C        1       1        0
+## 15 chr17 41226740   T   G       16       0        0
+## 16 chr17 41214210   A   C       16       0        0
+## 17 chr17 41214209   A   T       16       0        0
+## 18 chr17 41239915   T   A       16       0        0
+## 19 chr17 41204837   A   T       14       0        0
 ```
 
 Note vcftools appears to skip variants with single allele genotypes:
@@ -629,40 +635,40 @@ onlyVcftools
 ## 3  chr17 41267517  5.000000 0.126984        0       5        0   1.25
 ## 4  chr17 41266406  4.000000 0.314286        0       4        0   1.00
 ## 5  chr17 41264754  7.000000 0.037296        0       7        0   1.75
-## 6  chr17 41264750  7.000000 0.037296        0       7        0   1.75
-## 7  chr17 41264742  7.000000 0.037296        0       7        0   1.75
+## 6  chr17 41264742  7.000000 0.037296        0       7        0   1.75
+## 7  chr17 41264739  7.000000 0.037296        0       7        0   1.75
 ## 8  chr17 41264110  1.000000 1.000000        0       1        0   0.25
 ## 9  chr17 41259078  1.000000 1.000000        0       1        0   0.25
 ## 10 chr17 41258134  3.000000 0.400000        0       3        0   0.75
 ## 11 chr17 41256073  5.000000 0.126984        0       5        0   1.25
-## 12 chr17 41252692  1.000000 1.000000        0       1        0   0.25
-## 13 chr17 41252645  1.000000 1.000000        0       1        0   0.25
+## 12 chr17 41254964  3.644628 0.176471        0       7        2   1.36
+## 13 chr17 41252692  1.000000 1.000000        0       1        0   0.25
 ## 14 chr17 41252590  3.000000 0.400000        0       3        0   0.75
-## 15 chr17 41250220  1.000000 1.000000        0       1        0   0.25
+## 15 chr17 41250677  7.000000 0.037296        0       7        0   1.75
 ## 16 chr17 41249362  7.000000 0.037296        0       7        0   1.75
-## 17 chr17 41247121  7.000000 0.037296        0       7        0   1.75
-## 18 chr17 41242074  6.000000 0.090909        0       6        0   1.50
-## 19 chr17 41241567  4.000000 0.314286        0       4        0   1.00
+## 17 chr17 41242074  6.000000 0.090909        0       6        0   1.50
+## 18 chr17 41241567  4.000000 0.314286        0       4        0   1.00
+## 19 chr17 41250220  1.000000 1.000000        0       1        0   0.25
 ## 20 chr17 41239914  7.000000 0.037296        0       7        0   1.75
-## 21 chr17 41250677  7.000000 0.037296        0       7        0   1.75
-## 22 chr17 41232343       NaN 1.000000        0       0       17   0.00
-## 23 chr17 41230104  5.000000 0.126984        0       5        0   1.25
-## 24 chr17 41229776       NaN 1.000000        0       0       17   0.00
+## 21 chr17 41232343       NaN 1.000000        0       0       17   0.00
+## 22 chr17 41230104  5.000000 0.126984        0       5        0   1.25
+## 23 chr17 41229776       NaN 1.000000        0       0       17   0.00
+## 24 chr17 41229759  7.000000 0.037296        0       7        0   1.75
 ## 25 chr17 41226735  7.000000 0.037296        0       7        0   1.75
-## 26 chr17 41223537  1.000000 1.000000        0       1        0   0.25
-## 27 chr17 41219906 17.000000 0.000056        0      17        0   4.25
-## 28 chr17 41219852  1.000000 1.000000        0       1        0   0.25
-## 29 chr17 41256088  1.000000 1.000000        0       1        0   0.25
-## 30 chr17 41218817 17.000000 0.000056        0      17        0   4.25
-## 31 chr17 41254964  3.644628 0.176471        0       7        2   1.36
-## 32 chr17 41214208  7.000000 0.037296        0       7        0   1.75
-## 33 chr17 41229759  7.000000 0.037296        0       7        0   1.75
-## 34 chr17 41213601  5.000000 0.126984        0       5        0   1.25
-## 35 chr17 41264739  7.000000 0.037296        0       7        0   1.75
-## 36 chr17 41225653 10.000000 0.006906        0      10        0   2.50
-## 37 chr17 41208190  2.000000 1.000000        0       2        0   0.50
-## 38 chr17 41206760  6.000000 0.090909        0       6        0   1.50
-## 39 chr17 41204835       NaN 1.000000        0       0        2   0.00
+## 26 chr17 41225653 10.000000 0.006906        0      10        0   2.50
+## 27 chr17 41223537  1.000000 1.000000        0       1        0   0.25
+## 28 chr17 41219906 17.000000 0.000056        0      17        0   4.25
+## 29 chr17 41218817 17.000000 0.000056        0      17        0   4.25
+## 30 chr17 41219852  1.000000 1.000000        0       1        0   0.25
+## 31 chr17 41214208  7.000000 0.037296        0       7        0   1.75
+## 32 chr17 41213601  5.000000 0.126984        0       5        0   1.25
+## 33 chr17 41264750  7.000000 0.037296        0       7        0   1.75
+## 34 chr17 41252645  1.000000 1.000000        0       1        0   0.25
+## 35 chr17 41208190  2.000000 1.000000        0       2        0   0.50
+## 36 chr17 41206760  6.000000 0.090909        0       6        0   1.50
+## 37 chr17 41247121  7.000000 0.037296        0       7        0   1.75
+## 38 chr17 41204835       NaN 1.000000        0       0        2   0.00
+## 39 chr17 41256088  1.000000 1.000000        0       1        0   0.25
 ## 40 chr17 41204831       NaN 1.000000        0       0        1   0.00
 ## 41 chr17 41200703  6.000000 0.090909        0       6        0   1.50
 ## 42 chr17 41197938  3.000000 0.400000        0       3        0   0.75
@@ -678,34 +684,34 @@ onlyVcftools
 ## 9   0.50   0.25
 ## 10  1.50   0.75
 ## 11  2.50   1.25
-## 12  0.50   0.25
+## 12  4.28   3.36
 ## 13  0.50   0.25
 ## 14  1.50   0.75
-## 15  0.50   0.25
+## 15  3.50   1.75
 ## 16  3.50   1.75
-## 17  3.50   1.75
-## 18  3.00   1.50
-## 19  2.00   1.00
+## 17  3.00   1.50
+## 18  2.00   1.00
+## 19  0.50   0.25
 ## 20  3.50   1.75
-## 21  3.50   1.75
-## 22  0.00  17.00
-## 23  2.50   1.25
-## 24  0.00  17.00
+## 21  0.00  17.00
+## 22  2.50   1.25
+## 23  0.00  17.00
+## 24  3.50   1.75
 ## 25  3.50   1.75
-## 26  0.50   0.25
-## 27  8.50   4.25
-## 28  0.50   0.25
-## 29  0.50   0.25
-## 30  8.50   4.25
-## 31  4.28   3.36
-## 32  3.50   1.75
+## 26  5.00   2.50
+## 27  0.50   0.25
+## 28  8.50   4.25
+## 29  8.50   4.25
+## 30  0.50   0.25
+## 31  3.50   1.75
+## 32  2.50   1.25
 ## 33  3.50   1.75
-## 34  2.50   1.25
-## 35  3.50   1.75
-## 36  5.00   2.50
-## 37  1.00   0.50
-## 38  3.00   1.50
-## 39  0.00   2.00
+## 34  0.50   0.25
+## 35  1.00   0.50
+## 36  3.00   1.50
+## 37  3.50   1.75
+## 38  0.00   2.00
+## 39  0.50   0.25
 ## 40  0.00   1.00
 ## 41  3.00   1.50
 ## 42  1.50   0.75
@@ -726,7 +732,7 @@ result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
 SELECT
   reference_name,
   start,
-  END,
+  end,
   reference_bases,
   GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
   call.call_set_name,
@@ -739,10 +745,11 @@ FROM
 WHERE
   reference_name = 'chr17'
 HAVING
-  start = 41270777 OR start = 41268207 OR start = 41267517 OR start = 41266406 OR start = 41264754 OR start = 41264750 OR start = 41264742 OR start = 41264110 OR start = 41259078 OR start = 41258134 OR start = 41256073 OR start = 41252692 OR start = 41252645 OR start = 41252590 OR start = 41250220 OR start = 41249362 OR start = 41247121 OR start = 41242074 OR start = 41241567 OR start = 41239914 OR start = 41250677 OR start = 41232343 OR start = 41230104 OR start = 41229776 OR start = 41226735 OR start = 41223537 OR start = 41219906 OR start = 41219852 OR start = 41256088 OR start = 41218817 OR start = 41254964 OR start = 41214208 OR start = 41229759 OR start = 41213601 OR start = 41264739 OR start = 41225653 OR start = 41208190 OR start = 41206760 OR start = 41204835 OR start = 41204831 OR start = 41200703 OR start = 41197938
+  start = 41270777 OR start = 41268207 OR start = 41267517 OR start = 41266406 OR start = 41264754 OR start = 41264742 OR start = 41264739 OR start = 41264110 OR start = 41259078 OR start = 41258134 OR start = 41256073 OR start = 41254964 OR start = 41252692 OR start = 41252590 OR start = 41250677 OR start = 41249362 OR start = 41242074 OR start = 41241567 OR start = 41250220 OR start = 41239914 OR start = 41232343 OR start = 41230104 OR start = 41229776 OR start = 41229759 OR start = 41226735 OR start = 41225653 OR start = 41223537 OR start = 41219906 OR start = 41218817 OR start = 41219852 OR start = 41214208 OR start = 41213601 OR start = 41264750 OR start = 41252645 OR start = 41208190 OR start = 41206760 OR start = 41247121 OR start = 41204835 OR start = 41256088 OR start = 41204831 OR start = 41200703 OR start = 41197938
 ORDER BY
   start,
-  END
+  end,
+  call.call_set_name
 ```
 
 Let's filter out indels and reference-matching blocks from this result:
@@ -752,60 +759,60 @@ result <- filter(result, reference_bases %in% c('A','C','G','T') & alternate_bas
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec 12 10:55:27 2014 -->
+<!-- Mon Dec 15 18:28:18 2014 -->
 <table border=1>
-<tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12892 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 138,0,863 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12881 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 290,0,988 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12880 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 35,0,777 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12878 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 234,0,1058 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12893 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 354,0,1202 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12890 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 225,0,842 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12884 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 87,0,427 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12888 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 195,0,867 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12882 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 213,0,1195 </td> </tr>
+<tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12877 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 70,0,881 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12889 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 194,0,1006 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12885 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 250,0,708 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12887 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 228,0,813 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12883 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 322,0,982 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12878 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 234,0,1058 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12879 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 176,0,721 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12891 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 312,0,806 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12880 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 35,0,777 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12881 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 290,0,988 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12882 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 213,0,1195 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12883 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 322,0,982 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12884 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 87,0,427 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12885 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 250,0,708 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12886 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 397,0,757 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12887 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 228,0,813 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12888 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 195,0,867 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12889 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 194,0,1006 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12890 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 225,0,842 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12891 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 312,0,806 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12892 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 138,0,863 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12893 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 354,0,1202 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12877 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 211,0,369 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12878 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 261,0,326 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12879 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 134,0,489 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12880 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 266,0,171 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12891 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 235,0,204 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12888 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 295,0,336 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12886 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 305,0,557 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12884 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 224,0,196 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12890 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 161,0,404 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12893 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 293,0,667 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12878 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 261,0,326 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12892 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 302,0,260 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12881 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 227,0,492 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12887 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 176,0,226 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12885 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 210,0,370 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12889 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 165,0,353 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12877 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 211,0,369 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12882 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 208,0,366 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12883 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 222,0,298 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12884 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 224,0,196 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12885 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 210,0,370 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12886 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 305,0,557 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12887 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 176,0,226 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12888 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 295,0,336 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12889 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 165,0,353 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12890 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 161,0,404 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12891 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 235,0,204 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12892 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 302,0,260 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td align="right"> 41219907 </td> <td> T </td> <td> A </td> <td> NA12893 </td> <td> 0,1 </td> <td align="right"> 180.52 </td> <td> TruthSensitivityTranche99.00to99.90 </td> <td> 293,0,667 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12877 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2002,153,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12878 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2157,163,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12879 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2753,211,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12880 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2543,199,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12891 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2059,156,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12888 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 1834,141,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12886 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2491,193,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12884 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 1712,132,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12890 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 1787,138,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12893 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2434,184,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12892 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2246,172,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12882 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 1880,144,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12889 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2528,193,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12885 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2283,172,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12887 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2200,169,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12883 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 1733,129,0 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12881 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 1811,144,0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12878 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2157,163,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12882 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 1880,144,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12883 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 1733,129,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12884 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 1712,132,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12885 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2283,172,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12886 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2491,193,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12887 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2200,169,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12888 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 1834,141,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12889 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2528,193,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12890 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 1787,138,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12891 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2059,156,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12892 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2246,172,0 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41232343 </td> <td align="right"> 41232344 </td> <td> G </td> <td> C </td> <td> NA12893 </td> <td> 1,1 </td> <td align="right"> 1968.62 </td> <td> PASS </td> <td> 2434,184,0 </td> </tr>
    </table>
 
 It appears that the difference in results only returned by vcftools correspond either to:
@@ -859,7 +866,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Fri Dec 12 10:55:29 2014 -->
+<!-- Mon Dec 15 18:28:20 2014 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> N_SITES </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right">   3 </td> <td align="right">  27 </td> </tr>

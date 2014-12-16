@@ -1,16 +1,15 @@
-# Private variants within BRCA1
+# Private variants within BRCA1.
 SELECT
   reference_name AS CHROM,
   start AS POS,
-  CASE WHEN cnt = 1 THEN 'S'
-  WHEN cnt = 2 THEN 'D'
-  ELSE STRING(cnt) END AS SINGLETON_DOUBLETON,
+  GROUP_CONCAT(CASE WHEN cnt = 1 THEN 'S'
+    WHEN cnt = 2 THEN 'D'
+    ELSE STRING(cnt) END) AS SINGLETON_DOUBLETON,
   reference_bases AS REF,
   alternate_bases AS ALT,
-  call.call_set_name AS INDV,
-  alt_num,
-  genotype,
-  cnt
+  GROUP_CONCAT(call.call_set_name) AS INDV,
+  GROUP_CONCAT(genotype) AS genotype,
+  SUM(num_samples_with_variant) AS num_samples_with_variant
 FROM (
   SELECT
     reference_name,
@@ -38,15 +37,23 @@ FROM (
           reference_name = 'chr17'
           AND start BETWEEN 41196311
           AND 41277499
-        OMIT call IF EVERY(call.genotype = -1)
+        OMIT
+          call IF EVERY(call.genotype = -1)
           ),
         alternate_bases)
       )
   OMIT
     RECORD IF alternate_bases IS NULL
   HAVING
-    num_samples_with_variant = 1
-    AND cnt > 0
+    cnt > 0
     )
+GROUP BY
+  chrom,
+  pos,
+  ref,
+  alt
+HAVING
+  num_samples_with_variant = 1
 ORDER BY
-  POS, INDV
+  POS,
+  INDV

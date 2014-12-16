@@ -2,7 +2,7 @@
 SELECT
   reference_name,
   start,
-  END,
+  end,
   reference_bases,
   GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
   call.call_set_name,
@@ -18,4 +18,5 @@ HAVING
   _HAVING_
 ORDER BY
   start,
-  END
+  end,
+  call.call_set_name

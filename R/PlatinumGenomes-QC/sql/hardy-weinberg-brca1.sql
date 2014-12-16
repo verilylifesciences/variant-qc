@@ -63,4 +63,5 @@ GROUP BY
 ORDER BY
   CHR,
   POS,
-  ref
+  ref,
+  alt
