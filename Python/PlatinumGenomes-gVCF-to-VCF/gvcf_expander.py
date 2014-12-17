@@ -98,7 +98,7 @@ class GvcfExpander(object):
     # Sort by start position descending and ensure that if a variant and a
     # ref-matching block are at the same position, the ref-matching block comes first.
     calls = sorted(self.binned_calls,
-                   key=lambda k: int(k['start']) if 'alternate_bases' not in k else (int(k['start']) + len(k['alternate_bases'])))
+                   key=lambda k: (int(k['start']), len(k.get('alternate_bases', []))))
 
     for call in calls:
       if self.is_variant(call):
@@ -106,7 +106,7 @@ class GvcfExpander(object):
       else:
         self.accumulate_block(call)
         if self.emit_ref_blocks:
-          # Don't output ref-matches that we already output
+          # Don't output ref-matches that we previously emitted
           if self.compute_start_bin(call) == current_bin:
             expanded_calls.append(call)
 
@@ -309,6 +309,9 @@ class GvcfExpanderTest(unittest.TestCase):
 
   def test_same_start(self):
     expander = GvcfExpander(emit_ref_blocks=False)
+    expander.reduce(expander.map(fields=json.loads('{"reference_name":"chr17","start":"41196822","end":"41196841","reference_bases":"T","alternate_bases":[],"quality":0,"filter":["PASS"],"names":[],"call":[{"call_set_id":"3049512673186936334-5","call_set_name":"NA12883","genotype":[0,0],"genotype_likelihood":[],"AD":[],"DP":"39","FILTER":["PASS"],"GQX":"78","MQ":"48","PL":[],"QUAL":0}],"AC":[],"AF":[],"BLOCKAVG_min30p3a":true}'))[0])
+    expander.reduce(expander.map(fields=json.loads('{"reference_name":"chr17","start":"41196839","end":"41196841","reference_bases":"T","alternate_bases":[],"quality":0,"filter":["PASS"],"names":[],"call":[{"call_set_id":"3049512673186936334-15","call_set_name":"NA12892","genotype":[0,0],"genotype_likelihood":[],"AD":[],"DP":"32","FILTER":["PASS"],"GQX":"63","MQ":"47","PL":[],"QUAL":0}],"AC":[],"AF":[],"BLOCKAVG_min30p3a":true}'))[0])
+    expander.reduce(expander.map(fields=json.loads('{"reference_name":"chr17","start":"41196823","end":"41196841","reference_bases":"T","alternate_bases":[],"quality":0,"filter":["PASS"],"names":[],"call":[{"call_set_id":"3049512673186936334-7","call_set_name":"NA12880","genotype":[0,0],"genotype_likelihood":[],"AD":[],"DP":"56","FILTER":["PASS"],"GQX":"99","MQ":"50","PL":[],"QUAL":0}],"AC":[],"AF":[],"BLOCKAVG_min30p3a":true}'))[0])
     expander.reduce(expander.map(fields=json.loads('{"reference_name":"chr17","start":"41196840","end":"41196843","reference_bases":"G","alternate_bases":[],"quality":0,"filter":["PASS"],"names":[],"call":[{"call_set_id":"3049512673186936334-2","call_set_name":"NA12889","genotype":[0,0],"genotype_likelihood":[],"AD":[],"DP":"27","FILTER":["PASS"],"GQX":"63","MQ":"54","PL":[],"QUAL":0}],"AC":[],"AF":[],"BLOCKAVG_min30p3a":true}'))[0])
     expander.reduce(expander.map(fields=json.loads('{"reference_name":"chr17","start":"41196840","end":"41196841","reference_bases":"G","alternate_bases":[],"quality":91.489999999999995,"filter":["PASS"],"names":[],"call":[{"call_set_id":"3049512673186936334-0","call_set_name":"NA12882","genotype":[0,0],"genotype_likelihood":[],"AD":[],"DP":"40","FILTER":["LowGQX"],"GQX":"1","MQ":"53","PL":[],"QUAL":0},{"call_set_id":"3049512673186936334-1","call_set_name":"NA12877","genotype":[0,0],"genotype_likelihood":[],"AD":["40"],"DP":"48","FILTER":["PASS"],"GQ":61.490000000000002,"GQX":"61","MQ":"52","PL":[],"QUAL":91.489999999999995},{"call_set_id":"3049512673186936334-3","call_set_name":"NA12885","genotype":[0,0],"genotype_likelihood":[],"AD":["34"],"DP":"43","FILTER":["PASS"],"GQ":62.57,"GQX":"63","MQ":"48","PL":[],"QUAL":92.560000000000002},{"call_set_id":"3049512673186936334-8","call_set_name":"NA12891","genotype":[0,0],"genotype_likelihood":[],"AD":["31"],"DP":"39","FILTER":["LowGQX"],"GQ":0.01,"GQX":"0","MQ":"51","PL":[],"QUAL":6.4699999999999998},{"call_set_id":"3049512673186936334-10","call_set_name":"NA12886","genotype":[0,0],"genotype_likelihood":[],"AD":["34"],"DP":"42","FILTER":["PASS"],"GQ":93.260000000000005,"GQX":"93","MQ":"48","PL":[],"QUAL":123.26000000000001},{"call_set_id":"3049512673186936334-11","call_set_name":"NA12884","genotype":[0,0],"genotype_likelihood":[],"AD":["23"],"DP":"29","FILTER":["LowGQX"],"GQ":0.22,"GQX":"0","MQ":"49","PL":[],"QUAL":17.329999999999998},{"call_set_id":"3049512673186936334-12","call_set_name":"NA12890","genotype":[0,0],"genotype_likelihood":[],"AD":[],"DP":"28","FILTER":["PASS"],"GQX":"39","MQ":"55","PL":[],"QUAL":0},{"call_set_id":"3049512673186936334-14","call_set_name":"NA12878","genotype":[0,0],"genotype_likelihood":[],"AD":["33"],"DP":"41","FILTER":["LowGQX"],"GQ":0.34999999999999998,"GQX":"0","MQ":"49","PL":[],"QUAL":19.309999999999999},{"call_set_id":"3049512673186936334-16","call_set_name":"NA12881","genotype":[0,0],"genotype_likelihood":[],"AD":["33"],"DP":"43","FILTER":["PASS"],"GQ":93.260000000000005,"GQX":"93","MQ":"50","PL":[],"QUAL":123.26000000000001}],"AC":[],"AF":[],"DP":"50","MQ":"52","MQ0":"0"}'))[0])
     expander.reduce(expander.map(fields=json.loads('{"reference_name":"chr17","start":"41196840","end":"41196844","reference_bases":"G","alternate_bases":[],"quality":0,"filter":["PASS"],"names":[],"call":[{"call_set_id":"3049512673186936334-9","call_set_name":"NA12888","genotype":[0,0],"genotype_likelihood":[],"AD":[],"DP":"24","FILTER":["PASS"],"GQX":"66","MQ":"50","PL":[],"QUAL":0}],"AC":[],"AF":[],"BLOCKAVG_min30p3a":true}'))[0])
@@ -317,7 +320,7 @@ class GvcfExpanderTest(unittest.TestCase):
 
     result = expander.finalize()
     self.assertEqual(1, len(result))
-    self.assertEqual(14, len(result[0]['call']))
+    self.assertEqual(17, len(result[0]['call']))
 
   def setUp(self):
     self.maxDiff = None
