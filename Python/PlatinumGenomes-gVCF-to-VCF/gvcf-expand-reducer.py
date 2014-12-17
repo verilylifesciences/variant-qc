@@ -24,8 +24,6 @@ import sys
 from gvcf_expander import GvcfExpander
 from gvcf_expander import Pair
 
-FILTER_ENV_KEY = "FILTER_REF_MATCHES"
-
 
 def main():
   """Entry point to the script."""
@@ -36,10 +34,7 @@ def main():
   if 2 <= len(sys.argv):
     file_handle = open(sys.argv[1], "r")
 
-  if FILTER_ENV_KEY in os.environ:
-    expander = GvcfExpander(filter_ref_matches=True)
-  else:
-    expander = GvcfExpander()
+  expander = GvcfExpander(bin_size=1000, filter_ref_matches=False, emit_ref_blocks=False)
 
   line = file_handle.readline()
   while line:

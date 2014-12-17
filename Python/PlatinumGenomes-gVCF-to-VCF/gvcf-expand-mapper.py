@@ -32,7 +32,7 @@ def main():
   if 2 <= len(sys.argv):
     file_handle = open(sys.argv[1], "r")
 
-  expander = GvcfExpander()
+  expander = GvcfExpander(bin_size=1000, filter_ref_matches=False, emit_ref_blocks=False)
 
   line = file_handle.readline()
   while line:

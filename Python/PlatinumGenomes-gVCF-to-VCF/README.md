@@ -25,7 +25,6 @@ hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.
       -D mapred.bq.output.project.id=$OUTPUT_PROJECT \
       -D mapred.bq.output.dataset.id=$OUTPUT_DATASET \
       -D mapred.bq.output.table.id=$OUTPUT_TABLE \
-      -D mapred.bq.output.table.schema=$SCHEMA \
       -D mapred.output.committer.class=com.google.cloud.hadoop.io.bigquery.mapred.BigQueryMapredOutputCommitter \
       -inputformat com.google.cloud.hadoop.io.bigquery.mapred.BigQueryMapredInputFormat \
       -input requiredButUnused \
@@ -33,7 +32,8 @@ hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.
       -output requiredButUnused \
       -file gvcf_expander.py \
       -mapper gvcf-expand-mapper.py -file gvcf-expand-mapper.py  \
-      -reducer gvcf-expand-reducer.py -file gvcf-expand-reducer.py
+      -reducer gvcf-expand-reducer.py -file gvcf-expand-reducer.py \
+      -D mapred.bq.output.table.schema=$SCHEMA
 ```
 
 Lastly, note that the BigQuery connector when used with Hadoop Streaming does not clean up its temporary files automatically.
