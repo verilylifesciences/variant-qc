@@ -81,8 +81,8 @@ ORDER BY
 Number of rows returned by this query: 335.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Mon Dec 15 18:28:01 2014 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Dec 18 13:12:20 2014 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
@@ -116,8 +116,8 @@ GROUP BY
   alt_contains_no_special_characters
 ```
 
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Mon Dec 15 18:28:03 2014 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Dec 18 13:12:22 2014 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
@@ -153,8 +153,8 @@ ORDER BY
   genotype_count DESC
 ```
 
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Mon Dec 15 18:28:04 2014 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Dec 18 13:12:24 2014 -->
 <table border=1>
 <tr> <th> genotype </th> <th> genotype_count </th>  </tr>
   <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>
@@ -244,8 +244,8 @@ ORDER BY
 ```
 Number of rows returned by this query: 63.
 
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Mon Dec 15 18:28:08 2014 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Dec 18 13:12:27 2014 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> S </td> <td> CT </td> <td> C </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
@@ -423,8 +423,8 @@ ORDER BY
   call.call_set_name
 ```
 
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Mon Dec 15 18:28:10 2014 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Dec 18 13:12:29 2014 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td> NA12886 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
@@ -471,87 +471,154 @@ result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1.sql",
 ```
 
 ```
-# The following query computes the Hardy-Weinberg equilibrium for BRCA1 SNPs.
-SELECT
-  vars.reference_name AS CHR,
-  vars.start AS POS,
-  reference_bases AS ref,
-  alternate_bases AS alt,
-  SUM(refs.HOM_REF) + vars.HOM_REF AS OBS_HOM1,
-  vars.HET AS OBS_HET,
-  vars.HOM_ALT AS OBS_HOM2,
+SELECT 
+  calcs.CHR AS CHR,
+  calcs.POS AS POS,
+  calcs.ref AS ref,
+  calcs.alt AS alt,
+  calcs.OBS_HOM1 AS OBS_HOM1,
+  calcs.OBS_HET AS OBS_HET,
+  calcs.OBS_HOM2 AS OBS_HOM2,
+  calcs.EXP_HOM1 AS EXP_HOM1,
+  calcs.EXP_HET AS EXP_HET,
+  calcs.EXP_HOM2 AS EXP_HOM2,
+  
+  # Chi Squared Calculation
+  # SUM(((Observed - Expected)^2) / Expected )
+  ROUND((POW(calcs.OBS_HOM1 - calcs.EXP_HOM1, 2) / calcs.EXP_HOM1)
+  + (POW(calcs.OBS_HET - calcs.EXP_HET, 2) / calcs.EXP_HET)
+  + (POW(calcs.OBS_HOM2 - calcs.EXP_HOM2, 2) / calcs.EXP_HOM2), 3)
+  AS CHI_SQ,
+  
+  # Determine if Chi Sq value is significant
+  IF((POW(calcs.OBS_HOM1 - calcs.EXP_HOM1, 2) / calcs.EXP_HOM1)
+  + (POW(calcs.OBS_HET - calcs.EXP_HET, 2) / calcs.EXP_HET)
+  + (POW(calcs.OBS_HOM2 - calcs.EXP_HOM2, 2) / calcs.EXP_HOM2) 
+  > 5.991, "TRUE", "FALSE") AS PVALUE_SIG
+  
 FROM (
-    # Constrain the left hand side of the _join to reference-matching blocks.
-  SELECT
-    reference_name,
-    start,
-    END,
-    SUM(EVERY(0 = call.genotype)) WITHIN call AS HOM_REF,
-  FROM
-    [genomics-public-data:platinum_genomes.variants]
-  WHERE
-    reference_name = 'chr17'
-  OMIT
-    RECORD IF EVERY(alternate_bases IS NOT NULL)
-    ) AS refs
-JOIN (
-  SELECT
-    reference_name,
-    start,
-    END,
-    reference_bases,
-    GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-    COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-    SUM(EVERY(0 = call.genotype)) WITHIN call AS HOM_REF,
-    SUM(EVERY(1 = call.genotype)) WITHIN call AS HOM_ALT,
-    SUM(SOME(0 = call.genotype) AND SOME(1 = call.genotype)) WITHIN call AS HET,
-  FROM
-    [genomics-public-data:platinum_genomes.variants]
-  WHERE
-    reference_name = 'chr17'
-    AND start BETWEEN 41196311
-    AND 41277499
-#  OMIT call IF 2 != COUNT(call.genotype)
-  HAVING
-    # Skip ref-matching blocks, 1/2 genotypes, and non-SNP variants
-    num_alts = 1
-    AND reference_bases IN ('A','C','G','T')
-    AND alternate_bases IN ('A','C','G','T')
-    ) AS vars
-  # The _join criteria _is complicated since we are trying to see if a variant
-  # overlaps a reference-matching interval.
-ON
-  vars.reference_name = refs.reference_name
-WHERE
-  refs.start <= vars.start
-  AND refs.END >= vars.start+1
-GROUP BY
-  CHR,
-  POS,
-  ref,
-  alt,
-  vars.HOM_REF,
-  OBS_HET,
-  OBS_HOM2
-ORDER BY
-  CHR,
-  POS,
-  ref,
-  alt
+    SELECT
+      vals.CHR AS CHR,
+      vals.POS AS POS,
+      vals.ref AS ref,
+      vals.alt AS alt,
+      vals.OBS_HOM1 AS OBS_HOM1,
+      vals.OBS_HET AS OBS_HET,
+      vals.OBS_HOM2 AS OBS_HOM2,
+    
+      # Expected AA
+      # p^2
+      # ((COUNT(AA) + (COUNT(Aa)/2) / 
+      #  SAMPLE_COUNT) ^ 2) * SAMPLE_COUNT
+      ROUND(POW((vals.OBS_HOM1 + (vals.OBS_HET/2)) /
+        vals.SAMPLE_COUNT, 2) * vals.SAMPLE_COUNT, 2)
+        AS EXP_HOM1,
+    
+      # Expected Aa
+      # 2pq
+      # 2 * (COUNT(AA) + (COUNT(Aa)/2) / SAMPLE_COUNT) * 
+      # (COUNT(aa) + (COUNT(Aa)/2) / SAMPLE_COUNT) 
+      # * SAMPLE_COUNT
+      ROUND(2 * ((vals.OBS_HOM1 + (vals.OBS_HET/2)) / vals.SAMPLE_COUNT) *
+        ((vals.OBS_HOM2 + (vals.OBS_HET/2)) / vals.SAMPLE_COUNT) 
+        * vals.SAMPLE_COUNT, 2)
+        AS EXP_HET,
+    
+      # Expected aa
+      # q^2
+      # (COUNT(aa) + (COUNT(Aa)/2) / 
+      #  SAMPLE_COUNT) ^ 2 * SAMPLE_COUNT    
+      ROUND(POW((vals.OBS_HOM2 + (vals.OBS_HET/2)) /
+        vals.SAMPLE_COUNT, 2) * vals.SAMPLE_COUNT, 2)
+        AS EXP_HOM2,
+      
+    FROM (
+        SELECT
+          vars.reference_name AS CHR,
+          vars.start AS POS,
+          reference_bases AS ref,
+          alternate_bases AS alt,
+          SUM(refs.HOM_REF) + vars.HOM_REF AS OBS_HOM1,
+          vars.HET AS OBS_HET,
+          vars.HOM_ALT AS OBS_HOM2, 
+          SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT AS SAMPLE_COUNT,
+        
+        FROM (
+              # Constrain the left hand side of the _join to reference-matching blocks.
+            SELECT
+              reference_name,
+              start,
+              END,
+              SUM(EVERY(0 = call.genotype)) WITHIN call AS HOM_REF,
+            FROM
+              [genomics-public-data:platinum_genomes.variants]
+            WHERE
+              reference_name = 'chr17'
+            OMIT
+              RECORD IF EVERY(alternate_bases IS NOT NULL)
+              ) AS refs
+          JOIN (
+              SELECT
+                reference_name,
+                start,
+                END,
+                reference_bases,
+                GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+                COUNT(alternate_bases) WITHIN RECORD AS num_alts,
+                SUM(EVERY(0 = call.genotype)) WITHIN call AS HOM_REF,
+                SUM(EVERY(1 = call.genotype)) WITHIN call AS HOM_ALT,
+                SUM(SOME(0 = call.genotype) AND SOME(1 = call.genotype)) WITHIN call AS HET,
+                
+              FROM
+                [genomics-public-data:platinum_genomes.variants]
+              WHERE
+                reference_name = 'chr17'
+                AND start BETWEEN 41196311
+                AND 41277499
+            #  OMIT call IF 2 != COUNT(call.genotype)
+              HAVING
+                # Skip ref-matching blocks, 1/2 genotypes, and non-SNP variants
+                num_alts = 1
+                AND reference_bases IN ('A','C','G','T')
+                AND alternate_bases IN ('A','C','G','T')
+                ) AS vars
+              # The _join criteria _is complicated since we are trying to see if a variant
+              # overlaps a reference-matching interval.
+            ON
+              vars.reference_name = refs.reference_name
+            WHERE
+              refs.start <= vars.start
+              AND refs.END >= vars.start+1
+            GROUP BY
+              CHR,
+              POS,
+              ref,
+              alt,
+              vars.HOM_REF,
+              OBS_HET,
+              OBS_HOM2,
+              vars.HET,
+              vars.HOM_ALT
+            ORDER BY
+              CHR,
+              POS,
+              ref,
+              alt ) AS vals ) AS calcs
+
 ```
 Number of rows returned by this query: 271.
 
 Displaying the first few results:
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Mon Dec 15 18:28:14 2014 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Dec 18 13:12:47 2014 -->
 <table border=1>
-<tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th>  </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196840 </td> <td> G </td> <td> T </td> <td align="right">  15 </td> <td align="right">   2 </td> <td align="right">   0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41197273 </td> <td> C </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41197957 </td> <td> G </td> <td> T </td> <td align="right">   5 </td> <td align="right">  12 </td> <td align="right">   0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41197958 </td> <td> A </td> <td> T </td> <td align="right">  16 </td> <td align="right">   1 </td> <td align="right">   0 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41198182 </td> <td> A </td> <td> C </td> <td align="right">  11 </td> <td align="right">   6 </td> <td align="right">   0 </td> </tr>
+<tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> EXP_HOM1 </th> <th> EXP_HET </th> <th> EXP_HOM2 </th> <th> CHI_SQ </th> <th> PVALUE_SIG </th>  </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41196840 </td> <td> G </td> <td> T </td> <td align="right">  15 </td> <td align="right">   2 </td> <td align="right">   0 </td> <td align="right"> 15.06 </td> <td align="right"> 1.88 </td> <td align="right"> 0.06 </td> <td align="right"> 0.07 </td> <td> FALSE </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41197273 </td> <td> C </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41197957 </td> <td> G </td> <td> T </td> <td align="right">   5 </td> <td align="right">  12 </td> <td align="right">   0 </td> <td align="right"> 7.12 </td> <td align="right"> 7.76 </td> <td align="right"> 2.12 </td> <td align="right"> 5.07 </td> <td> FALSE </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41197958 </td> <td> A </td> <td> T </td> <td align="right">  16 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 16.01 </td> <td align="right"> 0.97 </td> <td align="right"> 0.01 </td> <td align="right"> 0.01 </td> <td> FALSE </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41198182 </td> <td> A </td> <td> C </td> <td align="right">  11 </td> <td align="right">   6 </td> <td align="right">   0 </td> <td align="right"> 11.53 </td> <td align="right"> 4.94 </td> <td align="right"> 0.53 </td> <td align="right"> 0.78 </td> <td> FALSE </td> </tr>
    </table>
 
 Compare to [brca1.hwe](./data/singletons/brca1.hwe) (see the [vcftools command line](./data/hwe/brca1.log) used to create this file).
@@ -593,26 +660,46 @@ onlyBQ
 ```
 
 ```
-##      CHR      POS ref alt OBS_HOM1 OBS_HET OBS_HOM2
-## 1  chr17 41273094   G   A       10       6        0
-## 2  chr17 41273094   G   C       10       1        0
-## 3  chr17 41271293   A   G       16       0        0
-## 4  chr17 41256102   G   A       12       4        0
-## 5  chr17 41256100   A   G       14       2        0
-## 6  chr17 41256097   G   A       13       3        0
-## 7  chr17 41256094   A   G       16       1        0
-## 8  chr17 41256091   A   G       16       1        0
-## 9  chr17 41252695   A   T        2      10        2
-## 10 chr17 41252693   T   A       16       1        0
-## 11 chr17 41252648   T   A       13       1        0
-## 12 chr17 41242077   G   A       13       1        0
-## 13 chr17 41252696   T   A        1       9        3
-## 14 chr17 41252696   T   C        1       1        0
-## 15 chr17 41226740   T   G       16       0        0
-## 16 chr17 41214210   A   C       16       0        0
-## 17 chr17 41214209   A   T       16       0        0
-## 18 chr17 41239915   T   A       16       0        0
-## 19 chr17 41204837   A   T       14       0        0
+##      CHR      POS ref alt OBS_HOM1 OBS_HET OBS_HOM2 EXP_HOM1 EXP_HET
+## 1  chr17 41256102   G   A       12       4        0    12.25    3.50
+## 2  chr17 41256100   A   G       14       2        0    14.06    1.88
+## 3  chr17 41256097   G   A       13       3        0    13.14    2.72
+## 4  chr17 41256094   A   G       16       1        0    16.01    0.97
+## 5  chr17 41256091   A   G       16       1        0    16.01    0.97
+## 6  chr17 41252696   T   A        1       9        3     2.33    6.35
+## 7  chr17 41252696   T   C        1       1        0     1.13    0.75
+## 8  chr17 41252695   A   T        2      10        2     3.50    7.00
+## 9  chr17 41252693   T   A       16       1        0    16.01    0.97
+## 10 chr17 41252648   T   A       13       1        0    13.02    0.96
+## 11 chr17 41271293   A   G       16       0        0    16.00    0.00
+## 12 chr17 41242077   G   A       13       1        0    13.02    0.96
+## 13 chr17 41239915   T   A       16       0        0    16.00    0.00
+## 14 chr17 41226740   T   G       16       0        0    16.00    0.00
+## 15 chr17 41273094   G   A       10       6        0    10.56    4.88
+## 16 chr17 41273094   G   C       10       1        0    10.02    0.95
+## 17 chr17 41214210   A   C       16       0        0    16.00    0.00
+## 18 chr17 41214209   A   T       16       0        0    16.00    0.00
+## 19 chr17 41204837   A   T       14       0        0    14.00    0.00
+##    EXP_HOM2 CHI_SQ PVALUE_SIG
+## 1      0.25  0.327      FALSE
+## 2      0.06  0.068      FALSE
+## 3      0.14  0.170      FALSE
+## 4      0.01  0.011      FALSE
+## 5      0.01  0.011      FALSE
+## 6      4.33  2.274      FALSE
+## 7      0.13  0.228      FALSE
+## 8      3.50  2.571      FALSE
+## 9      0.01  0.011      FALSE
+## 10     0.02  0.022      FALSE
+## 11     0.00     NA      FALSE
+## 12     0.02  0.022      FALSE
+## 13     0.00     NA      FALSE
+## 14     0.00     NA      FALSE
+## 15     0.56  0.847      FALSE
+## 16     0.02  0.023      FALSE
+## 17     0.00     NA      FALSE
+## 18     0.00     NA      FALSE
+## 19     0.00     NA      FALSE
 ```
 
 Note vcftools appears to skip variants with single allele genotypes:
@@ -633,42 +720,42 @@ onlyVcftools
 ## 1  chr17 41270777  1.000000 1.000000        0       1        0   0.25
 ## 2  chr17 41268207  7.000000 0.037296        0       7        0   1.75
 ## 3  chr17 41267517  5.000000 0.126984        0       5        0   1.25
-## 4  chr17 41266406  4.000000 0.314286        0       4        0   1.00
-## 5  chr17 41264754  7.000000 0.037296        0       7        0   1.75
+## 4  chr17 41264754  7.000000 0.037296        0       7        0   1.75
+## 5  chr17 41264750  7.000000 0.037296        0       7        0   1.75
 ## 6  chr17 41264742  7.000000 0.037296        0       7        0   1.75
 ## 7  chr17 41264739  7.000000 0.037296        0       7        0   1.75
 ## 8  chr17 41264110  1.000000 1.000000        0       1        0   0.25
 ## 9  chr17 41259078  1.000000 1.000000        0       1        0   0.25
-## 10 chr17 41258134  3.000000 0.400000        0       3        0   0.75
+## 10 chr17 41256088  1.000000 1.000000        0       1        0   0.25
 ## 11 chr17 41256073  5.000000 0.126984        0       5        0   1.25
-## 12 chr17 41254964  3.644628 0.176471        0       7        2   1.36
-## 13 chr17 41252692  1.000000 1.000000        0       1        0   0.25
+## 12 chr17 41258134  3.000000 0.400000        0       3        0   0.75
+## 13 chr17 41254964  3.644628 0.176471        0       7        2   1.36
 ## 14 chr17 41252590  3.000000 0.400000        0       3        0   0.75
 ## 15 chr17 41250677  7.000000 0.037296        0       7        0   1.75
-## 16 chr17 41249362  7.000000 0.037296        0       7        0   1.75
-## 17 chr17 41242074  6.000000 0.090909        0       6        0   1.50
-## 18 chr17 41241567  4.000000 0.314286        0       4        0   1.00
-## 19 chr17 41250220  1.000000 1.000000        0       1        0   0.25
-## 20 chr17 41239914  7.000000 0.037296        0       7        0   1.75
-## 21 chr17 41232343       NaN 1.000000        0       0       17   0.00
-## 22 chr17 41230104  5.000000 0.126984        0       5        0   1.25
+## 16 chr17 41250220  1.000000 1.000000        0       1        0   0.25
+## 17 chr17 41266406  4.000000 0.314286        0       4        0   1.00
+## 18 chr17 41249362  7.000000 0.037296        0       7        0   1.75
+## 19 chr17 41242074  6.000000 0.090909        0       6        0   1.50
+## 20 chr17 41241567  4.000000 0.314286        0       4        0   1.00
+## 21 chr17 41239914  7.000000 0.037296        0       7        0   1.75
+## 22 chr17 41232343       NaN 1.000000        0       0       17   0.00
 ## 23 chr17 41229776       NaN 1.000000        0       0       17   0.00
 ## 24 chr17 41229759  7.000000 0.037296        0       7        0   1.75
 ## 25 chr17 41226735  7.000000 0.037296        0       7        0   1.75
 ## 26 chr17 41225653 10.000000 0.006906        0      10        0   2.50
 ## 27 chr17 41223537  1.000000 1.000000        0       1        0   0.25
 ## 28 chr17 41219906 17.000000 0.000056        0      17        0   4.25
-## 29 chr17 41218817 17.000000 0.000056        0      17        0   4.25
-## 30 chr17 41219852  1.000000 1.000000        0       1        0   0.25
-## 31 chr17 41214208  7.000000 0.037296        0       7        0   1.75
-## 32 chr17 41213601  5.000000 0.126984        0       5        0   1.25
-## 33 chr17 41264750  7.000000 0.037296        0       7        0   1.75
-## 34 chr17 41252645  1.000000 1.000000        0       1        0   0.25
-## 35 chr17 41208190  2.000000 1.000000        0       2        0   0.50
-## 36 chr17 41206760  6.000000 0.090909        0       6        0   1.50
-## 37 chr17 41247121  7.000000 0.037296        0       7        0   1.75
-## 38 chr17 41204835       NaN 1.000000        0       0        2   0.00
-## 39 chr17 41256088  1.000000 1.000000        0       1        0   0.25
+## 29 chr17 41219852  1.000000 1.000000        0       1        0   0.25
+## 30 chr17 41218817 17.000000 0.000056        0      17        0   4.25
+## 31 chr17 41252645  1.000000 1.000000        0       1        0   0.25
+## 32 chr17 41214208  7.000000 0.037296        0       7        0   1.75
+## 33 chr17 41252692  1.000000 1.000000        0       1        0   0.25
+## 34 chr17 41247121  7.000000 0.037296        0       7        0   1.75
+## 35 chr17 41213601  5.000000 0.126984        0       5        0   1.25
+## 36 chr17 41230104  5.000000 0.126984        0       5        0   1.25
+## 37 chr17 41208190  2.000000 1.000000        0       2        0   0.50
+## 38 chr17 41206760  6.000000 0.090909        0       6        0   1.50
+## 39 chr17 41204835       NaN 1.000000        0       0        2   0.00
 ## 40 chr17 41204831       NaN 1.000000        0       0        1   0.00
 ## 41 chr17 41200703  6.000000 0.090909        0       6        0   1.50
 ## 42 chr17 41197938  3.000000 0.400000        0       3        0   0.75
@@ -676,42 +763,42 @@ onlyVcftools
 ## 1   0.50   0.25
 ## 2   3.50   1.75
 ## 3   2.50   1.25
-## 4   2.00   1.00
+## 4   3.50   1.75
 ## 5   3.50   1.75
 ## 6   3.50   1.75
 ## 7   3.50   1.75
 ## 8   0.50   0.25
 ## 9   0.50   0.25
-## 10  1.50   0.75
+## 10  0.50   0.25
 ## 11  2.50   1.25
-## 12  4.28   3.36
-## 13  0.50   0.25
+## 12  1.50   0.75
+## 13  4.28   3.36
 ## 14  1.50   0.75
 ## 15  3.50   1.75
-## 16  3.50   1.75
-## 17  3.00   1.50
-## 18  2.00   1.00
-## 19  0.50   0.25
-## 20  3.50   1.75
-## 21  0.00  17.00
-## 22  2.50   1.25
+## 16  0.50   0.25
+## 17  2.00   1.00
+## 18  3.50   1.75
+## 19  3.00   1.50
+## 20  2.00   1.00
+## 21  3.50   1.75
+## 22  0.00  17.00
 ## 23  0.00  17.00
 ## 24  3.50   1.75
 ## 25  3.50   1.75
 ## 26  5.00   2.50
 ## 27  0.50   0.25
 ## 28  8.50   4.25
-## 29  8.50   4.25
-## 30  0.50   0.25
-## 31  3.50   1.75
-## 32  2.50   1.25
-## 33  3.50   1.75
-## 34  0.50   0.25
-## 35  1.00   0.50
-## 36  3.00   1.50
-## 37  3.50   1.75
-## 38  0.00   2.00
-## 39  0.50   0.25
+## 29  0.50   0.25
+## 30  8.50   4.25
+## 31  0.50   0.25
+## 32  3.50   1.75
+## 33  0.50   0.25
+## 34  3.50   1.75
+## 35  2.50   1.25
+## 36  2.50   1.25
+## 37  1.00   0.50
+## 38  3.00   1.50
+## 39  0.00   2.00
 ## 40  0.00   1.00
 ## 41  3.00   1.50
 ## 42  1.50   0.75
@@ -745,7 +832,7 @@ FROM
 WHERE
   reference_name = 'chr17'
 HAVING
-  start = 41270777 OR start = 41268207 OR start = 41267517 OR start = 41266406 OR start = 41264754 OR start = 41264742 OR start = 41264739 OR start = 41264110 OR start = 41259078 OR start = 41258134 OR start = 41256073 OR start = 41254964 OR start = 41252692 OR start = 41252590 OR start = 41250677 OR start = 41249362 OR start = 41242074 OR start = 41241567 OR start = 41250220 OR start = 41239914 OR start = 41232343 OR start = 41230104 OR start = 41229776 OR start = 41229759 OR start = 41226735 OR start = 41225653 OR start = 41223537 OR start = 41219906 OR start = 41218817 OR start = 41219852 OR start = 41214208 OR start = 41213601 OR start = 41264750 OR start = 41252645 OR start = 41208190 OR start = 41206760 OR start = 41247121 OR start = 41204835 OR start = 41256088 OR start = 41204831 OR start = 41200703 OR start = 41197938
+  start = 41270777 OR start = 41268207 OR start = 41267517 OR start = 41264754 OR start = 41264750 OR start = 41264742 OR start = 41264739 OR start = 41264110 OR start = 41259078 OR start = 41256088 OR start = 41256073 OR start = 41258134 OR start = 41254964 OR start = 41252590 OR start = 41250677 OR start = 41250220 OR start = 41266406 OR start = 41249362 OR start = 41242074 OR start = 41241567 OR start = 41239914 OR start = 41232343 OR start = 41229776 OR start = 41229759 OR start = 41226735 OR start = 41225653 OR start = 41223537 OR start = 41219906 OR start = 41219852 OR start = 41218817 OR start = 41252645 OR start = 41214208 OR start = 41252692 OR start = 41247121 OR start = 41213601 OR start = 41230104 OR start = 41208190 OR start = 41206760 OR start = 41204835 OR start = 41204831 OR start = 41200703 OR start = 41197938
 ORDER BY
   start,
   end,
@@ -758,8 +845,8 @@ Let's filter out indels and reference-matching blocks from this result:
 result <- filter(result, reference_bases %in% c('A','C','G','T') & alternate_bases %in% c('A','C','G','T'))
 ```
 
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Mon Dec 15 18:28:18 2014 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Dec 18 13:12:50 2014 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41218817 </td> <td align="right"> 41218818 </td> <td> A </td> <td> C </td> <td> NA12877 </td> <td> 0,1 </td> <td align="right"> 40.36 </td> <td> TruthSensitivityTranche99.00to99.90,LowQD </td> <td> 70,0,881 </td> </tr>
@@ -865,8 +952,8 @@ ORDER BY
 ```
 Number of rows returned by this query: 17.
 
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Mon Dec 15 18:28:20 2014 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Dec 18 13:12:52 2014 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> N_SITES </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right">   3 </td> <td align="right">  27 </td> </tr>
