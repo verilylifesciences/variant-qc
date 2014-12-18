@@ -31,7 +31,7 @@ Setting Up and Describing the Data
 require(bigrquery)
 require(xtable)
 require(RCurl)
-project <- "stanford.edu:gbsc-stanford-google"                   # put your projectID here
+project <- "genomics-public-data"                   # put your projectID here
 DisplayAndDispatchQuery <- function(queryUri, replacements=list()) {
   if(grepl("^https.*", queryUri)) {
     querySql <- getURL(queryUri, ssl.verifypeer=FALSE)
@@ -382,8 +382,8 @@ onlyVcftools
 ## 4  chr17 41196319                   D      T NA12886
 ## 5  chr17 41196318                   D      G NA12886
 ## 6  chr17 41196317                   D      T NA12886
-## 7  chr17 41196315                   D      A NA12886
-## 8  chr17 41196316                   D      G NA12886
+## 7  chr17 41196316                   D      G NA12886
+## 8  chr17 41196315                   D      A NA12886
 ## 9  chr17 41196314                   D      A NA12886
 ## 10 chr17 41196313                   D      G NA12886
 ```
@@ -416,7 +416,7 @@ FROM
 WHERE
   reference_name = 'chr17'
 HAVING
-  start = 41252694 OR start = 41204841 OR start = 41196320 OR start = 41196319 OR start = 41196318 OR start = 41196317 OR start = 41196315 OR start = 41196316 OR start = 41196314 OR start = 41196313
+  start = 41252694 OR start = 41204841 OR start = 41196320 OR start = 41196319 OR start = 41196318 OR start = 41196317 OR start = 41196316 OR start = 41196315 OR start = 41196314 OR start = 41196313
 ORDER BY
   start,
   end,
@@ -471,6 +471,7 @@ result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1.sql",
 ```
 
 ```
+# The following query computes the Hardy-Weinberg equilibrium for BRCA1 SNPs.
 SELECT
   vars.reference_name AS CHR,
   vars.start AS POS,
