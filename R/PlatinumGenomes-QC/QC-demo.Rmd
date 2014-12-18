@@ -33,7 +33,10 @@ setwd("/YOUR/PATH/TO/codelabs/R/PlatinumGenomes-QC")
 require(bigrquery)
 require(xtable)
 require(RCurl)
+require(dplyr)
+
 project <- "genomics-public-data"                   # put your projectID here
+
 DisplayAndDispatchQuery <- function(queryUri, replacements=list()) {
   if(grepl("^https.*", queryUri)) {
     querySql <- getURL(queryUri, ssl.verifypeer=FALSE)
@@ -46,7 +49,9 @@ DisplayAndDispatchQuery <- function(queryUri, replacements=list()) {
   cat(querySql)
   query_exec(querySql, project)
 }
-table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants")
+
+table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 ```
 
 Let's take a look at a few of the [variants within BRCA1 via BigQuery](https://github.com/googlegenomics/getting-started-bigquery/blob/master/RMarkdown/literate-programming-demo.md#data-visualization)
@@ -89,6 +94,16 @@ To summarize attributes of this particular dataset that we need to consider when
 * The values for `alternate_bases` are just comprised of the letters A,C,G,T (e.g., contains no `<DEL>` values).
 * It contains some single-allele and 1/2 genotypes.
 
+Working with gVCF Data
+======================
+
+Data in gVCF format can be challenging to query.  For more detail see this [comparison](https://github.com/googlegenomics/bigquery-examples/tree/master/pgp/data-stories/schema-comparisons).
+
+In the analyses below, sometimes we work with the original gVCF data and sometimes we work with data converted from gVCF to VCF to make querying easier.  For more detail about the conversion process see the [PlatinumGenomes gVCF-to-VCF codelab](https://github.com/deflaux/codelabs/tree/qc-codelab/Python/PlatinumGenomes-gVCF-to-VCF).
+
+Sample-Level QC
+===============
+
 Check Singletons
 ----------------
 ```{r message=FALSE, warning=FALSE, comment=NA}
@@ -104,7 +119,6 @@ print(xtable(result), type="html", include.rownames=F)
 Compare to [brca1.singletons](./data/singletons/brca1.singletons) which has 85 some of which are for 0/0 genotypes from reference matching blocks (see the [vcftools command line](./data/singletons/brca1.log) used to create this file).
 
 ```{r}
-require(dplyr)
 expectedResult <- read.table("./data/singletons/brca1.singletons", header=TRUE)
 # Convert to zero-based coordinates
 expectedResult <- mutate(expectedResult, POS = POS - 1)
@@ -118,15 +132,15 @@ nrow(inner_join(result, expectedResult))
 ```
 
 Which singletons were only identified by BigQuery?
-```{r}
+```{r results="asis"}
 onlyBQ <- anti_join(result, expectedResult)
-onlyBQ
+print(xtable(onlyBQ), type="html", include.rownames=F)
 ```
 
 Which singletons were only identified by vcftools?
-```{r}
+```{r results="asis"}
 onlyVcftools <- anti_join(expectedResult, result)
-onlyVcftools
+print(xtable(onlyVcftools), type="html", include.rownames=F)
 ```
 
 Retrieving the gVCF data for the singletons identified only by vcftools:
@@ -146,10 +160,43 @@ It appears that they correspond either to:
 * a reference-matching block, so not actually a singleton and just perhaps violating an assumption in the vcftools code
 * or a non-singleon variant, perhaps due to a problem in converting the gVCF data to all-positions VCF via gvcftools?
 
+Check Individual Heterozygosity
+-----------------------------------
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/homozygous-variants-brca1.sql",
+                                  replacements=table_replacement)
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(result), type="html", include.rownames=F)
+```
+
+Compare to [brca1.het](./data/heterozygous/brca1.het) (see the [vcftools command line](./data/heterozygous/brca1.log) used to create this file).
+
+
+```{r}
+expectedResult <- read.table("./data/heterozygous/brca1.het", header=TRUE)
+# Clean colnames to match
+colnames(expectedResult) <- gsub('\\.+$', '', colnames(expectedResult))
+colnames(expectedResult) <- gsub('\\.+', '_', colnames(expectedResult))
+```
+
+```{r results="asis"}
+joinedResult <- inner_join(expectedResult, result, by=c("INDV"))
+print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include.rownames=F)
+```
+
+The logic in the query looks similar to vcftools [output_het method](http://sourceforge.net/p/vcftools/code/HEAD/tree/trunk/cpp/variant_file_output.cpp#l165) but there is clearly a different.  TODO: investigate the different further.
+
+Cohort Level QC
+===============
+
 Check Hardy-Weinberg Equilibrium
 -----------------------------------
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1.sql",
+result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1-expanded.sql",
                                   replacements=table_replacement)
 ```
 Number of rows returned by this query: `r nrow(result)`.
@@ -159,7 +206,7 @@ Displaying the first few results:
 print(xtable(head(result)), type="html", include.rownames=F)
 ```
 
-Compare to [brca1.hwe](./data/singletons/brca1.hwe) (see the [vcftools command line](./data/hwe/brca1.log) used to create this file).
+Compare to [brca1.hwe](./data/hwe/brca1.hwe) (see the [vcftools command line](./data/hwe/brca1.log) used to create this file).
 
 ```{r}
 require(dplyr)
@@ -177,13 +224,13 @@ expectedResult <- mutate(expectedResult, POS = POS - 1)
 
 How many results do the two results have in common?
 ```{r}
-nrow(inner_join(result, expectedResult))
+nrow(inner_join(result, expectedResult, by=c("CHR", "POS", "OBS_HOM1", "OBS_HET", "OBS_HOM2")))
 ```
 
 Which results were only identified by BigQuery?
-```{r}
-onlyBQ <- anti_join(result, expectedResult, by=c("CHR", "POS"))
-onlyBQ
+```{r results="asis"}
+onlyBQ <- anti_join(result, expectedResult, , by=c("CHR", "POS", "OBS_HOM1", "OBS_HET", "OBS_HOM2"))
+print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
 ```
 
 Note vcftools appears to skip variants with single allele genotypes:
@@ -193,50 +240,27 @@ chr17  41242078  .  G	A	143	LowGQX;TruthSensitivityTranche99.90to100.00;LowQD;Si
 ```
 
 Which results were only identified by vcftools?
-```{r}
-onlyVcftools <- anti_join(expectedResult, result, by=c("CHR", "POS"))
-onlyVcftools
+```{r results="asis"}
+onlyVcftools <- anti_join(expectedResult, result, , by=c("CHR", "POS", "OBS_HOM1", "OBS_HET", "OBS_HOM2"))
+print(xtable(arrange(onlyVcftools, CHR, POS)), type="html", include.rownames=F)
 ```
 
 Retrieving the gVCF data for the results identified only by vcftools:
 ```{r message=FALSE, warning=FALSE, comment=NA}
-having <- paste("start = ", onlyVcftools$POS,
-                sep="", collapse=" OR ")
+having <- paste("start <= ", onlyVcftools$POS,
+                "AND",
+                "end >= ", onlyVcftools$POS+1)
 result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
                                   replacements=c(table_replacement,
                                                  "_HAVING_"=having))
 ```
 
-Let's filter out indels and reference-matching blocks from this result:
-```{r message=FALSE, warning=FALSE, comment=NA}
-result <- filter(result, reference_bases %in% c('A','C','G','T') & alternate_bases %in% c('A','C','G','T'))
-```
-
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
 print(xtable(result), type="html", include.rownames=F)
 ```
 
-It appears that the difference in results only returned by vcftools correspond either to:
-* indels, which we are not examining here
-* or variants for which all samples have the alternate for one or both alleles -> a RIGHT OUTER JOIN is needed in this query
+It appears that with BigQuery we are computing HWE for all the same variants as vcftoosl and the expected and ChiSquared values are only slightly different.
 
-TODO(deflaux):
-* find a a way to work around the lack of RIGHT OUTER JOIN
-* add Chi-Squared test to query from [this sample](https://github.com/googlegenomics/bigquery-examples/tree/master/1000genomes/data-stories/reproducing-hardy-weinberg-equilibrium)
-
-Check Individual Heterozygosity
------------------------------------
-
-More calculations needed here . . . these are just counts.
-
-```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/homozygous-variants-brca1.sql",
-                                  replacements=table_replacement)
-```
-Number of rows returned by this query: `r nrow(result)`.
-
-```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(result), type="html", include.rownames=F)
-```
+See also: the [gVCF version of this query](./sql/hardy-weinberg-brca1.sql), which is close but only works for SNPs and needs a RIGHT OUTER JOIN to compute values for variants for which all the samples have the variant.
 
 
