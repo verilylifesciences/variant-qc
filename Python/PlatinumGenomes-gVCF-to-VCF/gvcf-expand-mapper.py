@@ -15,6 +15,9 @@
 # limitations under the License.
 
 """A mapper for expansion of gVCF data.
+
+To test locally, set both BIG_QUERY_SOURCE and BIG_QUERY_SINK to False and run:
+  cat ./data/platinum-genomes-brca1.json | ./gvcf-expand-mapper.py | sort | ./gvcf-expand-reducer.py > out.json
 """
 
 import json
@@ -22,6 +25,9 @@ import sys
 
 from gvcf_expander import GvcfExpander
 
+# Whether the source data from this job is coming from the BigQuery connector
+# for Hadoop Streaming
+BIG_QUERY_SOURCE=True
 
 def main():
   """Entry point to the script."""
@@ -41,8 +47,11 @@ def main():
       line = file_handle.readline()
       continue
 
-    (key, value) = line.split("\t")
-    fields = json.loads(value)
+    if BIG_QUERY_SOURCE:
+      (key, value) = line.split("\t")
+      fields = json.loads(value)
+    else:
+      fields = json.loads(line)
 
     pairs = expander.map(fields=fields)
     for pair in pairs:

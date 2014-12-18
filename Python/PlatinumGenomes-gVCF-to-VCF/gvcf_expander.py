@@ -13,6 +13,11 @@
 # limitations under the License.
 
 """A library for expansion of gVCF data.
+
+Given gVCF data as input, this library will find the reference matching blocks which
+overlap a variant and add the reference-matching sample genotypes to the variant record.
+
+At this current time, only SNPs are expanded.  Other variant types are left as-is.
 """
 
 from collections import namedtuple
@@ -28,7 +33,7 @@ Pair = namedtuple('Pair', 'k v')
 class GvcfExpander(object):
   """Common logic for gVCF expansion."""
 
-  def __init__(self, bin_size=100, filter_ref_matches=True, emit_ref_blocks=True):
+  def __init__(self, bin_size=100, filter_ref_matches=False, emit_ref_blocks=True):
     self.bin_size = bin_size
     self.filter_ref_matches = filter_ref_matches
     self.emit_ref_blocks = emit_ref_blocks
@@ -37,8 +42,14 @@ class GvcfExpander(object):
     self.sample_refs = {}
 
   def is_variant(self, fields):
-    """Determines whether or not the VCF fields constitute variant."""
+    """Determines whether or not the VCF fields constitute a variant."""
     if 'alternate_bases' in fields and 0 != len(fields['alternate_bases']):
+      return True
+    return False
+
+  def is_snp(self, fields):
+    """Determines whether or not the VCF fields constitute a SNP."""
+    if self.is_variant(fields) and fields['reference_bases'] in ['A', 'C', 'G', 'T'] and all(alt in ['A', 'C', 'G', 'T'] for alt in fields['alternate_bases']):
       return True
     return False
 
@@ -113,9 +124,15 @@ class GvcfExpander(object):
     return expanded_calls
 
   def expand_variant(self, variant_call):
+    # Only expand SNPs.  Leave indels as-is.
+    if not self.is_snp(variant_call):
+      return variant_call
+
     expansion_calls = []
     for sample_id in self.sample_refs.keys():
       ref_call = self.sample_refs[sample_id]
+      # This criteria is correct for SNPs.  It would need to be modified
+      # if we wish to support insertions or deletions
       if (self.get_start(ref_call) <= self.get_start(variant_call) and
           self.get_end(ref_call) >= self.get_start(variant_call) + 1):
         expansion_calls.extend(ref_call['call'])
@@ -154,8 +171,10 @@ class GvcfExpanderTest(unittest.TestCase):
   def test_is_variant(self):
     expander = GvcfExpander()
 
-    self.assertTrue(expander.is_variant(json.loads(self.variant_1)))
-    self.assertTrue(expander.is_variant(json.loads(self.variant_2)))
+    self.assertTrue(expander.is_variant(json.loads(self.snp_1)))
+    self.assertTrue(expander.is_variant(json.loads(self.snp_2)))
+    self.assertTrue(expander.is_variant(json.loads(self.insertion_1)))
+    self.assertTrue(expander.is_variant(json.loads(self.deletion_1)))
     self.assertFalse(expander.is_variant(json.loads(self.ref_a)))
     self.assertFalse(expander.is_variant(json.loads(self.ref_b)))
     self.assertFalse(expander.is_variant(json.loads(self.ref_c)))
@@ -163,10 +182,24 @@ class GvcfExpanderTest(unittest.TestCase):
     self.assertFalse(expander.is_variant(json.loads(self.ref_ambiguous)))
     self.assertFalse(expander.is_variant(json.loads(self.no_call_1)))
 
-  def test_mapper_variant(self):
-    test_input = json.loads(self.variant_1)
+  def test_is_snp(self):
+    expander = GvcfExpander()
 
-    expected_output = json.loads(self.variant_1)  # no changes
+    self.assertTrue(expander.is_snp(json.loads(self.snp_1)))
+    self.assertTrue(expander.is_snp(json.loads(self.snp_2)))
+    self.assertFalse(expander.is_snp(json.loads(self.insertion_1)))
+    self.assertFalse(expander.is_snp(json.loads(self.deletion_1)))
+    self.assertFalse(expander.is_snp(json.loads(self.ref_a)))
+    self.assertFalse(expander.is_snp(json.loads(self.ref_b)))
+    self.assertFalse(expander.is_snp(json.loads(self.ref_c)))
+    self.assertFalse(expander.is_snp(json.loads(self.ref_d)))
+    self.assertFalse(expander.is_snp(json.loads(self.ref_ambiguous)))
+    self.assertFalse(expander.is_snp(json.loads(self.no_call_1)))
+
+  def test_mapper_variant(self):
+    test_input = json.loads(self.snp_1)
+
+    expected_output = json.loads(self.snp_1)  # no changes
 
     expander = GvcfExpander()
     result = expander.map(fields=test_input)
@@ -202,9 +235,9 @@ class GvcfExpanderTest(unittest.TestCase):
     self.assertDictEqual(expected_output, value)
 
   def test_mr_variant(self):
-    test_input = json.loads(self.variant_1)
+    test_input = json.loads(self.snp_1)
 
-    expected_output = json.loads(self.variant_1)  # no changes
+    expected_output = json.loads(self.snp_1)  # no changes
 
     expander = GvcfExpander()
     result = expander.map(fields=test_input)
@@ -272,8 +305,8 @@ class GvcfExpanderTest(unittest.TestCase):
       pairs.extend(expander.map(fields=json.loads(self.ref_b)))
       pairs.extend(expander.map(fields=json.loads(self.ref_c)))
       pairs.extend(expander.map(fields=json.loads(self.ref_ambiguous)))
-      pairs.extend(expander.map(fields=json.loads(self.variant_1)))
-      pairs.extend(expander.map(fields=json.loads(self.variant_2)))
+      pairs.extend(expander.map(fields=json.loads(self.snp_1)))
+      pairs.extend(expander.map(fields=json.loads(self.snp_2)))
       pairs.extend(expander.map(fields=json.loads(self.no_call_1)))
       self.assertEqual(11, len(pairs))
 
@@ -297,11 +330,11 @@ class GvcfExpanderTest(unittest.TestCase):
       self.assertIn(json.loads(self.no_call_1), result)
 
       if True == filter_ref_matches:
-        self.assertIn(json.loads(self.expanded_variant_1_filtered), result)
-        self.assertIn(json.loads(self.expanded_variant_2), result)
+        self.assertIn(json.loads(self.expanded_snp_1_filtered), result)
+        self.assertIn(json.loads(self.expanded_snp_2), result)
       else:
-        self.assertIn(json.loads(self.expanded_variant_1), result)
-        self.assertIn(json.loads(self.expanded_variant_2), result)
+        self.assertIn(json.loads(self.expanded_snp_1), result)
+        self.assertIn(json.loads(self.expanded_snp_2), result)
 
       for i in range(7, 11):
         result = expander.reduce(pairs[i])
@@ -329,18 +362,24 @@ class GvcfExpanderTest(unittest.TestCase):
 {
   "reference_name": "13",
   "start": "102265642",
-  "reference_bases": "N",
+  "reference_bases": "A",
   "END": "102265842",
   "call": [
     {
       "callset_id": "1",
       "call_set_name": "same_start",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     },
     {
       "callset_id": "2",
       "call_set_name": "same_start_second_sample",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     }
   ]
 }
@@ -350,13 +389,16 @@ class GvcfExpanderTest(unittest.TestCase):
 {
   "reference_name": "13",
   "start": "102265602",
-  "reference_bases": "N",
+  "reference_bases": "A",
   "END": "102265842",
   "call": [
     {
       "callset_id": "1",
       "call_set_name": "different_start",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     }
   ]
 }
@@ -366,13 +408,16 @@ class GvcfExpanderTest(unittest.TestCase):
 {
   "reference_name": "13",
   "start": "102265642",
-  "reference_bases": "N",
+  "reference_bases": "A",
   "END": "102265650",
   "call": [
     {
       "callset_id": "3",
       "call_set_name": "ambiguous",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     }
   ]
 }
@@ -382,13 +427,16 @@ class GvcfExpanderTest(unittest.TestCase):
 {
   "reference_name": "13",
   "start": "102265602",
-  "reference_bases": "N",
+  "reference_bases": "A",
   "END": "102265642",
   "call": [
     {
       "callset_id": "1",
       "call_set_name": "does_not_overlap_var_1",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     }
   ]
 }
@@ -407,12 +455,18 @@ class GvcfExpanderTest(unittest.TestCase):
     {
       "callset_id": "715080930289-10",
       "call_set_name": "foo1",
-      "gt": "0\/0"
+      "genotype":[
+        0,
+        0
+      ]
     },
     {
       "callset_id": "715080930289-14",
       "call_set_name": "foo2",
-      "gt": "0\/0"
+      "genotype":[
+        0,
+        0
+      ]
     }
   ]
 }
@@ -420,12 +474,13 @@ class GvcfExpanderTest(unittest.TestCase):
 
     self.no_call_1 = """
 {
+  "reference_name": "13",
+  "start": "102265642",
+  "end": "102265645",
   "reference_bases":"TGA",
   "alternate_bases":[
 
   ],
-  "reference_name": "13",
-  "start": "102265642",
   "call":[
     {
       "callset_id":"7122130836277736291-116",
@@ -436,17 +491,16 @@ class GvcfExpanderTest(unittest.TestCase):
         -1
       ]
     }
-  ],
-  "end": "102265645"
+  ]
 }
 """
 
-    self.variant_1 = """
+    self.snp_1 = """
 {
   "reference_name": "13",
   "start": "102265642",
-  "end": "102265647",
-  "reference_bases": "GTTCA",
+  "end": "102265643",
+  "reference_bases": "A",
   "alternate_bases": [
     "G"
   ],
@@ -454,33 +508,45 @@ class GvcfExpanderTest(unittest.TestCase):
     {
       "callset_id": "383928317087-12",
       "call_set_name": "hu52B7E5",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "383928317087-34",
       "call_set_name": "hu1187FF",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "383928317087-38",
       "call_set_name": "huC434ED",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "3",
       "call_set_name": "ambiguous",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     }
   ]
 }
 """
 
-    self.expanded_variant_1 = """
+    self.expanded_snp_1 = """
 {
   "reference_name": "13",
   "start": "102265642",
-  "end": "102265647",
-  "reference_bases": "GTTCA",
+  "end": "102265643",
+  "reference_bases": "A",
   "alternate_bases": [
     "G"
   ],
@@ -488,37 +554,58 @@ class GvcfExpanderTest(unittest.TestCase):
     {
       "callset_id": "383928317087-12",
       "call_set_name": "hu52B7E5",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "383928317087-34",
       "call_set_name": "hu1187FF",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "383928317087-38",
       "call_set_name": "huC434ED",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "3",
       "call_set_name": "ambiguous",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "1",
       "call_set_name": "different_start",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     },
     {
       "callset_id": "1",
       "call_set_name": "same_start",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     },
     {
       "callset_id": "2",
       "call_set_name": "same_start_second_sample",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     },
     {
       "callset_id":"7122130836277736291-116",
@@ -532,18 +619,21 @@ class GvcfExpanderTest(unittest.TestCase):
     {
       "callset_id": "3",
       "call_set_name": "ambiguous",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     }
   ]
 }
 """
 
-    self.expanded_variant_1_filtered = """
+    self.expanded_snp_1_filtered = """
 {
   "reference_name": "13",
   "start": "102265642",
-  "end": "102265647",
-  "reference_bases": "GTTCA",
+  "end": "102265643",
+  "reference_bases": "A",
   "alternate_bases": [
     "G"
   ],
@@ -551,37 +641,58 @@ class GvcfExpanderTest(unittest.TestCase):
     {
       "callset_id": "383928317087-12",
       "call_set_name": "hu52B7E5",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "383928317087-34",
       "call_set_name": "hu1187FF",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "383928317087-38",
       "call_set_name": "huC434ED",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "3",
       "call_set_name": "ambiguous",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "1",
       "call_set_name": "different_start",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     },
     {
       "callset_id": "1",
       "call_set_name": "same_start",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     },
     {
       "callset_id": "2",
       "call_set_name": "same_start_second_sample",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     },
     {
       "callset_id":"7122130836277736291-116",
@@ -596,79 +707,153 @@ class GvcfExpanderTest(unittest.TestCase):
 }
 """
 
-    self.variant_2 = """
+    self.snp_2 = """
 {
   "reference_name": "13",
   "start": "102265640",
-  "end": "102265645",
-  "reference_bases": "GTTCA",
+  "end": "102265641",
+  "reference_bases": "A",
   "alternate_bases": [
-    "A"
+    "T"
   ],
   "call": [
     {
       "callset_id": "383928317087-12",
       "call_set_name": "hu52B7E5",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "383928317087-34",
       "call_set_name": "hu1187FF",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "383928317087-38",
       "call_set_name": "huC434ED",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "383928317087-48",
       "call_set_name": "hu0211D6",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     }
   ]
 }
 """
 
-    self.expanded_variant_2 = """
+    self.expanded_snp_2 = """
 {
   "reference_name": "13",
   "start": "102265640",
-  "end": "102265645",
-  "reference_bases": "GTTCA",
+  "end": "102265641",
+  "reference_bases": "A",
   "alternate_bases": [
-    "A"
+    "T"
   ],
   "call": [
     {
       "callset_id": "383928317087-12",
       "call_set_name": "hu52B7E5",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "383928317087-34",
       "call_set_name": "hu1187FF",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "383928317087-38",
       "call_set_name": "huC434ED",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "383928317087-48",
       "call_set_name": "hu0211D6",
-      "gt": "1/0"
+      "genotype":[
+        1,
+        0
+      ]
     },
     {
       "callset_id": "1",
       "call_set_name": "different_start",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
     },
     {
       "callset_id": "1",
       "call_set_name": "does_not_overlap_var_1",
-      "gt": "0/0"
+      "genotype":[
+        0,
+        0
+      ]
+    }
+  ]
+}
+"""
+
+    self.insertion_1 = """
+{
+  "reference_name": "13",
+  "start": "102265642",
+  "end": "102265643",
+  "reference_bases": "A",
+  "alternate_bases": [
+    "AGG"
+  ],
+  "call": [
+    {
+      "callset_id": "1",
+      "call_set_name": "sample_with_an_insertion",
+      "genotype":[
+        1,
+        0
+      ]
+    }
+  ]
+}
+"""
+
+    self.deletion_1 = """
+{
+  "reference_name": "13",
+  "start": "102265642",
+  "end": "102265644",
+  "reference_bases": "AT",
+  "alternate_bases": [
+    "A"
+  ],
+  "call": [
+    {
+      "callset_id": "1",
+      "call_set_name": "sample_with_a_deletion",
+      "genotype":[
+        1,
+        0
+      ]
     }
   ]
 }
