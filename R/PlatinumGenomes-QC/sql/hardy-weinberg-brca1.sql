@@ -7,6 +7,184 @@ SELECT
   SUM(refs.HOM_REF) + vars.HOM_REF AS OBS_HOM1,
   vars.HET AS OBS_HET,
   vars.HOM_ALT AS OBS_HOM2,
+  # Expected AA
+  # p^2
+  # ((COUNT(AA) + (COUNT(Aa)/2) / 
+  #  TOTAL_SAMPLE_COUNT) ^ 2) * 
+  #  TOTAL_SAMPLE_COUNT
+  
+  POW(((SUM(refs.HOM_REF) + vars.HOM_REF + (vars.HET / 2))  /  
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)), 2) *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)
+    AS EXP_HOM1,
+  
+  # Expected Aa
+  # 2pq
+  # 2 *
+  # ((COUNT(AA) + (COUNT(Aa)/2) / 
+  #  TOTAL_SAMPLE_COUNT) ^ 2) * 
+  # (COUNT(aa) + (COUNT(Aa)/2) / 
+  #  TOTAL_SAMPLE_COUNT) ^ 2 *
+  # TOTAL_SAMPLE_COUNT
+  
+  2 *
+  ((SUM(refs.HOM_REF) + vars.HOM_REF + (vars.HET / 2))  /  
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)) *
+  ((vars.HOM_ALT + (vars.HET / 2)) / 
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)) *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)
+    AS EXP_HET,
+    
+  # Expected aa
+  # q^2
+  # (COUNT(aa) + (COUNT(Aa)/2) / 
+  #  TOTAL_SAMPLE_COUNT) ^ 2 *
+  #  TOTAL_SAMPLE_COUNT
+  
+  POW(((vars.HOM_ALT + (vars.HET / 2)) / 
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)), 2)  *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT) 
+    AS EXP_HOM2,
+  
+  ########################
+  # Chi square
+  # SUM(((Observed - Expected)^2) / Expected )
+    
+    # AA chisq value
+    # Numerator 
+    POW(
+    # Observed
+    (SUM(refs.HOM_REF) + vars.HOM_REF) 
+      - 
+    # Expected
+    (POW(((SUM(refs.HOM_REF) + vars.HOM_REF + (vars.HET / 2))  /  
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)), 2) *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT))
+    , 2) 
+    /
+    # Denominator 
+    # Expected  
+      (POW(((SUM(refs.HOM_REF) + vars.HOM_REF + (vars.HET / 2))  /  
+      (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)), 2) *
+      (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT))
+    
+    +
+    
+    # Aa chisq value
+    # Numerator
+    POW(
+    # Observed
+    vars.HET 
+      -
+    # Expected
+    (2 *
+    ((SUM(refs.HOM_REF) + vars.HOM_REF + (vars.HET / 2))  /  
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)) *
+    ((vars.HOM_ALT + (vars.HET / 2)) / 
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)) *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT))
+    , 2)
+    / 
+    # Denominator
+    # Expected
+    (2 *
+    ((SUM(refs.HOM_REF) + vars.HOM_REF + (vars.HET / 2))  /  
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)) *
+    ((vars.HOM_ALT + (vars.HET / 2)) / 
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)) *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT))
+      
+    +
+      
+    #aa chisq value
+    # Numerator
+    POW(
+    # Observed
+    vars.HOM_ALT - 
+    # Expected
+    (POW(((vars.HOM_ALT + (vars.HET / 2)) / 
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)), 2)  *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT))
+    , 2)
+    / 
+    # Denominator
+    # Expected
+    (POW(((vars.HOM_ALT + (vars.HET / 2)) / 
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)), 2)  *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT))
+    
+    AS CHISQ,
+    #########################
+    
+    #########################
+    # p-value boolean
+    # Need to recalculate chisq value and determine if it is greater than 
+    # the cutoff for significance with two degrees of freedom, 5.991.
+    IF ( 
+    POW(
+    # Observed
+    (SUM(refs.HOM_REF) + vars.HOM_REF) 
+      - 
+    # Expected
+    (POW(((SUM(refs.HOM_REF) + vars.HOM_REF + (vars.HET / 2))  /  
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)), 2) *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT))
+    , 2) 
+    /
+    # Denominator 
+    # Expected  
+      (POW(((SUM(refs.HOM_REF) + vars.HOM_REF + (vars.HET / 2))  /  
+      (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)), 2) *
+      (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT))
+    
+    +
+    
+    # Aa chisq value
+    # Numerator
+    POW(
+    # Observed
+    vars.HET 
+      -
+    # Expected
+    (2 *
+    ((SUM(refs.HOM_REF) + vars.HOM_REF + (vars.HET / 2))  /  
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)) *
+    ((vars.HOM_ALT + (vars.HET / 2)) / 
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)) *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT))
+    , 2)
+    / 
+    # Denominator
+    # Expected
+    (2 *
+    ((SUM(refs.HOM_REF) + vars.HOM_REF + (vars.HET / 2))  /  
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)) *
+    ((vars.HOM_ALT + (vars.HET / 2)) / 
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)) *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT))
+      
+    +
+      
+    #aa chisq value
+    # Numerator
+    POW(
+    # Observed
+    vars.HOM_ALT - 
+    # Expected
+    (POW(((vars.HOM_ALT + (vars.HET / 2)) / 
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)), 2)  *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT))
+    , 2)
+    / 
+    # Denominator
+    # Expected
+    (POW(((vars.HOM_ALT + (vars.HET / 2)) / 
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT)), 2)  *
+    (SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT))
+
+    > 5.991, "TRUE", "FALSE") AS PVALUE,
+    #########################
+    
 FROM (
     # Constrain the left hand side of the _join to reference-matching blocks.
   SELECT
