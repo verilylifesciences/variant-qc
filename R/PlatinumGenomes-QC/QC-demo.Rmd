@@ -97,9 +97,11 @@ To summarize attributes of this particular dataset that we need to consider when
 Working with gVCF Data
 ======================
 
-Data in gVCF format can be challenging to query.  For more detail see this [comparison](https://github.com/googlegenomics/bigquery-examples/tree/master/pgp/data-stories/schema-comparisons).
+Data in gVCF format can be challenging to query.  For more detail see this [comparison](https://github.com/googlegenomics/bigquery-examples/tree/master/pgp/data-stories/schema-comparisons#motivation).
 
-In the analyses below, sometimes we work with the original gVCF data and sometimes we work with data converted from gVCF to VCF to make querying easier.  For more detail about the conversion process see the [PlatinumGenomes gVCF-to-VCF codelab](https://github.com/deflaux/codelabs/tree/qc-codelab/Python/PlatinumGenomes-gVCF-to-VCF).
+In the analyses below, sometimes we work with the original gVCF data and sometimes we work with data converted from gVCF to VCF to make querying easier.  
+
+For more detail about the conversion process see the [PlatinumGenomes gVCF-to-VCF codelab](https://github.com/deflaux/codelabs/tree/qc-codelab/Python/PlatinumGenomes-gVCF-to-VCF).
 
 Sample-Level QC
 ===============
@@ -188,7 +190,7 @@ joinedResult <- inner_join(expectedResult, result, by=c("INDV"))
 print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include.rownames=F)
 ```
 
-The logic in the query looks similar to vcftools [output_het method](http://sourceforge.net/p/vcftools/code/HEAD/tree/trunk/cpp/variant_file_output.cpp#l165) but there is clearly a different.  TODO: investigate the different further.
+The logic in the query looks similar to vcftools [output_het method](http://sourceforge.net/p/vcftools/code/HEAD/tree/trunk/cpp/variant_file_output.cpp#l165) but there is clearly a difference.  TODO: investigate the difference further.
 
 Cohort Level QC
 ===============
@@ -259,7 +261,7 @@ result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
 print(xtable(result), type="html", include.rownames=F)
 ```
 
-It appears that with BigQuery we are computing HWE for all the same variants as vcftoosl and the expected and ChiSquared values are only slightly different.
+It appears that with BigQuery we are computing HWE for all the same variants as vcftools and the expected and Chi-Squared values are only slightly different.
 
 See also: the [gVCF version of this query](./sql/hardy-weinberg-brca1.sql), which is close but only works for SNPs and needs a RIGHT OUTER JOIN to compute values for variants for which all the samples have the variant.
 
