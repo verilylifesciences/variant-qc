@@ -14,16 +14,18 @@
 
 """A library for expansion of gVCF data.
 
-Given gVCF data as input, this library will find the reference matching blocks which
-overlap a variant and add the reference-matching sample genotypes to the variant record.
+Given gVCF data as input, this library will find the reference
+matching blocks which overlap a variant and add the reference-matching
+sample genotypes to the variant record.
 
-At this current time, only SNPs are expanded.  Other variant types are left as-is.
+At this current time, only SNPs are expanded.  Other variant types are
+left as-is.
+
 """
 
 from collections import namedtuple
 import json
 import math
-import sys
 import unittest
 
 
@@ -33,7 +35,9 @@ Pair = namedtuple('Pair', 'k v')
 class GvcfExpander(object):
   """Common logic for gVCF expansion."""
 
-  def __init__(self, bin_size=100, filter_ref_matches=False, emit_ref_blocks=True):
+  def __init__(self, bin_size=100,
+               filter_ref_matches=False,
+               emit_ref_blocks=True):
     self.bin_size = bin_size
     self.filter_ref_matches = filter_ref_matches
     self.emit_ref_blocks = emit_ref_blocks
@@ -43,13 +47,16 @@ class GvcfExpander(object):
 
   def is_variant(self, fields):
     """Determines whether or not the VCF fields constitute a variant."""
-    if 'alternate_bases' in fields and 0 != len(fields['alternate_bases']):
+    if 'alternate_bases' in fields and fields['alternate_bases']:
       return True
     return False
 
   def is_snp(self, fields):
     """Determines whether or not the VCF fields constitute a SNP."""
-    if self.is_variant(fields) and fields['reference_bases'] in ['A', 'C', 'G', 'T'] and all(alt in ['A', 'C', 'G', 'T'] for alt in fields['alternate_bases']):
+    if (self.is_variant(fields)
+        and fields['reference_bases'] in ['A', 'C', 'G', 'T']
+        and all(alt in ['A', 'C', 'G', 'T']
+                for alt in fields['alternate_bases'])):
       return True
     return False
 
@@ -106,10 +113,12 @@ class GvcfExpander(object):
     expanded_calls = []
     current_bin = int(self.current_key.split(':')[1])
 
-    # Sort by start position descending and ensure that if a variant and a
-    # ref-matching block are at the same position, the ref-matching block comes first.
+    # Sort by start position descending and ensure that if a variant
+    # and a ref-matching block are at the same position, the
+    # ref-matching block comes first.
     calls = sorted(self.binned_calls,
-                   key=lambda k: (int(k['start']), len(k.get('alternate_bases', []))))
+                   key=lambda k: (int(k['start']),
+                                  len(k.get('alternate_bases', []))))
 
     for call in calls:
       if self.is_variant(call):
@@ -141,7 +150,7 @@ class GvcfExpander(object):
         # considering and therefore obsolete, nuke it
         del self.sample_refs[sample_id]
 
-    if True == self.filter_ref_matches:
+    if self.filter_ref_matches:
       # Get the sample_ids already called in this variant
       variant_sample_names = [call['call_set_name'] for call in
                               variant_call['call']]
@@ -329,7 +338,7 @@ class GvcfExpanderTest(unittest.TestCase):
       self.assertIn(json.loads(self.ref_ambiguous), result)
       self.assertIn(json.loads(self.no_call_1), result)
 
-      if True == filter_ref_matches:
+      if filter_ref_matches:
         self.assertIn(json.loads(self.expanded_snp_1_filtered), result)
         self.assertIn(json.loads(self.expanded_snp_2), result)
       else:
