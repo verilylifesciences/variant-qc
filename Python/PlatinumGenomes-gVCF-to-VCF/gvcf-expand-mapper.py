@@ -17,7 +17,8 @@
 """A mapper for expansion of gVCF data.
 
 To test locally, set both BIG_QUERY_SOURCE and BIG_QUERY_SINK to False and run:
-  cat ./data/platinum-genomes-brca1.json | ./gvcf-expand-mapper.py | sort | ./gvcf-expand-reducer.py > out.json
+  cat ./data/platinum-genomes-brca1.json | ./gvcf-expand-mapper.py | sort \
+  | ./gvcf-expand-reducer.py > out.json
 """
 
 import json
@@ -27,7 +28,8 @@ from gvcf_expander import GvcfExpander
 
 # Whether the source data from this job is coming from the BigQuery connector
 # for Hadoop Streaming
-BIG_QUERY_SOURCE=True
+BIG_QUERY_SOURCE = True
+
 
 def main():
   """Entry point to the script."""
@@ -38,7 +40,9 @@ def main():
   if 2 <= len(sys.argv):
     file_handle = open(sys.argv[1], "r")
 
-  expander = GvcfExpander(bin_size=1000, filter_ref_matches=False, emit_ref_blocks=False)
+  expander = GvcfExpander(bin_size=1000,
+                          filter_ref_matches=False,
+                          emit_ref_blocks=False)
 
   line = file_handle.readline()
   while line:
