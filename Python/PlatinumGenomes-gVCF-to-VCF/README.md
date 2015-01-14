@@ -34,7 +34,7 @@ hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.
       -D mapred.bq.output.project.id=$OUTPUT_PROJECT \
       -D mapred.bq.output.dataset.id=$OUTPUT_DATASET \
       -D mapred.bq.output.table.id=$OUTPUT_TABLE \
-      -D mapred.bq.output.table.schema=${SCHEMA} \
+      -D mapred.bq.output.table.schema="${SCHEMA}" \
       -D mapred.map.tasks=500 \
       -D mapred.task.timeout=0 \
       -D mapred.bq.output.async.write.enabled=true \
