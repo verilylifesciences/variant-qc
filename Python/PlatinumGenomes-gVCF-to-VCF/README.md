@@ -85,7 +85,7 @@ Getting the Schema for a Table
 Here's how we grabbed the schema from the source table.  Do something similar when running this job against a different table.
 
 ```
-bq --project genomics-public-data show --format json platinum_genomes.variants | python -c "import json,sys ; print \"'%s'\" % (json.dumps(json.loads(sys.stdin.readline())['schema']['fields']).replace(\"'\", \"_\"))" > platinum_genomes.variants.schema
+bq --project genomics-public-data show --format json platinum_genomes.variants | python -c "import json,sys ; print \"%s\" % (json.dumps(json.loads(sys.stdin.readline())['schema']['fields']).replace(\"'\", \"_\"))" > platinum_genomes.variants.schema
 ```
 
 Using Google Cloud Storage as a source and/or sink
