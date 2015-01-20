@@ -33,7 +33,7 @@ require(xtable)
 require(RCurl)
 require(dplyr)
 
-project <- "google-genomics"                   # put your projectID here
+project <- "genomics-public-data"                   # put your projectID here
 
 DisplayAndDispatchQuery <- function(queryUri, replacements=list()) {
   if(grepl("^https.*", queryUri)) {
