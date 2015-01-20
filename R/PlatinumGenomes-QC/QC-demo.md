@@ -33,7 +33,7 @@ require(xtable)
 require(RCurl)
 require(dplyr)
 
-project <- "gbsc-gcp-project-mvp"                   # put your projectID here
+project <- "google-genomics"                   # put your projectID here
 
 DisplayAndDispatchQuery <- function(queryUri, replacements=list()) {
   if(grepl("^https.*", queryUri)) {
@@ -1012,7 +1012,7 @@ Here's the first few variants reported by BigQuery:
   <tr> <td> chr17 </td> <td align="right"> 41197958 </td> <td> A </td> <td> T </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41198182 </td> <td> A </td> <td> C </td> </tr>
    </table>
-Next, import the [transition and transversion mutations](./data/titv/brca.titv.csv) from the raw vcf file.  These were pulled out of the original vcf using a [custom perl script](./titv/pull_titv).  vcftools does not output a new vcf file with only the transitions and transversions so we need to use a proxy method.
+Next, import the [transition and transversion mutations](./data/titv/brca.titv.csv) from the raw vcf file.  These were pulled out of the original vcf using a [custom perl script](./titv/pull_titv.pl).  vcftools does not output a new vcf file with only the transitions and transversions so we need to use a proxy method.
 
 ```r
 expectedResult <- read.csv("./data/titv/brca.titv.csv", header=FALSE)
