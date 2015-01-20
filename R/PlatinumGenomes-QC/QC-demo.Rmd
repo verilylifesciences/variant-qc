@@ -298,7 +298,7 @@ Here's the first few variants reported by BigQuery:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
 print(xtable(head(result)), type="html", include.rownames=F)
 ```
-Next, import the [transition and transversion mutations](./data/titv/brca.titv.csv) from the raw vcf file.  These were pulled out of the original vcf using a [custom perl script](./titv/pull_titv).  vcftools does not output a new vcf file with only the transitions and transversions so we need to use a proxy method.
+Next, import the [transition and transversion mutations](./data/titv/brca.titv.csv) from the raw vcf file.  These were pulled out of the original vcf using a [custom perl script](./titv/pull_titv.pl).  vcftools does not output a new vcf file with only the transitions and transversions so we need to use a proxy method.
 ```{r}
 expectedResult <- read.csv("./data/titv/brca.titv.csv", header=FALSE)
 # Set column names
