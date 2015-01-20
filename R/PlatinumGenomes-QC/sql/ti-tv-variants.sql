@@ -1,11 +1,11 @@
-#Show the location of each mutation
+# Show the location of each SNP.
 SELECT
       reference_name,
       start,
       reference_bases,
       alternate_bases
     FROM
-      [genomics-public-data:platinum_genomes.variants]
+      [_THE_TABLE_]
     WHERE
       reference_name = 'chr17'
       AND start BETWEEN 41196311
@@ -20,3 +20,4 @@ SELECT
       alternate_bases
     ORDER BY
       start
+      
