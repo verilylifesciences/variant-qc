@@ -30,7 +30,7 @@ FROM (
           alternate_bases)) AS mutation,
       COUNT(alternate_bases) AS num_snps,
     FROM
-      [genomics-public-data:platinum_genomes.variants]
+      [_THE_TABLE_]
     WHERE
       reference_name = 'chr17'
       AND start BETWEEN 41196311
