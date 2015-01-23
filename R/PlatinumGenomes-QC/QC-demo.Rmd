@@ -238,7 +238,7 @@ print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
 Note vcftools appears to skip variants with single allele genotypes:
 ```
 zgrep 41242078 platinum_genomes_brca1_expanded_merged.vcf.gz 
-chr17  41242078  .  G	A	143	LowGQX;TruthSensitivityTranche99.90to100.00;LowQD;SiteConflict	BLOCKAVG_min30p3a;MQ=57;MQ0=0;BaseQRankSum=0.781;Dels=0.3;FS=1.561;HRun=11;HaplotypeScore=77.7361;MQRankSum=0.093;QD=2.01;ReadPosRankSum=-2.871;SB=-45.67;VQSLOD=-1.8762;culprit=QD;set=FilteredInAll;DP=425;AF=0.5;AN=25;AC=1	GT:DP:GQX:MQ:AD:GQ:PL:VF	0/0:57:99:59:.:.:.:.	0:27:25:57:26:25.38:.:.	0/0:51:99:57:.:.:.:.	0/1:50:99:59:42,8:99:173,0,1238:0.16	0/0:46:99:59:.:.:.:.	0/0:44:99:60:.:.:.:.	.:46:.:59:40,6:.:.:.	0/0:40:85:59:.:.:.:.	0/0:40:85:59:.:.:.:.	0/0:63:99:58:.:.:.:.	0:42:2:58:37:1.58:.:.	0:33:0:57:29:0.03:.:.	.:44:.:58:31,12:.:.:.	0/0:44:90:58:.:.:.:.	0/0:40:87:58:.:.:.:.	.:44:.:57:39,5:.:.:.	0/0:55:99:59:.:.:.:.
+chr17  41242078  .  G  A	143	LowGQX;TruthSensitivityTranche99.90to100.00;LowQD;SiteConflict	BLOCKAVG_min30p3a;MQ=57;MQ0=0;BaseQRankSum=0.781;Dels=0.3;FS=1.561;HRun=11;HaplotypeScore=77.7361;MQRankSum=0.093;QD=2.01;ReadPosRankSum=-2.871;SB=-45.67;VQSLOD=-1.8762;culprit=QD;set=FilteredInAll;DP=425;AF=0.5;AN=25;AC=1	GT:DP:GQX:MQ:AD:GQ:PL:VF	0/0:57:99:59:.:.:.:.	0:27:25:57:26:25.38:.:.	0/0:51:99:57:.:.:.:.	0/1:50:99:59:42,8:99:173,0,1238:0.16	0/0:46:99:59:.:.:.:.	0/0:44:99:60:.:.:.:.	.:46:.:59:40,6:.:.:.	0/0:40:85:59:.:.:.:.	0/0:40:85:59:.:.:.:.	0/0:63:99:58:.:.:.:.	0:42:2:58:37:1.58:.:.	0:33:0:57:29:0.03:.:.	.:44:.:58:31,12:.:.:.	0/0:44:90:58:.:.:.:.	0/0:40:87:58:.:.:.:.	.:44:.:57:39,5:.:.:.	0/0:55:99:59:.:.:.:.
 ```
 
 Which results were only identified by vcftools?
@@ -265,4 +265,58 @@ It appears that with BigQuery we are computing HWE for all the same variants as 
 
 See also: the [gVCF version of this query](./sql/hardy-weinberg-brca1.sql), which is close but only works for SNPs and needs a RIGHT OUTER JOIN to compute values for variants for which all the samples have the variant.
 
+===============
 
+Check Transition-Transversion Ratio
+-----------------------------------
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
+                                  replacements=table_replacement)
+```
+The result:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(result), type="html", include.rownames=F)
+```
+
+
+Let's compare this to what we get from vcftools.  For information about the vcftools command see the [log](./titv/platinum_genomes_brca1_expanded_merged.log).  
+```{r}
+expectedResult <- read.table("./data/titv/platinum_genomes_brca1_expanded_merged.TsTv.summary", header=TRUE)
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(expectedResult), type="html", include.rownames=F)
+```
+We can see that with BigQuery we get 143 transition mutations, and 132 transversion mutations.  Using vcftools we get two less of each category, 141 transitions and 130 transversions.  
+
+
+Let's figure out what the differences are.  First, we need to get the specific mutations from BigQuery.
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/ti-tv-variants.sql",
+                                  replacements=table_replacement)
+```
+Here's the first few variants reported by BigQuery:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(head(result)), type="html", include.rownames=F)
+```
+Next, import the [transition and transversion mutations](./data/titv/brca.titv.csv) from the raw vcf file.  These were pulled out of the original vcf using a [custom perl script](./titv/pull_titv.pl).  vcftools does not output a new vcf file with only the transitions and transversions so we need to use a proxy method.
+```{r}
+expectedResult <- read.csv("./data/titv/brca.titv.csv", header=FALSE)
+# Set column names
+names(expectedResult) <- c("reference_name","start","reference_bases","alternate_bases")
+# Convert to zero-based coordinates
+expectedResult <- mutate(expectedResult, start = start - 1)
+```
+Which variants were only identified by BigQuery?
+```{r}
+onlyBQ <- anti_join(result, expectedResult)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(onlyBQ), type="html", include.rownames=F)
+```
+The four variants identified only by BigQuery are from two positions, each having multiple alternate alleles.  The perl script used to identify positions with transitions and transversion did not account for this, it is likely vcftools does not either.  Because vcftools does not output we cannot say for sure whether these are the 4 variants that vcftools missed, but it is a safe assumption given that we have two additional transitions and two transversions from these positions (which matches the discrepencey we originally had) as well as a logical reason for a bug in vcftools.
+
+Let's double check that no variants were identified only by vcftools.
+```{r}
+nrow(anti_join(expectedResult, result))
+```
