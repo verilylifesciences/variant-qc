@@ -7,7 +7,7 @@ This job creates a new BigQuery table containing data that is reshaped, but the 
 
 [Hadoop on Google Cloud Platform](https://cloud.google.com/solutions/hadoop/click-to-deploy) supports using BigQuery as a source and/or a sink for jobs.  
 
-(1) Make sure your Hadoop cluster has bigquery enabled.  For more detail, see the [BigQuery Connector](https://cloud.google.com/hadoop/bigquery-connector) and specific details for [Hadoop Streaming](https://groups.google.com/forum/#!topic/gcp-hadoop-announce/bzji9yjj304).
+(1) Use `bdutil` version `1.1.0` or higher to deploy the Hadoop cluster and ensure that bigquery support is enabled.  For more detail, see the [BigQuery Connector](https://cloud.google.com/hadoop/bigquery-connector) and specific details for [Hadoop Streaming](https://groups.google.com/forum/#!topic/gcp-hadoop-announce/bzji9yjj304).
 
 ```
 ./bdutil -e bigquery_env.sh deploy
@@ -35,7 +35,6 @@ hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.
       -D mapred.bq.output.dataset.id=$OUTPUT_DATASET \
       -D mapred.bq.output.table.id=$OUTPUT_TABLE \
       -D mapred.bq.output.table.schema="${SCHEMA}" \
-      -D mapred.map.tasks=500 \
       -D mapred.task.timeout=0 \
       -D mapred.bq.output.async.write.enabled=true \
       -D mapred.output.committer.class=com.google.cloud.hadoop.io.bigquery.mapred.BigQueryMapredOutputCommitter \
@@ -59,7 +58,8 @@ Caveat
 ------
 Note: using BigQuery as the sink appears to be problematic.  For now, send the output to Google Cloud Storage instead.
 
-Edit [gvcf-expand-reducer.py](./gvcf-expand-reducer.py) to set `BIG_QUERY_SINK=False` and then:
+* Edit [gvcf-expand-reducer.py](./gvcf-expand-reducer.py) to set `BIG_QUERY_SINK=False`
+* Run the job like so:
 ```
 hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.jar \
       -D mapred.bq.input.project.id=genomics-public-data \
@@ -74,8 +74,7 @@ hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.
       -reducer gvcf-expand-reducer.py -file gvcf-expand-reducer.py \
       -output gs://YOUR-BUCKET/YOUR_OUTPUT_PREFIX
 ```
-
-Finally, load the json from the Google Cloud Storage destination to BigQuery using schema [platinum_genomes.variants.schema](./platinum_genomes.variants.schema) 
+* Finally, load the json from the Google Cloud Storage destination to BigQuery using schema [platinum_genomes.variants.schema](./platinum_genomes.variants.schema) 
 
 Appendix
 ========
@@ -85,7 +84,9 @@ Getting the Schema for a Table
 Here's how we grabbed the schema from the source table.  Do something similar when running this job against a different table.
 
 ```
-bq --project genomics-public-data show --format json platinum_genomes.variants | python -c "import json,sys ; print \"%s\" % (json.dumps(json.loads(sys.stdin.readline())['schema']['fields']).replace(\"'\", \"_\"))" > platinum_genomes.variants.schema
+bq --project genomics-public-data show --format json platinum_genomes.variants | python -c \
+"import json,sys ; print \"%s\" % (json.dumps(json.loads(sys.stdin.readline())['schema']['fields']).replace(\"'\", \"_\"))" \
+> platinum_genomes.variants.schema
 ```
 
 Using Google Cloud Storage as a source and/or sink
@@ -98,8 +99,7 @@ Note that under the covers the BigQuery connector is:
 If you wish to run the job without the BigQuery connector:
 * Edit gvcf-expand-mapper.py to set `BIG_QUERY_SOURCE = False`
 * Edit gvcf-expand-reducer.py to set `BIG_QUERY_SINK = False`
-* Run the job like so
-
+* Run the job like so:
 ```
 hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.jar \
 -file gvcf_expander.py \
@@ -108,3 +108,4 @@ hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.
 -input gs://YOUR-BUCKET/YOUR_INPUT_PREFIX  \
 -output gs://YOUR-BUCKET/YOUR_OUTPUT_PREFIX
 ```
+* Finally, load the json from the Google Cloud Storage destination to BigQuery using schema [platinum_genomes.variants.schema](./platinum_genomes.variants.schema) 
