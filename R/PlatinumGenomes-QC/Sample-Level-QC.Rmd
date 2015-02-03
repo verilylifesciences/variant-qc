@@ -1,0 +1,143 @@
+<!-- R Markdown Documentation, DO NOT EDIT THE PLAIN MARKDOWN VERSION OF THIS FILE -->
+
+<!-- Copyright 2015 Google Inc. All rights reserved. -->
+
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
+<!-- you may not use this file except in compliance with the License. -->
+<!-- You may obtain a copy of the License at -->
+
+<!--     http://www.apache.org/licenses/LICENSE-2.0 -->
+
+<!-- Unless required by applicable law or agreed to in writing, software -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS, -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
+<!-- See the License for the specific language governing permissions and -->
+<!-- limitations under the License. -->
+
+# Sample-Level QC
+
+* Singleton Rate
+* Missingness Rate
+* Heterozygosity Rate and Inbreeding Coefficient
+* Sex Inference
+* Ethnicity Inference
+* Genome Similarity
+
+```{r echo=FALSE, eval=FALSE}
+######################[ CHANGE ME ]##################################
+# This codelab assumes that the current working directory is where the Rmd file resides.
+setwd("/YOUR/PATH/TO/codelabs/R/PlatinumGenomes-QC")
+
+# Set the Google Cloud Platform project id under which these queries will run.
+project <- "YOUR-PROJECT-ID"
+#####################################################################
+```
+
+```{r echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+# Set up for BigQuery access.
+source("./helper.R")
+
+# By default this codelab runs upon the Illumina Platinum Genomes Variants.
+# Change the table here if you wish to run these queries against a different table.
+table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+```
+
+## Singleton Rate
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/private-variants.sql",
+                                  project=project,
+                                  replacements=table_replacement)
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(result), type="html", include.rownames=F)
+```
+
+## Missingness Rate
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/sample-level-missingness.sql",
+                                  project=project,
+                                  replacements=table_replacement)
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(result), type="html", include.rownames=F)
+```
+
+## Homozygosity Rate and Inbreeding Coefficient
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/homozygous-variants.sql",
+                                  project=project,
+                                  replacements=table_replacement)
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(result), type="html", include.rownames=F)
+```
+
+## Sex Inference
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/gender-check.sql",
+                                  project=project,
+                                  replacements=table_replacement)
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(result), type="html", include.rownames=F)
+```
+
+## Ethnicity Inference
+
+For this check, we:
+* use the intersection of common variants found in both 1,000 Genomes phase 1 variants and Platinum Genomes
+* compute PCA on those variants in common between the two data
+* examine whether the individuals in Platinum Genomes cluster with other samples of the same ethnicity
+
+This is a work-in-progress.  See https://github.com/elmer-garduno/spark-examples/tree/multiple_dataset_pca for the current state.
+
+## Genome Similarity
+
+### Results
+
+```{r}
+ibs <- read.table("./data/platinum-genomes-ibs.tsv",
+                  col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
+ggplot(data=ibs, aes(x=sample1, y=sample2)) +
+       geom_tile(aes(fill=ibsScore), colour="white") +
+       scale_fill_gradient(low="white", high="steelblue", na.value="black", trans="log",
+                           guide=guide_colourbar(title= "IBS Score")) +
+       labs(list(title="Identity By State (IBS) Heat Map",
+                 x="Sample 1", y="Sample 2"))
+```
+
+### To Run the Job
+
+If you wish to run the Dataflow job, see the [dataflow-java README](https://github.com/googlegenomics/dataflow-java) for instructions to compile and run the job.
+```
+java -cp target/google-genomics-dataflow-v1beta2-0.2-SNAPSHOT.jar \
+com.google.cloud.genomics.dataflow.pipelines.IdentityByState \
+--project=YOUR-PROJECT \
+--stagingLocation=gs://YOUR-BUCKET/staging \
+--output=gs://YOUR-BUCKET/output/platinum-genomes-ibs.tsv \
+--genomicsSecretsFile=/PATH/TO/YOUR/client_secrets.json \
+--runner=DataflowPipelineRunner \
+--numWorkers=40 \
+--basesPerShard=1000000 \
+--datasetId=3049512673186936334 \
+--gvcf \
+--allContigs
+```
+
+Note that there are several IBS calculators from which to choose.  Use the `--callSimilarityCalculatorFactory` to switch between them.
+
+To gather the results into a single file:
+```
+gsutil cat gs://YOUR-BUCKET/output/platinum-genomes-ibs.tsv* | sort > platinum-genomes-ibs.tsv
+```

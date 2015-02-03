@@ -14,178 +14,11 @@
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
 
-Performing QC on gVCF Data using Google Genomics
-================================================
-
-The following example makes use of [Illumina Platinum Genomes](http://www.illumina.com/platinumgenomes/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/platinum-genomes).
-
-Setting Up and Describing the Data
-----------------------------------
+# Comparing Google Genomics Quality Control Results
 
 
 
 
-
-```r
-# Setup for BigQuery access
-require(bigrquery)
-require(xtable)
-require(RCurl)
-require(dplyr)
-
-project <- "genomics-public-data"                   # put your projectID here
-
-DisplayAndDispatchQuery <- function(queryUri, replacements=list()) {
-  if(grepl("^https.*", queryUri)) {
-    querySql <- getURL(queryUri, ssl.verifypeer=FALSE)
-  } else {
-    querySql <- readChar(queryUri, nchars=1e6)
-  }
-  for(replacement in names(replacements)) {
-    querySql <- gsub(replacement, replacements[[replacement]], querySql, fixed=TRUE)
-  }
-  cat(querySql)
-  query_exec(querySql, project)
-}
-
-table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
-```
-
-Let's take a look at a few of the [variants within BRCA1 via BigQuery](https://github.com/googlegenomics/getting-started-bigquery/blob/master/RMarkdown/literate-programming-demo.md#data-visualization)
-
-```r
-result <- DisplayAndDispatchQuery("https://raw.githubusercontent.com/googlegenomics/getting-started-bigquery/master/sql/variant-level-data-for-brca1.sql",
-                                  replacements=table_replacement)
-```
-
-```
-# Retrieve variant-level information for BRCA1 variants.
-SELECT
-  reference_name,
-  start,
-  end,
-  reference_bases,
-  GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-  quality,
-  GROUP_CONCAT(filter) WITHIN RECORD AS filter,
-  GROUP_CONCAT(names) WITHIN RECORD AS names,
-  COUNT(call.call_set_name) WITHIN RECORD AS num_samples,
-FROM
-  [genomics-public-data:platinum_genomes.variants]
-WHERE
-  reference_name = 'chr17'
-  AND start BETWEEN 41196311
-  AND 41277499
-HAVING
-  alternate_bases IS NOT NULL
-ORDER BY
-  start,
-  alternate_bases
-```
-Number of rows returned by this query: 335.
-
-Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:31 2015 -->
-<table border=1>
-<tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td align="right"> 41196822 </td> <td> CT </td> <td> C </td> <td align="right"> 63.74 </td> <td> LowQD </td> <td>  </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td align="right"> 41196823 </td> <td> CTT </td> <td> C,CT </td> <td align="right"> 314.59 </td> <td> PASS </td> <td>  </td> <td align="right">   3 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196840 </td> <td align="right"> 41196841 </td> <td> G </td> <td> T </td> <td align="right"> 85.68 </td> <td> TruthSensitivityTranche99.90to100.00,LowQD </td> <td>  </td> <td align="right">   2 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41197273 </td> <td align="right"> 41197274 </td> <td> C </td> <td> A </td> <td align="right"> 1011.08 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41197938 </td> <td align="right"> 41197939 </td> <td> A </td> <td> AT </td> <td align="right"> 86.95 </td> <td> LowQD </td> <td>  </td> <td align="right">   3 </td> </tr>
-   </table>
-
-And then let's take a look at the domain and range of values for alternate_bases:
-
-```r
-result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
-                                  replacements=table_replacement)
-```
-
-```
-# Variants are only SNPs and INDELs, with no special characters.
-SELECT
-  COUNT(1) AS number_of_variant_records,
-  REGEXP_MATCH(alternate_bases,
-    r'^[A,C,G,T]+$') AS alt_contains_no_special_characters,
-  MAX(LENGTH(reference_bases)) AS max_ref_len,
-  MAX(LENGTH(alternate_bases)) AS max_alt_len
-FROM
-  [genomics-public-data:platinum_genomes.variants]
-OMIT
-  RECORD IF EVERY(alternate_bases IS NULL)
-GROUP BY
-  alt_contains_no_special_characters
-```
-
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:33 2015 -->
-<table border=1>
-<tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
-  <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
-   </table>
-We see from the query results that there are no special charaters in alternate_bases and the maximum length is ~50 base pairs.
-
-And finally let's take a look at the domain and range of values for genotype:
-
-```r
-result <- DisplayAndDispatchQuery("./sql/genotypes-brca1.sql",
-                                  replacements=table_replacement)
-```
-
-```
-# Query to show the variety of genotypes within BRCA1, such as
-# single allele genotypes.
-SELECT
-  genotype,
-  COUNT(genotype) AS genotype_count
-FROM (
-  SELECT
-    GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
-  FROM
-  [genomics-public-data:platinum_genomes.variants]
-  WHERE
-    reference_name = 'chr17'
-    AND start BETWEEN 41196311
-    AND 41277499
-    )
-GROUP BY
-  genotype
-ORDER BY
-  genotype_count DESC
-```
-
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:34 2015 -->
-<table border=1>
-<tr> <th> genotype </th> <th> genotype_count </th>  </tr>
-  <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>
-  <tr> <td> 0,1 </td> <td align="right"> 1677 </td> </tr>
-  <tr> <td> 0 </td> <td align="right"> 226 </td> </tr>
-  <tr> <td> 1,1 </td> <td align="right">  73 </td> </tr>
-  <tr> <td> -1 </td> <td align="right">  50 </td> </tr>
-  <tr> <td> -1,-1 </td> <td align="right">   5 </td> </tr>
-  <tr> <td> 1,2 </td> <td align="right">   4 </td> </tr>
-   </table>
-We see from the query results the variety of genotypes within BRCA1.
-
-To summarize attributes of this particular dataset that we need to consider when performing QC:
-* It is in gVCF format which adds complexity above and beyond [similar examples for the 1,000 Genomes dataset](https://github.com/googlegenomics/bigquery-examples/blob/master/1000genomes/sql/README.md).
-* It is comprised only of SNPs and INDELs (contains no structural variants).
-* The values for `alternate_bases` are just comprised of the letters A,C,G,T (e.g., contains no `<DEL>` values).
-* It contains some single-allele and 1/2 genotypes.
-
-Working with gVCF Data
-======================
-
-Data in gVCF format can be challenging to query.  For more detail see this [comparison](https://github.com/googlegenomics/bigquery-examples/tree/master/pgp/data-stories/schema-comparisons#motivation).
-
-In the analyses below, sometimes we work with the original gVCF data and sometimes we work with data converted from gVCF to VCF to make querying easier.  
-
-For more detail about the conversion process see the [PlatinumGenomes gVCF-to-VCF codelab](https://github.com/deflaux/codelabs/tree/qc-codelab/Python/PlatinumGenomes-gVCF-to-VCF).
 
 Sample-Level QC
 ===============
@@ -195,6 +28,7 @@ Check Singletons
 
 ```r
 result <- DisplayAndDispatchQuery("./sql/private-variants-brca1.sql",
+                                  project=project,
                                   replacements=table_replacement)
 ```
 
@@ -261,8 +95,8 @@ ORDER BY
 ```
 Number of rows returned by this query: 63.
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:38 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:01:55 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> S </td> <td> CT </td> <td> C </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
@@ -369,8 +203,8 @@ onlyBQ <- anti_join(result, expectedResult)
 print(xtable(onlyBQ), type="html", include.rownames=F)
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:38 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:01:55 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> S </td> <td> CACA </td> <td> CACAACA </td> <td> NA12878 </td> <td> "1,2" </td> <td align="right">   1 </td> </tr>
@@ -390,8 +224,8 @@ onlyVcftools <- anti_join(expectedResult, result)
 print(xtable(onlyVcftools), type="html", include.rownames=F)
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:38 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:01:55 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> ALLELE </th> <th> INDV </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694.00 </td> <td> S </td> <td> AAT </td> <td> NA12886 </td> </tr>
@@ -412,6 +246,7 @@ Retrieving the gVCF data for the singletons identified only by vcftools:
 having <- paste("start = ", onlyVcftools$POS,
                 sep="", collapse=" OR ")
 result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
+                                  project=project,
                                   replacements=c(table_replacement,
                                                  "_HAVING_"=having))
 ```
@@ -441,8 +276,8 @@ ORDER BY
   call.call_set_name
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:40 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:01:57 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td> NA12886 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
@@ -485,12 +320,13 @@ Check Individual Heterozygosity
 
 
 ```r
-result <- DisplayAndDispatchQuery("./sql/homozygous-variants-brca1.sql",
+result <- DisplayAndDispatchQuery("./sql/homozygous-variants.sql",
+                                  project=project,
                                   replacements=table_replacement)
 ```
 
 ```
-# Individual Homozygosity
+# Compute the expected and observed homozygosity rate for each individual.
 SELECT
   INDV,
   O_HOM,
@@ -510,10 +346,8 @@ FROM (
       reference_bases,
       GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
       call.call_set_name,
-      NTH(1,
-        call.genotype) WITHIN call AS first_allele,
-      NTH(2,
-        call.genotype) WITHIN call AS second_allele,
+      NTH(1, call.genotype) WITHIN call AS first_allele,
+      NTH(2, call.genotype) WITHIN call AS second_allele,
       COUNT(alternate_bases) WITHIN RECORD AS num_alts,
       SUM(call.genotype >= 0) WITHIN RECORD AS called_allele_count,
       IF((SUM(1 = call.genotype) > 0),
@@ -521,13 +355,11 @@ FROM (
         -1)  WITHIN RECORD AS freq
     FROM
       [google.com:biggene:platinum_genomes.expanded_variants]
-    WHERE
-      reference_name = 'chr17'
-      AND start BETWEEN 41196311
-      AND 41277499
-    OMIT
-      call IF SOME(call.genotype < 0)
-      OR (2 > COUNT(call.genotype))
+    # Optionally add a clause here to limit the query to a particular
+    # region of the genome.
+    WHERE reference_name = 'chr17' AND start BETWEEN 41196311 AND 41277499
+    # Skip no calls and haploid sites
+    OMIT call IF SOME(call.genotype < 0) OR (2 > COUNT(call.genotype))
     HAVING
       # Skip 1/2 genotypes _and non-SNP variants
       num_alts = 1
@@ -542,8 +374,8 @@ ORDER BY
 ```
 Number of rows returned by this query: 17.
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:42 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:02:01 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 252 </td> <td align="right"> 233.49 </td> <td align="right"> 274 </td> <td align="right"> 0.46 </td> </tr>
@@ -582,8 +414,8 @@ joinedResult <- inner_join(expectedResult, result, by=c("INDV"))
 print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include.rownames=F)
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:42 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:02:01 2015 -->
 <table border=1>
 <tr> <th> E_HOM.x </th> <th> E_HOM.y </th> <th> F.x </th> <th> F.y </th> <th> INDV </th> <th> N_SITES.x </th> <th> N_SITES.y </th> <th> O_HOM.x </th> <th> O_HOM.y </th>  </tr>
   <tr> <td align="right"> 185.60 </td> <td align="right"> 233.49 </td> <td align="right"> 0.71 </td> <td align="right"> 0.46 </td> <td> NA12877 </td> <td align="right"> 254 </td> <td align="right"> 274 </td> <td align="right"> 234 </td> <td align="right"> 252 </td> </tr>
@@ -615,6 +447,7 @@ Check Hardy-Weinberg Equilibrium
 
 ```r
 result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1-expanded.sql",
+                                  project=project,
                                   replacements=table_replacement)
 ```
 
@@ -721,8 +554,8 @@ ORDER BY
 Number of rows returned by this query: 333.
 
 Displaying the first few results:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:46 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:02:04 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
@@ -767,8 +600,8 @@ onlyBQ <- anti_join(result, expectedResult, , by=c("CHR", "POS", "OBS_HOM1", "OB
 print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:46 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:02:04 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
@@ -776,8 +609,8 @@ print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
   <tr> <td> chr17 </td> <td align="right"> 41204837 </td> <td> A </td> <td> T </td> <td align="right">  14 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 14.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204839 </td> <td> A </td> <td> T </td> <td align="right">  14 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 14.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td> T </td> <td> A </td> <td align="right">   0 </td> <td align="right">   1 </td> <td align="right">  12 </td> <td align="right"> 0.02 </td> <td align="right"> 0.96 </td> <td align="right"> 12.02 </td> <td align="right"> 0.02 </td> <td> FALSE </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> CACA </td> <td> C </td> <td align="right">   0 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 1.75 </td> <td align="right"> 3.50 </td> <td align="right"> 1.75 </td> <td align="right"> 7.00 </td> <td> TRUE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> C </td> <td> CACA </td> <td align="right">   0 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right"> 0.13 </td> <td align="right"> 0.75 </td> <td align="right"> 1.13 </td> <td align="right"> 0.23 </td> <td> FALSE </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> CACA </td> <td> C </td> <td align="right">   0 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 1.75 </td> <td align="right"> 3.50 </td> <td align="right"> 1.75 </td> <td align="right"> 7.00 </td> <td> TRUE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41214209 </td> <td> A </td> <td> T </td> <td align="right">  16 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 16.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41214210 </td> <td> A </td> <td> C </td> <td align="right">  16 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 16.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td> T </td> <td> TAA </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right">   3 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right"> 3.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
@@ -789,8 +622,8 @@ print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
   <tr> <td> chr17 </td> <td align="right"> 41252693 </td> <td> T </td> <td> A </td> <td align="right">  16 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 16.01 </td> <td align="right"> 0.97 </td> <td align="right"> 0.01 </td> <td align="right"> 0.01 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td> A </td> <td> T </td> <td align="right">  16 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 16.01 </td> <td align="right"> 0.97 </td> <td align="right"> 0.01 </td> <td align="right"> 0.01 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252695 </td> <td> A </td> <td> T </td> <td align="right">   2 </td> <td align="right">  10 </td> <td align="right">   2 </td> <td align="right"> 3.50 </td> <td align="right"> 7.00 </td> <td align="right"> 3.50 </td> <td align="right"> 2.57 </td> <td> FALSE </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> C </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 1.13 </td> <td align="right"> 0.75 </td> <td align="right"> 0.13 </td> <td align="right"> 0.23 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> A </td> <td align="right">   1 </td> <td align="right">   9 </td> <td align="right">   3 </td> <td align="right"> 2.33 </td> <td align="right"> 6.35 </td> <td align="right"> 4.33 </td> <td align="right"> 2.27 </td> <td> FALSE </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> C </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 1.13 </td> <td align="right"> 0.75 </td> <td align="right"> 0.13 </td> <td align="right"> 0.23 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41256091 </td> <td> A </td> <td> G </td> <td align="right">  16 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 16.01 </td> <td align="right"> 0.97 </td> <td align="right"> 0.01 </td> <td align="right"> 0.01 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41256094 </td> <td> A </td> <td> G </td> <td align="right">  16 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 16.01 </td> <td align="right"> 0.97 </td> <td align="right"> 0.01 </td> <td align="right"> 0.01 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41256097 </td> <td> G </td> <td> A </td> <td align="right">  13 </td> <td align="right">   3 </td> <td align="right">   0 </td> <td align="right"> 13.14 </td> <td align="right"> 2.72 </td> <td align="right"> 0.14 </td> <td align="right"> 0.17 </td> <td> FALSE </td> </tr>
@@ -814,8 +647,8 @@ onlyVcftools <- anti_join(expectedResult, result, , by=c("CHR", "POS", "OBS_HOM1
 print(xtable(arrange(onlyVcftools, CHR, POS)), type="html", include.rownames=F)
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:46 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:02:04 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ChiSq </th> <th> P </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407.00 </td> <td align="right"> 1.39 </td> <td align="right"> 0.53 </td> <td align="right">   8 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 8.82 </td> <td align="right"> 5.37 </td> <td align="right"> 0.82 </td> </tr>
@@ -828,6 +661,7 @@ having <- paste("start <= ", onlyVcftools$POS,
                 "AND",
                 "end >= ", onlyVcftools$POS+1)
 result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
+                                  project=project,
                                   replacements=c(table_replacement,
                                                  "_HAVING_"=having))
 ```
@@ -857,8 +691,8 @@ ORDER BY
   call.call_set_name
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:48 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:02:05 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196196 </td> <td align="right"> 41196429 </td> <td> A </td> <td>  </td> <td> NA12891 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
@@ -884,6 +718,7 @@ It appears that with BigQuery we are computing HWE for all the same variants as 
 
 See also: the [gVCF version of this query](./sql/hardy-weinberg-brca1.sql), which is close but only works for SNPs and needs a RIGHT OUTER JOIN to compute values for variants for which all the samples have the variant.
 
+
 ===============
 
 Check Transition-Transversion Ratio
@@ -891,11 +726,12 @@ Check Transition-Transversion Ratio
 
 ```r
 result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
+                                  project=project,
                                   replacements=table_replacement)
 ```
 
 ```
-# Compute the Ti/Tv ratio of the 1,000 Genomes dataset.
+# Compute the Ti/Tv ratio of the Platinum Genomes dataset.
 SELECT
   transitions,
   transversions,
@@ -938,10 +774,11 @@ FROM (
       mutation,
     ORDER BY
       mutation))
+      
 ```
 The result:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:51 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:02:08 2015 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> COUNT </th>  </tr>
   <tr> <td align="right"> 143 </td> <td align="right"> 132 </td> <td align="right"> 1.08 </td> <td align="right">  12 </td> </tr>
@@ -953,8 +790,8 @@ Let's compare this to what we get from vcftools.  For information about the vcft
 ```r
 expectedResult <- read.table("./data/titv/platinum_genomes_brca1_expanded_merged.TsTv.summary", header=TRUE)
 ```
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:51 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:02:08 2015 -->
 <table border=1>
 <tr> <th> MODEL </th> <th> COUNT </th>  </tr>
   <tr> <td> AC </td> <td align="right">  48 </td> </tr>
@@ -969,15 +806,16 @@ expectedResult <- read.table("./data/titv/platinum_genomes_brca1_expanded_merged
 We can see that with BigQuery we get 143 transition mutations, and 132 transversion mutations.  Using vcftools we get two less of each category, 141 transitions and 130 transversions.  
 
 
-First, we need to get the specific mutations from BigQuery.
+Let's figure out what the differences are.  First, we need to get the specific mutations from BigQuery.
 
 ```r
 result <- DisplayAndDispatchQuery("./sql/ti-tv-variants.sql",
+                                  project=project,
                                   replacements=table_replacement)
 ```
 
 ```
-#Show the location of each mutation
+# Show the location of each SNP.
 SELECT
       reference_name,
       start,
@@ -999,10 +837,11 @@ SELECT
       alternate_bases
     ORDER BY
       start
+      
 ```
 Here's the first few variants reported by BigQuery:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:52 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:02:10 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> </tr>
@@ -1031,14 +870,14 @@ onlyBQ <- anti_join(result, expectedResult)
 ## Joining by: c("reference_name", "start", "reference_bases", "alternate_bases")
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Jan 12 18:08:52 2015 -->
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb  3 12:02:10 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> C </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> A </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> C </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> C </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> A </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> C </td> </tr>
    </table>
 The four variants identified only by BigQuery are from two positions, each having multiple alternate alleles.  The perl script used to identify positions with transitions and transversion did not account for this, it is likely vcftools does not either.  Because vcftools does not output we cannot say for sure whether these are the 4 variants that vcftools missed, but it is a safe assumption given that we have two additional transitions and two transversions from these positions (which matches the discrepencey we originally had) as well as a logical reason for a bug in vcftools.
 
@@ -1055,3 +894,4 @@ nrow(anti_join(expectedResult, result))
 ```
 ## [1] 0
 ```
+

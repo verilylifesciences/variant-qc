@@ -1,0 +1,53 @@
+<!-- R Markdown Documentation, DO NOT EDIT THE PLAIN MARKDOWN VERSION OF THIS FILE -->
+
+<!-- Copyright 2015 Google Inc. All rights reserved. -->
+
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
+<!-- you may not use this file except in compliance with the License. -->
+<!-- You may obtain a copy of the License at -->
+
+<!--     http://www.apache.org/licenses/LICENSE-2.0 -->
+
+<!-- Unless required by applicable law or agreed to in writing, software -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS, -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
+<!-- See the License for the specific language governing permissions and -->
+<!-- limitations under the License. -->
+
+# Variant-Level QC
+
+* Missingness Rate
+* Hardy-Weinberg Equilibrium
+* Ti/Tv by Depth
+* Ti/Tv by Alternate Allele Counts
+* Heterozygous Haploitype
+
+```{r echo=FALSE, eval=FALSE}
+######################[ CHANGE ME ]##################################
+# This codelab assumes that the current working directory is where the Rmd file resides.
+setwd("/YOUR/PATH/TO/codelabs/R/PlatinumGenomes-QC")
+
+# Set the Google Cloud Platform project id under which these queries will run.
+project <- "YOUR-PROJECT-ID"
+#####################################################################
+```
+
+```{r echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+# Set up for BigQuery access.
+source("./helper.R")
+
+# By default this codelab runs upon the Illumina Platinum Genomes Variants.
+# Change the table here if you wish to run these queries against a different table.
+table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+```
+
+## Missingness Rate
+
+## Hardy-Weinberg Equilibrium
+
+## Ti/Tv by Depth
+
+## Ti/Tv by Alternate Allele Counts
+
+## Heterozygous Haploitype
