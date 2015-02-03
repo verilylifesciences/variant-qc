@@ -21,6 +21,6 @@ In this codelab you will use [Google Genomics](https://cloud.google.com/genomics
  + [Sample-Level QC](./Sample-Level-QC.md)
  + [Variant-Level QC](./Variant-Level-QC.md)
 3. Execute the code *chunk by chunk* in RStudio or *line by line* in R.
-4. Optionally, [read more](./QC-demo.md) about how these results compare to those from tools such as [vcftools](http://vcftools.sourceforge.net/).
+4. Optionally, [read more](./comparison/QC-Comparison.md) about how these results compare to those from tools such as [vcftools](http://vcftools.sourceforge.net/).
 
 _This is very much a work-in-progress._  Please submit pull requests and file issues for feedback and corrections!

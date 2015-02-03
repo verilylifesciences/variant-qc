@@ -16,12 +16,12 @@
 
 # Sample-Level QC
 
-* Singleton Rate
-* Missingness Rate
-* Heterozygosity Rate and Inbreeding Coefficient
-* Sex Inference
-* Ethnicity Inference
-* Genome Similarity
+* [Singleton Rate](#singleton-rate)
+* [Missingness Rate](#missingness-rate)
+* [Heterozygosity Rate and Inbreeding Coefficient](#homozygosity-rate-and-inbreeding-coefficient)
+* [Sex Inference](#sex-inference)
+* [Ethnicity Inference](#ethnicity-inference)
+* [Genome Similarity](#genome-similarity)
 
 ```{r echo=FALSE, eval=FALSE}
 ######################[ CHANGE ME ]##################################

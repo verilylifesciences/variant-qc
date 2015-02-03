@@ -16,11 +16,11 @@
 
 # Variant-Level QC
 
-* Missingness Rate
-* Hardy-Weinberg Equilibrium
-* Ti/Tv by Depth
-* Ti/Tv by Alternate Allele Counts
-* Heterozygous Haploitype
+* [Missingness Rate](#missingness-rate)
+* [Hardy-Weinberg Equilibrium](#hardy-weinberg-equilibrium)
+* [Ti/Tv by Depth](#titv-by-depth)
+* [Ti/Tv by Alternate Allele Counts](#titv-by-alternate-allele-counts)
+* [Heterozygous Haploitype](#heterozygous-haploitype)
 
 ```{r echo=FALSE, eval=FALSE}
 ######################[ CHANGE ME ]##################################

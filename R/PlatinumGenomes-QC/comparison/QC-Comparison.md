@@ -16,7 +16,7 @@
 
 # Comparing Google Genomics Quality Control Results
 
-For details as to how the comparison data was created, see the [provenance details](./data/README.md).
+For details as to how the comparison data was created, see the [provenance details](./README.md).
 
 
 
@@ -29,9 +29,9 @@ Check Singletons
 ----------------
 
 ```r
-result <- DisplayAndDispatchQuery("./sql/private-variants-brca1.sql",
+result <- DisplayAndDispatchQuery("../sql/private-variants-brca1.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=replacements)
 ```
 
 ```
@@ -98,7 +98,7 @@ ORDER BY
 Number of rows returned by this query: 63.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:23:42 2015 -->
+<!-- Tue Feb  3 14:22:15 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> S </td> <td> CT </td> <td> C </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
@@ -166,11 +166,11 @@ Number of rows returned by this query: 63.
   <tr> <td> chr17 </td> <td align="right"> 41276517 </td> <td> S </td> <td> T </td> <td> C </td> <td> NA12880 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
    </table>
 
-Compare to [brca1.singletons](./data/singletons/brca1.singletons) which has 85 some of which are for 0/0 genotypes from reference matching blocks (see the [vcftools command line](./data/singletons/brca1.log) used to create this file).
+Compare to [brca1.singletons](./singletons/brca1.singletons) which has 85 some of which are for 0/0 genotypes from reference matching blocks (see the [vcftools command line](./singletons/brca1.log) used to create this file).
 
 
 ```r
-expectedResult <- read.table("./data/singletons/brca1.singletons", header=TRUE)
+expectedResult <- read.table("./singletons/brca1.singletons", header=TRUE)
 # Convert to zero-based coordinates
 expectedResult <- mutate(expectedResult, POS = POS - 1)
 # Clean colnames to match
@@ -206,7 +206,7 @@ print(xtable(onlyBQ), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:23:42 2015 -->
+<!-- Tue Feb  3 14:22:15 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> S </td> <td> CACA </td> <td> CACAACA </td> <td> NA12878 </td> <td> "1,2" </td> <td align="right">   1 </td> </tr>
@@ -227,7 +227,7 @@ print(xtable(onlyVcftools), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:23:42 2015 -->
+<!-- Tue Feb  3 14:22:15 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> ALLELE </th> <th> INDV </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694.00 </td> <td> S </td> <td> AAT </td> <td> NA12886 </td> </tr>
@@ -247,9 +247,9 @@ Retrieving the gVCF data for the singletons identified only by vcftools:
 ```r
 having <- paste("start = ", onlyVcftools$POS,
                 sep="", collapse=" OR ")
-result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
+result <- DisplayAndDispatchQuery("../sql/examine-data.sql",
                                   project=project,
-                                  replacements=c(table_replacement,
+                                  replacements=c(replacements,
                                                  "_HAVING_"=having))
 ```
 
@@ -279,7 +279,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:23:44 2015 -->
+<!-- Tue Feb  3 14:22:17 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td> NA12886 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
@@ -322,9 +322,9 @@ Check Individual Heterozygosity
 
 
 ```r
-result <- DisplayAndDispatchQuery("./sql/homozygous-variants.sql",
+result <- DisplayAndDispatchQuery("../sql/homozygous-variants.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=replacements)
 ```
 
 ```
@@ -377,7 +377,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:23:48 2015 -->
+<!-- Tue Feb  3 14:22:21 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 252 </td> <td align="right"> 233.49 </td> <td align="right"> 274 </td> <td align="right"> 0.46 </td> </tr>
@@ -399,12 +399,12 @@ Number of rows returned by this query: 17.
   <tr> <td> NA12893 </td> <td align="right"> 238 </td> <td align="right"> 230.91 </td> <td align="right"> 271 </td> <td align="right"> 0.18 </td> </tr>
    </table>
 
-Compare to [brca1.het](./data/heterozygous/brca1.het) (see the [vcftools command line](./data/heterozygous/brca1.log) used to create this file).
+Compare to [brca1.het](./heterozygous/brca1.het) (see the [vcftools command line](./heterozygous/brca1.log) used to create this file).
 
 
 
 ```r
-expectedResult <- read.table("./data/heterozygous/brca1.het", header=TRUE)
+expectedResult <- read.table("./heterozygous/brca1.het", header=TRUE)
 # Clean colnames to match
 colnames(expectedResult) <- gsub('\\.+$', '', colnames(expectedResult))
 colnames(expectedResult) <- gsub('\\.+', '_', colnames(expectedResult))
@@ -417,7 +417,7 @@ print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:23:48 2015 -->
+<!-- Tue Feb  3 14:22:21 2015 -->
 <table border=1>
 <tr> <th> E_HOM.x </th> <th> E_HOM.y </th> <th> F.x </th> <th> F.y </th> <th> INDV </th> <th> N_SITES.x </th> <th> N_SITES.y </th> <th> O_HOM.x </th> <th> O_HOM.y </th>  </tr>
   <tr> <td align="right"> 185.60 </td> <td align="right"> 233.49 </td> <td align="right"> 0.71 </td> <td align="right"> 0.46 </td> <td> NA12877 </td> <td align="right"> 254 </td> <td align="right"> 274 </td> <td align="right"> 234 </td> <td align="right"> 252 </td> </tr>
@@ -441,6 +441,71 @@ print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include
 
 The logic in the query looks similar to vcftools [output_het method](http://sourceforge.net/p/vcftools/code/HEAD/tree/trunk/cpp/variant_file_output.cpp#l165) but there is clearly a difference.  TODO: investigate the difference further.
 
+Check Identity By State
+-----------------------
+The Dataflow job was run like so:
+```
+java -cp target/google-genomics-dataflow-v1beta2-0.2-SNAPSHOT.jar \
+com.google.cloud.genomics.dataflow.pipelines.IdentityByState \
+--project=YOUR-PROJECT \
+--stagingLocation=gs://YOUR-BUCKET/staging \
+--output=gs://YOUR-BUCKET/output/platinum-genomes-brca1-ibs.tsv \
+--genomicsSecretsFile=/PATH/TO/YOUR/client_secrets.json \
+--datasetId=3049512673186936334 \
+--gvcf \
+--references=chr17:41196311:41277499
+```
+
+```r
+result <- read.table("./identity-by-state/platinum-genomes-brca1-ibs.tsv",
+                  col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
+expectedResult <- read.table("./identity-by-state/brca1-long.ibs",
+                  col.names=c("sample1", "sample2", "similar", "observed"))
+expectedResult <- mutate(expectedResult, ibsScore= similar / observed)
+joinedResult <- inner_join(result, expectedResult, by=c("sample1", "sample2"))
+nrow(joinedResult)
+```
+
+```
+## [1] 136
+```
+
+```r
+ggplot(joinedResult, aes(x=ibsScore.x, y=ibsScore.y)) + geom_point()
+```
+
+![plot of chunk ibs](figure/ibs-1.png) 
+
+```r
+model <- lm(ibsScore.y ~ ibsScore.x, joinedResult)
+summary(model)
+```
+
+```
+## 
+## Call:
+## lm(formula = ibsScore.y ~ ibsScore.x, data = joinedResult)
+## 
+## Residuals:
+##       Min        1Q    Median        3Q       Max 
+## -0.005134 -0.001818  0.001031  0.001590  0.003735 
+## 
+## Coefficients:
+##               Estimate Std. Error  t value Pr(>|t|)    
+## (Intercept) -0.0013157  0.0001938   -6.789 3.33e-10 ***
+## ibsScore.x   1.0005072  0.0008346 1198.768  < 2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.001847 on 134 degrees of freedom
+## Multiple R-squared:  0.9999,	Adjusted R-squared:  0.9999 
+## F-statistic: 1.437e+06 on 1 and 134 DF,  p-value: < 2.2e-16
+```
+
+There are a few differences between plink pseq IBS and the [Shared Minor Alleles Calculator](https://github.com/googlegenomics/dataflow-java/blob/master/src/main/java/com/google/cloud/genomics/dataflow/functions/SharedMinorAllelesCalculator.java) IBS score calculator in this data Dataflow job.
+1. plinkpseq skips variants that are not bi-allelic
+1. plinkseq increments the denominator for calls that are no-calls
+
 Cohort Level QC
 ===============
 
@@ -448,9 +513,9 @@ Check Hardy-Weinberg Equilibrium
 -----------------------------------
 
 ```r
-result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1-expanded.sql",
+result <- DisplayAndDispatchQuery("../sql/hardy-weinberg-brca1-expanded.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=replacements)
 ```
 
 ```
@@ -557,7 +622,7 @@ Number of rows returned by this query: 333.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:23:51 2015 -->
+<!-- Tue Feb  3 14:22:27 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
@@ -568,12 +633,12 @@ Displaying the first few results:
   <tr> <td> chr17 </td> <td align="right"> 41197957 </td> <td> G </td> <td> T </td> <td align="right">   5 </td> <td align="right">  12 </td> <td align="right">   0 </td> <td align="right"> 7.12 </td> <td align="right"> 7.76 </td> <td align="right"> 2.12 </td> <td align="right"> 5.07 </td> <td> FALSE </td> </tr>
    </table>
 
-Compare to [brca1.hwe](./data/hwe/brca1.hwe) (see the [vcftools command line](./data/hwe/brca1.log) used to create this file).
+Compare to [brca1.hwe](./hwe/brca1.hwe) (see the [vcftools command line](./hwe/brca1.log) used to create this file).
 
 
 ```r
 require(dplyr)
-df <- read.table("./data/hwe/brca1.hwe", header=TRUE)
+df <- read.table("./hwe/brca1.hwe", header=TRUE)
 obsSplitCol <- "OBS.HOM1.HET.HOM2."
 obsTemp <- read.table(text=as.character(df[, obsSplitCol]), sep = "/")
 names(obsTemp) <- c("OBS_HOM1", "OBS_HET", "OBS_HOM2")
@@ -603,7 +668,7 @@ print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:23:51 2015 -->
+<!-- Tue Feb  3 14:22:27 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
@@ -650,7 +715,7 @@ print(xtable(arrange(onlyVcftools, CHR, POS)), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:23:51 2015 -->
+<!-- Tue Feb  3 14:22:27 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ChiSq </th> <th> P </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407.00 </td> <td align="right"> 1.39 </td> <td align="right"> 0.53 </td> <td align="right">   8 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 8.82 </td> <td align="right"> 5.37 </td> <td align="right"> 0.82 </td> </tr>
@@ -662,9 +727,9 @@ Retrieving the gVCF data for the results identified only by vcftools:
 having <- paste("start <= ", onlyVcftools$POS,
                 "AND",
                 "end >= ", onlyVcftools$POS+1)
-result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
+result <- DisplayAndDispatchQuery("../sql/examine-data.sql",
                                   project=project,
-                                  replacements=c(table_replacement,
+                                  replacements=c(replacements,
                                                  "_HAVING_"=having))
 ```
 
@@ -694,7 +759,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:23:54 2015 -->
+<!-- Tue Feb  3 14:22:30 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196196 </td> <td align="right"> 41196429 </td> <td> A </td> <td>  </td> <td> NA12891 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
@@ -718,7 +783,7 @@ ORDER BY
 
 It appears that with BigQuery we are computing HWE for all the same variants as vcftools and the expected and Chi-Squared values are only slightly different.
 
-See also: the [gVCF version of this query](./sql/hardy-weinberg-brca1.sql), which is close but only works for SNPs and needs a RIGHT OUTER JOIN to compute values for variants for which all the samples have the variant.
+See also: the [gVCF version of this query](../sql/hardy-weinberg-brca1.sql), which is close but only works for SNPs and needs a RIGHT OUTER JOIN to compute values for variants for which all the samples have the variant.
 
 
 ===============
@@ -727,9 +792,9 @@ Check Transition-Transversion Ratio
 -----------------------------------
 
 ```r
-result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
+result <- DisplayAndDispatchQuery("../sql/ti-tv-ratio.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=replacements)
 ```
 
 ```
@@ -780,7 +845,7 @@ FROM (
 ```
 The result:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:23:58 2015 -->
+<!-- Tue Feb  3 14:22:33 2015 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> COUNT </th>  </tr>
   <tr> <td align="right"> 143 </td> <td align="right"> 132 </td> <td align="right"> 1.08 </td> <td align="right">  12 </td> </tr>
@@ -789,10 +854,10 @@ The result:
 Let's compare this to what we get from vcftools.  For information about the vcftools command see the [log](./titv/platinum_genomes_brca1_expanded_merged.log).  
 
 ```r
-expectedResult <- read.table("./data/titv/platinum_genomes_brca1_expanded_merged.TsTv.summary", header=TRUE)
+expectedResult <- read.table("./titv/platinum_genomes_brca1_expanded_merged.TsTv.summary", header=TRUE)
 ```
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:23:58 2015 -->
+<!-- Tue Feb  3 14:22:33 2015 -->
 <table border=1>
 <tr> <th> MODEL </th> <th> COUNT </th>  </tr>
   <tr> <td> AC </td> <td align="right">  48 </td> </tr>
@@ -810,9 +875,9 @@ We can see that with BigQuery we get 143 transition mutations, and 132 transvers
 Let's figure out what the differences are.  First, we need to get the specific mutations from BigQuery.
 
 ```r
-result <- DisplayAndDispatchQuery("./sql/ti-tv-variants.sql",
+result <- DisplayAndDispatchQuery("../sql/ti-tv-variants.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=replacements)
 ```
 
 ```
@@ -842,7 +907,7 @@ SELECT
 ```
 Here's the first few variants reported by BigQuery:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:24:00 2015 -->
+<!-- Tue Feb  3 14:22:35 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> </tr>
@@ -852,10 +917,10 @@ Here's the first few variants reported by BigQuery:
   <tr> <td> chr17 </td> <td align="right"> 41197958 </td> <td> A </td> <td> T </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41198182 </td> <td> A </td> <td> C </td> </tr>
    </table>
-Next, import the [transition and transversion mutations](./data/titv/brca.titv.csv) from the raw vcf file.  These were pulled out of the original vcf using a [custom perl script](./titv/pull_titv.pl).  vcftools does not output a new vcf file with only the transitions and transversions so we need to use a proxy method.
+Next, import the [transition and transversion mutations](./titv/brca.titv.csv) from the raw vcf file.  These were pulled out of the original vcf using a [custom perl script](./titv/pull_titv.pl).  vcftools does not output a new vcf file with only the transitions and transversions so we need to use a proxy method.
 
 ```r
-expectedResult <- read.csv("./data/titv/brca.titv.csv", header=FALSE)
+expectedResult <- read.csv("./titv/brca.titv.csv", header=FALSE)
 # Set column names
 names(expectedResult) <- c("reference_name","start","reference_bases","alternate_bases")
 # Convert to zero-based coordinates
@@ -872,7 +937,7 @@ onlyBQ <- anti_join(result, expectedResult)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 12:24:00 2015 -->
+<!-- Tue Feb  3 14:22:35 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> A </td> </tr>

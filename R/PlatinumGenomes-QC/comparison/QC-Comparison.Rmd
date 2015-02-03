@@ -16,7 +16,7 @@
 
 # Comparing Google Genomics Quality Control Results
 
-For details as to how the comparison data was created, see the [provenance details](./data/README.md).
+For details as to how the comparison data was created, see the [provenance details](./README.md).
 
 ```{r echo=FALSE, eval=FALSE}
 ######################[ CHANGE ME ]##################################
@@ -30,13 +30,11 @@ project <- "YOUR-PROJECT-ID"
 
 ```{r echo=FALSE, eval=TRUE}
 # Set up for BigQuery access.
-source("./helper.R")
+source("../helper.R")
 
-# By default this codelab runs upon the Illumina Platinum Genomes Variants.
-# Change the table here if you wish to run these queries against a different table.
-table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants",
-                          "#_WHERE_"="WHERE reference_name = 'chr17' AND start BETWEEN 41196311 AND 41277499")
+replacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                     "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants",
+                     "#_WHERE_"="WHERE reference_name = 'chr17' AND start BETWEEN 41196311 AND 41277499")
 ```
 
 Sample-Level QC
@@ -45,9 +43,9 @@ Sample-Level QC
 Check Singletons
 ----------------
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/private-variants-brca1.sql",
+result <- DisplayAndDispatchQuery("../sql/private-variants-brca1.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=replacements)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -55,10 +53,10 @@ Number of rows returned by this query: `r nrow(result)`.
 print(xtable(result), type="html", include.rownames=F)
 ```
 
-Compare to [brca1.singletons](./data/singletons/brca1.singletons) which has 85 some of which are for 0/0 genotypes from reference matching blocks (see the [vcftools command line](./data/singletons/brca1.log) used to create this file).
+Compare to [brca1.singletons](./singletons/brca1.singletons) which has 85 some of which are for 0/0 genotypes from reference matching blocks (see the [vcftools command line](./singletons/brca1.log) used to create this file).
 
 ```{r}
-expectedResult <- read.table("./data/singletons/brca1.singletons", header=TRUE)
+expectedResult <- read.table("./singletons/brca1.singletons", header=TRUE)
 # Convert to zero-based coordinates
 expectedResult <- mutate(expectedResult, POS = POS - 1)
 # Clean colnames to match
@@ -86,9 +84,9 @@ Retrieving the gVCF data for the singletons identified only by vcftools:
 ```{r message=FALSE, warning=FALSE, comment=NA}
 having <- paste("start = ", onlyVcftools$POS,
                 sep="", collapse=" OR ")
-result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
+result <- DisplayAndDispatchQuery("../sql/examine-data.sql",
                                   project=project,
-                                  replacements=c(table_replacement,
+                                  replacements=c(replacements,
                                                  "_HAVING_"=having))
 ```
 
@@ -104,9 +102,9 @@ Check Individual Heterozygosity
 -----------------------------------
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/homozygous-variants.sql",
+result <- DisplayAndDispatchQuery("../sql/homozygous-variants.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=replacements)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -114,11 +112,11 @@ Number of rows returned by this query: `r nrow(result)`.
 print(xtable(result), type="html", include.rownames=F)
 ```
 
-Compare to [brca1.het](./data/heterozygous/brca1.het) (see the [vcftools command line](./data/heterozygous/brca1.log) used to create this file).
+Compare to [brca1.het](./heterozygous/brca1.het) (see the [vcftools command line](./heterozygous/brca1.log) used to create this file).
 
 
 ```{r}
-expectedResult <- read.table("./data/heterozygous/brca1.het", header=TRUE)
+expectedResult <- read.table("./heterozygous/brca1.het", header=TRUE)
 # Clean colnames to match
 colnames(expectedResult) <- gsub('\\.+$', '', colnames(expectedResult))
 colnames(expectedResult) <- gsub('\\.+', '_', colnames(expectedResult))
@@ -131,15 +129,46 @@ print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include
 
 The logic in the query looks similar to vcftools [output_het method](http://sourceforge.net/p/vcftools/code/HEAD/tree/trunk/cpp/variant_file_output.cpp#l165) but there is clearly a difference.  TODO: investigate the difference further.
 
+Check Identity By State
+-----------------------
+The Dataflow job was run like so:
+```
+java -cp target/google-genomics-dataflow-v1beta2-0.2-SNAPSHOT.jar \
+com.google.cloud.genomics.dataflow.pipelines.IdentityByState \
+--project=YOUR-PROJECT \
+--stagingLocation=gs://YOUR-BUCKET/staging \
+--output=gs://YOUR-BUCKET/output/platinum-genomes-brca1-ibs.tsv \
+--genomicsSecretsFile=/PATH/TO/YOUR/client_secrets.json \
+--datasetId=3049512673186936334 \
+--gvcf \
+--references=chr17:41196311:41277499
+```
+```{r ibs}
+result <- read.table("./identity-by-state/platinum-genomes-brca1-ibs.tsv",
+                  col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
+expectedResult <- read.table("./identity-by-state/brca1-long.ibs",
+                  col.names=c("sample1", "sample2", "similar", "observed"))
+expectedResult <- mutate(expectedResult, ibsScore= similar / observed)
+joinedResult <- inner_join(result, expectedResult, by=c("sample1", "sample2"))
+nrow(joinedResult)
+ggplot(joinedResult, aes(x=ibsScore.x, y=ibsScore.y)) + geom_point()
+model <- lm(ibsScore.y ~ ibsScore.x, joinedResult)
+summary(model)
+```
+
+There are a few differences between plink pseq IBS and the [Shared Minor Alleles Calculator](https://github.com/googlegenomics/dataflow-java/blob/master/src/main/java/com/google/cloud/genomics/dataflow/functions/SharedMinorAllelesCalculator.java) IBS score calculator in this data Dataflow job.
+1. plinkpseq skips variants that are not bi-allelic
+1. plinkseq increments the denominator for calls that are no-calls
+
 Cohort Level QC
 ===============
 
 Check Hardy-Weinberg Equilibrium
 -----------------------------------
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1-expanded.sql",
+result <- DisplayAndDispatchQuery("../sql/hardy-weinberg-brca1-expanded.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=replacements)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -148,11 +177,11 @@ Displaying the first few results:
 print(xtable(head(result)), type="html", include.rownames=F)
 ```
 
-Compare to [brca1.hwe](./data/hwe/brca1.hwe) (see the [vcftools command line](./data/hwe/brca1.log) used to create this file).
+Compare to [brca1.hwe](./hwe/brca1.hwe) (see the [vcftools command line](./hwe/brca1.log) used to create this file).
 
 ```{r}
 require(dplyr)
-df <- read.table("./data/hwe/brca1.hwe", header=TRUE)
+df <- read.table("./hwe/brca1.hwe", header=TRUE)
 obsSplitCol <- "OBS.HOM1.HET.HOM2."
 obsTemp <- read.table(text=as.character(df[, obsSplitCol]), sep = "/")
 names(obsTemp) <- c("OBS_HOM1", "OBS_HET", "OBS_HOM2")
@@ -192,9 +221,9 @@ Retrieving the gVCF data for the results identified only by vcftools:
 having <- paste("start <= ", onlyVcftools$POS,
                 "AND",
                 "end >= ", onlyVcftools$POS+1)
-result <- DisplayAndDispatchQuery("./sql/examine-data.sql",
+result <- DisplayAndDispatchQuery("../sql/examine-data.sql",
                                   project=project,
-                                  replacements=c(table_replacement,
+                                  replacements=c(replacements,
                                                  "_HAVING_"=having))
 ```
 
@@ -204,7 +233,7 @@ print(xtable(result), type="html", include.rownames=F)
 
 It appears that with BigQuery we are computing HWE for all the same variants as vcftools and the expected and Chi-Squared values are only slightly different.
 
-See also: the [gVCF version of this query](./sql/hardy-weinberg-brca1.sql), which is close but only works for SNPs and needs a RIGHT OUTER JOIN to compute values for variants for which all the samples have the variant.
+See also: the [gVCF version of this query](../sql/hardy-weinberg-brca1.sql), which is close but only works for SNPs and needs a RIGHT OUTER JOIN to compute values for variants for which all the samples have the variant.
 
 
 ===============
@@ -212,9 +241,9 @@ See also: the [gVCF version of this query](./sql/hardy-weinberg-brca1.sql), whic
 Check Transition-Transversion Ratio
 -----------------------------------
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
+result <- DisplayAndDispatchQuery("../sql/ti-tv-ratio.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=replacements)
 ```
 The result:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
@@ -223,7 +252,7 @@ print(xtable(result), type="html", include.rownames=F)
 
 Let's compare this to what we get from vcftools.  For information about the vcftools command see the [log](./titv/platinum_genomes_brca1_expanded_merged.log).  
 ```{r}
-expectedResult <- read.table("./data/titv/platinum_genomes_brca1_expanded_merged.TsTv.summary", header=TRUE)
+expectedResult <- read.table("./titv/platinum_genomes_brca1_expanded_merged.TsTv.summary", header=TRUE)
 ```
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
 print(xtable(expectedResult), type="html", include.rownames=F)
@@ -233,17 +262,17 @@ We can see that with BigQuery we get 143 transition mutations, and 132 transvers
 
 Let's figure out what the differences are.  First, we need to get the specific mutations from BigQuery.
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/ti-tv-variants.sql",
+result <- DisplayAndDispatchQuery("../sql/ti-tv-variants.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=replacements)
 ```
 Here's the first few variants reported by BigQuery:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
 print(xtable(head(result)), type="html", include.rownames=F)
 ```
-Next, import the [transition and transversion mutations](./data/titv/brca.titv.csv) from the raw vcf file.  These were pulled out of the original vcf using a [custom perl script](./titv/pull_titv.pl).  vcftools does not output a new vcf file with only the transitions and transversions so we need to use a proxy method.
+Next, import the [transition and transversion mutations](./titv/brca.titv.csv) from the raw vcf file.  These were pulled out of the original vcf using a [custom perl script](./titv/pull_titv.pl).  vcftools does not output a new vcf file with only the transitions and transversions so we need to use a proxy method.
 ```{r}
-expectedResult <- read.csv("./data/titv/brca.titv.csv", header=FALSE)
+expectedResult <- read.csv("./titv/brca.titv.csv", header=FALSE)
 # Set column names
 names(expectedResult) <- c("reference_name","start","reference_bases","alternate_bases")
 # Convert to zero-based coordinates
