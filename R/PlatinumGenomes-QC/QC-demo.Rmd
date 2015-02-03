@@ -16,6 +16,8 @@
 
 # Comparing Google Genomics Quality Control Results
 
+For details as to how the comparison data was created, see the [provenance details](./data/README.md).
+
 ```{r echo=FALSE, eval=FALSE}
 ######################[ CHANGE ME ]##################################
 # This codelab assumes that the current working directory is where the Rmd file resides.
@@ -218,7 +220,6 @@ The result:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
 print(xtable(result), type="html", include.rownames=F)
 ```
-
 
 Let's compare this to what we get from vcftools.  For information about the vcftools command see the [log](./titv/platinum_genomes_brca1_expanded_merged.log).  
 ```{r}
