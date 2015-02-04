@@ -9,7 +9,7 @@ In this codelab you will use [Google Genomics](https://cloud.google.com/genomics
 3. perform sample-level Quality Control checks such as
  + homozygosity rate via BigQuery
  + ethnicity using Principal Coordinate Analysis (either from scratch via Apache Spark or using pre-computed results)
- + relatedness amoung individuals using Identity-By-State results (either from scratch via Google Cloud Dataflow or using pre-computed results)
+ + relatedness among individuals using Identity-By-State results (either from scratch via Google Cloud Dataflow or using pre-computed results)
 4. perform variant-level Quality Control checks via BigQuery such as
  + Hardy-Weinberg Equilibrium via BigQuery
 

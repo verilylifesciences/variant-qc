@@ -45,9 +45,57 @@ table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.v
 ## Missingness Rate
 
 ## Hardy-Weinberg Equilibrium
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1-expanded.sql",
+                                  project=project,
+                                  replacements=c(table_replacement,
+                                                 "#_ORDER_BY_"=
+                                                   paste("ORDER BY",
+                                                         "ChiSq DESC, CHR, POS, ref, alt",
+                                                         "LIMIT 1000")))
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+Displaying the first few results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(head(result)), type="html", include.rownames=F)
+```
 
 ## Ti/Tv by Depth
 
+TODO: this is actually by genomic window, not depth
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
+                                  project=project,
+                                  replacements=c(table_replacement,
+                                                 "#_WHERE_"="WHERE reference_name='chr1'",
+                                                 "_WINDOW_SIZE_"="100000"))
+```
+
+Visualizing the results:
+```{r titvByWindow, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(result) +
+  geom_point(aes(x=window_start, y=titv)) +
+  xlab("Genomic Position") +
+  ylab("Ti/Tv") +
+  ggtitle("Ti/Tv by 100,000 base pair windows on Chromosome 1")
+```
+
 ## Ti/Tv by Alternate Allele Counts
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/ti-tv-by-alternate-allele-count.sql",
+                                  project=project,
+                                  replacements=c(table_replacement))
+```
+
+Visualizing the results:
+```{r titvByAlt, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(result) +
+  geom_point(aes(x=alternate_allele_count, y=titv)) +
+  xlab("Alternate Allele Count") +
+  ylab("Ti/Tv") +
+  ggtitle("Ti/Tv by Alternate Allele Count")
+```
 
 ## Heterozygous Haploitype

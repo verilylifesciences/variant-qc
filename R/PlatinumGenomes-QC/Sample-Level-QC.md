@@ -16,12 +16,12 @@
 
 # Sample-Level QC
 
-* Singleton Rate
-* Missingness Rate
-* Heterozygosity Rate and Inbreeding Coefficient
-* Sex Inference
-* Ethnicity Inference
-* Genome Similarity
+* [Singleton Rate](#singleton-rate)
+* [Missingness Rate](#missingness-rate)
+* [Heterozygosity Rate and Inbreeding Coefficient](#homozygosity-rate-and-inbreeding-coefficient)
+* [Sex Inference](#sex-inference)
+* [Ethnicity Inference](#ethnicity-inference)
+* [Genome Similarity](#genome-similarity)
 
 
 
@@ -102,7 +102,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 11:58:22 2015 -->
+<!-- Wed Feb  4 15:35:21 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -164,7 +164,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 11:58:24 2015 -->
+<!-- Wed Feb  4 15:35:22 2015 -->
 <table border=1>
 <tr> <th> sample_id </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -245,7 +245,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 11:58:28 2015 -->
+<!-- Wed Feb  4 15:35:26 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
@@ -326,7 +326,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 11:58:31 2015 -->
+<!-- Wed Feb  4 15:35:28 2015 -->
 <table border=1>
 <tr> <th> sample_id </th> <th> all_callable_sites </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th> <th> all_snvs </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 329461 </td> <td align="right"> 79721 </td> <td align="right"> 37317 </td> <td align="right"> 212423 </td> <td align="right"> 117038 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> </tr>
@@ -373,7 +373,7 @@ ggplot(data=ibs, aes(x=sample1, y=sample2)) +
                  x="Sample 1", y="Sample 2"))
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png) 
+<img src="figure/ibs-1.png" title="plot of chunk ibs" alt="plot of chunk ibs" style="display: block; margin: auto;" />
 
 ### To Run the Job
 

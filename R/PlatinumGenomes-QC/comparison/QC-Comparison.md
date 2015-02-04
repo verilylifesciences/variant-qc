@@ -98,7 +98,7 @@ ORDER BY
 Number of rows returned by this query: 63.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:15 2015 -->
+<!-- Wed Feb  4 15:19:40 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> S </td> <td> CT </td> <td> C </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
@@ -206,7 +206,7 @@ print(xtable(onlyBQ), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:15 2015 -->
+<!-- Wed Feb  4 15:19:40 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> S </td> <td> CACA </td> <td> CACAACA </td> <td> NA12878 </td> <td> "1,2" </td> <td align="right">   1 </td> </tr>
@@ -227,7 +227,7 @@ print(xtable(onlyVcftools), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:15 2015 -->
+<!-- Wed Feb  4 15:19:40 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> ALLELE </th> <th> INDV </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694.00 </td> <td> S </td> <td> AAT </td> <td> NA12886 </td> </tr>
@@ -279,7 +279,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:17 2015 -->
+<!-- Wed Feb  4 15:19:42 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td> NA12886 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
@@ -377,7 +377,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:21 2015 -->
+<!-- Wed Feb  4 15:19:45 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 252 </td> <td align="right"> 233.49 </td> <td align="right"> 274 </td> <td align="right"> 0.46 </td> </tr>
@@ -417,7 +417,7 @@ print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:21 2015 -->
+<!-- Wed Feb  4 15:19:45 2015 -->
 <table border=1>
 <tr> <th> E_HOM.x </th> <th> E_HOM.y </th> <th> F.x </th> <th> F.y </th> <th> INDV </th> <th> N_SITES.x </th> <th> N_SITES.y </th> <th> O_HOM.x </th> <th> O_HOM.y </th>  </tr>
   <tr> <td align="right"> 185.60 </td> <td align="right"> 233.49 </td> <td align="right"> 0.71 </td> <td align="right"> 0.46 </td> <td> NA12877 </td> <td align="right"> 254 </td> <td align="right"> 274 </td> <td align="right"> 234 </td> <td align="right"> 252 </td> </tr>
@@ -503,8 +503,9 @@ summary(model)
 ```
 
 There are a few differences between plink pseq IBS and the [Shared Minor Alleles Calculator](https://github.com/googlegenomics/dataflow-java/blob/master/src/main/java/com/google/cloud/genomics/dataflow/functions/SharedMinorAllelesCalculator.java) IBS score calculator in this data Dataflow job.
+
 1. plinkpseq skips variants that are not bi-allelic
-1. plinkseq increments the denominator for calls that are no-calls
+1. plinkpseq increments the denominator for calls that are no-calls
 
 Cohort Level QC
 ===============
@@ -515,7 +516,8 @@ Check Hardy-Weinberg Equilibrium
 ```r
 result <- DisplayAndDispatchQuery("../sql/hardy-weinberg-brca1-expanded.sql",
                                   project=project,
-                                  replacements=replacements)
+                                  replacements=c(replacements,
+                                                 "#_ORDER_BY_"="ORDER BY CHR, POS, ref, alt"))
 ```
 
 ```
@@ -605,24 +607,21 @@ FROM (
           AND SOME(1 = call.genotype)) WITHIN call AS HET,
       FROM
         [google.com:biggene:platinum_genomes.expanded_variants]
-      WHERE
-        reference_name = 'chr17'
-        AND start BETWEEN 41196311
-        AND 41277499
+      # Optionally add a clause here to limit the query to a particular
+      # region of the genome.
+      WHERE reference_name = 'chr17' AND start BETWEEN 41196311 AND 41277499
       HAVING
         # Skip 1/2 genotypes
         num_alts = 1
         )))
-ORDER BY
-  CHR,
-  POS,
-  ref
+# Optionally add a clause here sort and limit the results.
+ORDER BY CHR, POS, ref, alt
 ```
 Number of rows returned by this query: 333.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:27 2015 -->
+<!-- Wed Feb  4 15:19:48 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
@@ -668,7 +667,7 @@ print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:27 2015 -->
+<!-- Wed Feb  4 15:19:49 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
@@ -680,8 +679,8 @@ print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
   <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> CACA </td> <td> C </td> <td align="right">   0 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 1.75 </td> <td align="right"> 3.50 </td> <td align="right"> 1.75 </td> <td align="right"> 7.00 </td> <td> TRUE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41214209 </td> <td> A </td> <td> T </td> <td align="right">  16 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 16.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41214210 </td> <td> A </td> <td> C </td> <td align="right">  16 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 16.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td> T </td> <td> TAA </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right">   3 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right"> 3.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td> T </td> <td> TA </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right">   3 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right"> 3.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td> T </td> <td> TAA </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right">   3 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right"> 3.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41226740 </td> <td> T </td> <td> G </td> <td align="right">  16 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 16.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41239915 </td> <td> T </td> <td> A </td> <td align="right">  16 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 16.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41242077 </td> <td> G </td> <td> A </td> <td align="right">  13 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 13.02 </td> <td align="right"> 0.96 </td> <td align="right"> 0.02 </td> <td align="right"> 0.02 </td> <td> FALSE </td> </tr>
@@ -689,16 +688,16 @@ print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
   <tr> <td> chr17 </td> <td align="right"> 41252693 </td> <td> T </td> <td> A </td> <td align="right">  16 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 16.01 </td> <td align="right"> 0.97 </td> <td align="right"> 0.01 </td> <td align="right"> 0.01 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694 </td> <td> A </td> <td> T </td> <td align="right">  16 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 16.01 </td> <td align="right"> 0.97 </td> <td align="right"> 0.01 </td> <td align="right"> 0.01 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252695 </td> <td> A </td> <td> T </td> <td align="right">   2 </td> <td align="right">  10 </td> <td align="right">   2 </td> <td align="right"> 3.50 </td> <td align="right"> 7.00 </td> <td align="right"> 3.50 </td> <td align="right"> 2.57 </td> <td> FALSE </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> A </td> <td align="right">   1 </td> <td align="right">   9 </td> <td align="right">   3 </td> <td align="right"> 2.33 </td> <td align="right"> 6.35 </td> <td align="right"> 4.33 </td> <td align="right"> 2.27 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> C </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 1.13 </td> <td align="right"> 0.75 </td> <td align="right"> 0.13 </td> <td align="right"> 0.23 </td> <td> FALSE </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> A </td> <td align="right">   1 </td> <td align="right">   9 </td> <td align="right">   3 </td> <td align="right"> 2.33 </td> <td align="right"> 6.35 </td> <td align="right"> 4.33 </td> <td align="right"> 2.27 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41256091 </td> <td> A </td> <td> G </td> <td align="right">  16 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 16.01 </td> <td align="right"> 0.97 </td> <td align="right"> 0.01 </td> <td align="right"> 0.01 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41256094 </td> <td> A </td> <td> G </td> <td align="right">  16 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 16.01 </td> <td align="right"> 0.97 </td> <td align="right"> 0.01 </td> <td align="right"> 0.01 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41256097 </td> <td> G </td> <td> A </td> <td align="right">  13 </td> <td align="right">   3 </td> <td align="right">   0 </td> <td align="right"> 13.14 </td> <td align="right"> 2.72 </td> <td align="right"> 0.14 </td> <td align="right"> 0.17 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41256100 </td> <td> A </td> <td> G </td> <td align="right">  14 </td> <td align="right">   2 </td> <td align="right">   0 </td> <td align="right"> 14.06 </td> <td align="right"> 1.88 </td> <td align="right"> 0.06 </td> <td align="right"> 0.07 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41256102 </td> <td> G </td> <td> A </td> <td align="right">  12 </td> <td align="right">   4 </td> <td align="right">   0 </td> <td align="right"> 12.25 </td> <td align="right"> 3.50 </td> <td align="right"> 0.25 </td> <td align="right"> 0.33 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41271293 </td> <td> A </td> <td> G </td> <td align="right">  16 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 16.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   6 </td> <td align="right">   0 </td> <td align="right"> 10.56 </td> <td align="right"> 4.88 </td> <td align="right"> 0.56 </td> <td align="right"> 0.85 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> C </td> <td align="right">  10 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 10.02 </td> <td align="right"> 0.95 </td> <td align="right"> 0.02 </td> <td align="right"> 0.02 </td> <td> FALSE </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   6 </td> <td align="right">   0 </td> <td align="right"> 10.56 </td> <td align="right"> 4.88 </td> <td align="right"> 0.56 </td> <td align="right"> 0.85 </td> <td> FALSE </td> </tr>
    </table>
 
 Note vcftools appears to skip variants with single allele genotypes:
@@ -715,7 +714,7 @@ print(xtable(arrange(onlyVcftools, CHR, POS)), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:27 2015 -->
+<!-- Wed Feb  4 15:19:49 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ChiSq </th> <th> P </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407.00 </td> <td align="right"> 1.39 </td> <td align="right"> 0.53 </td> <td align="right">   8 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 8.82 </td> <td align="right"> 5.37 </td> <td align="right"> 0.82 </td> </tr>
@@ -759,7 +758,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:30 2015 -->
+<!-- Wed Feb  4 15:19:51 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196196 </td> <td align="right"> 41196429 </td> <td> A </td> <td>  </td> <td> NA12891 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
@@ -794,61 +793,55 @@ Check Transition-Transversion Ratio
 ```r
 result <- DisplayAndDispatchQuery("../sql/ti-tv-ratio.sql",
                                   project=project,
-                                  replacements=replacements)
+                                  replacements=c(replacements,
+                                                 "_WINDOW_SIZE_"="1000000"))
 ```
 
 ```
-# Compute the Ti/Tv ratio of the Platinum Genomes dataset.
+# Compute the Ti/Tv ratio for variants within genomic region windows.
 SELECT
+  reference_name,
+  window * 1000000 AS window_start,
   transitions,
   transversions,
   transitions/transversions AS titv,
-  COUNT
+  num_variants_in_window,
 FROM (
   SELECT
-    SUM(IF(mutation IN ('A->G',
-          'G->A',
-          'C->T',
-          'T->C'),
-        INTEGER(num_snps),
-        INTEGER(0))) AS transitions,
-    SUM(IF(mutation IN ('A->C',
-          'C->A',
-          'G->T',
-          'T->G',
-          'A->T',
-          'T->A',
-          'C->G',
-          'G->C'),
-        INTEGER(num_snps),
-        INTEGER(0))) AS transversions,
-        COUNT(mutation) AS COUNT
+    reference_name,
+    window,
+    SUM(mutation IN ('A->G', 'G->A', 'C->T', 'T->C')) AS transitions,
+    SUM(mutation IN ('A->C', 'C->A', 'G->T', 'T->G',
+                     'A->T', 'T->A', 'C->G', 'G->C')) AS transversions,
+    COUNT(mutation) AS num_variants_in_window
   FROM (
     SELECT
-      CONCAT(reference_bases,
-        CONCAT(STRING('->'),
-          alternate_bases)) AS mutation,
-      COUNT(alternate_bases) AS num_snps,
+      reference_name,
+      INTEGER(FLOOR(start / 1000000)) AS window,
+      CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
+      COUNT(alternate_bases) WITHIN RECORD AS num_alts,
     FROM
       [genomics-public-data:platinum_genomes.variants]
-    WHERE
-      reference_name = 'chr17'
-      AND start BETWEEN 41196311
-      AND 41277499     
-      AND LENGTH(alternate_bases) == 1
-      AND LENGTH(reference_bases) == 1
-    GROUP BY
-      mutation,
-    ORDER BY
-      mutation))
-      
+    # Optionally add clause here to limit the query to a particular
+    # region of the genome.
+    WHERE reference_name = 'chr17' AND start BETWEEN 41196311 AND 41277499
+    HAVING
+      # Skip 1/2 genotypes _and non-SNP variants
+      num_alts = 1
+      AND reference_bases IN ('A','C','G','T')
+      AND alternate_bases IN ('A','C','G','T'))
+  GROUP BY
+    reference_name,
+    window)
+ORDER BY
+  window_start
 ```
 The result:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:33 2015 -->
+<!-- Wed Feb  4 15:19:56 2015 -->
 <table border=1>
-<tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> COUNT </th>  </tr>
-  <tr> <td align="right"> 143 </td> <td align="right"> 132 </td> <td align="right"> 1.08 </td> <td align="right">  12 </td> </tr>
+<tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41000000 </td> <td align="right"> 143 </td> <td align="right"> 132 </td> <td align="right"> 1.08 </td> <td align="right"> 275 </td> </tr>
    </table>
 
 Let's compare this to what we get from vcftools.  For information about the vcftools command see the [log](./titv/platinum_genomes_brca1_expanded_merged.log).  
@@ -857,7 +850,7 @@ Let's compare this to what we get from vcftools.  For information about the vcft
 expectedResult <- read.table("./titv/platinum_genomes_brca1_expanded_merged.TsTv.summary", header=TRUE)
 ```
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:33 2015 -->
+<!-- Wed Feb  4 15:19:56 2015 -->
 <table border=1>
 <tr> <th> MODEL </th> <th> COUNT </th>  </tr>
   <tr> <td> AC </td> <td align="right">  48 </td> </tr>
@@ -907,7 +900,7 @@ SELECT
 ```
 Here's the first few variants reported by BigQuery:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:35 2015 -->
+<!-- Wed Feb  4 15:19:58 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> </tr>
@@ -937,7 +930,7 @@ onlyBQ <- anti_join(result, expectedResult)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb  3 14:22:35 2015 -->
+<!-- Wed Feb  4 15:19:58 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> A </td> </tr>

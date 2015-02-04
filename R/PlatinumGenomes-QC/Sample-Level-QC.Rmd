@@ -106,7 +106,7 @@ This is a work-in-progress.  See https://github.com/elmer-garduno/spark-examples
 
 ### Results
 
-```{r}
+```{r ibs, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ibs <- read.table("./data/platinum-genomes-ibs.tsv",
                   col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
 ggplot(data=ibs, aes(x=sample1, y=sample2)) +

@@ -84,15 +84,12 @@ FROM (
           AND SOME(1 = call.genotype)) WITHIN call AS HET,
       FROM
         [_THE_EXPANDED_TABLE_]
-      WHERE
-        reference_name = 'chr17'
-        AND start BETWEEN 41196311
-        AND 41277499
+      # Optionally add a clause here to limit the query to a particular
+      # region of the genome.
+      #_WHERE_
       HAVING
         # Skip 1/2 genotypes
         num_alts = 1
         )))
-ORDER BY
-  CHR,
-  POS,
-  ref
+# Optionally add a clause here sort and limit the results.
+#_ORDER_BY_

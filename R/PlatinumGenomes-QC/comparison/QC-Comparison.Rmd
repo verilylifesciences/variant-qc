@@ -157,8 +157,9 @@ summary(model)
 ```
 
 There are a few differences between plink pseq IBS and the [Shared Minor Alleles Calculator](https://github.com/googlegenomics/dataflow-java/blob/master/src/main/java/com/google/cloud/genomics/dataflow/functions/SharedMinorAllelesCalculator.java) IBS score calculator in this data Dataflow job.
+
 1. plinkpseq skips variants that are not bi-allelic
-1. plinkseq increments the denominator for calls that are no-calls
+1. plinkpseq increments the denominator for calls that are no-calls
 
 Cohort Level QC
 ===============
@@ -168,7 +169,8 @@ Check Hardy-Weinberg Equilibrium
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("../sql/hardy-weinberg-brca1-expanded.sql",
                                   project=project,
-                                  replacements=replacements)
+                                  replacements=c(replacements,
+                                                 "#_ORDER_BY_"="ORDER BY CHR, POS, ref, alt"))
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -243,7 +245,8 @@ Check Transition-Transversion Ratio
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("../sql/ti-tv-ratio.sql",
                                   project=project,
-                                  replacements=replacements)
+                                  replacements=c(replacements,
+                                                 "_WINDOW_SIZE_"="1000000"))
 ```
 The result:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
