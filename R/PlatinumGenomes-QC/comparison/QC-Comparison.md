@@ -74,13 +74,11 @@ FROM (
           reference_name = 'chr17'
           AND start BETWEEN 41196311
           AND 41277499
-        OMIT
-          call IF EVERY(call.genotype = -1)
+        OMIT call IF EVERY(call.genotype = -1)
           ),
         alternate_bases)
       )
-  OMIT
-    RECORD IF alternate_bases IS NULL
+  OMIT RECORD IF alternate_bases IS NULL
   HAVING
     cnt > 0
     )
@@ -98,7 +96,7 @@ ORDER BY
 Number of rows returned by this query: 63.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:40 2015 -->
+<!-- Thu Feb  5 16:34:54 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> S </td> <td> CT </td> <td> C </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
@@ -206,7 +204,7 @@ print(xtable(onlyBQ), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:40 2015 -->
+<!-- Thu Feb  5 16:34:54 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> S </td> <td> CACA </td> <td> CACAACA </td> <td> NA12878 </td> <td> "1,2" </td> <td align="right">   1 </td> </tr>
@@ -227,7 +225,7 @@ print(xtable(onlyVcftools), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:40 2015 -->
+<!-- Thu Feb  5 16:34:54 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> ALLELE </th> <th> INDV </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694.00 </td> <td> S </td> <td> AAT </td> <td> NA12886 </td> </tr>
@@ -279,7 +277,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:42 2015 -->
+<!-- Thu Feb  5 16:34:55 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td> NA12886 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
@@ -377,7 +375,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:45 2015 -->
+<!-- Thu Feb  5 16:35:00 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 252 </td> <td align="right"> 233.49 </td> <td align="right"> 274 </td> <td align="right"> 0.46 </td> </tr>
@@ -417,7 +415,7 @@ print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:45 2015 -->
+<!-- Thu Feb  5 16:35:00 2015 -->
 <table border=1>
 <tr> <th> E_HOM.x </th> <th> E_HOM.y </th> <th> F.x </th> <th> F.y </th> <th> INDV </th> <th> N_SITES.x </th> <th> N_SITES.y </th> <th> O_HOM.x </th> <th> O_HOM.y </th>  </tr>
   <tr> <td align="right"> 185.60 </td> <td align="right"> 233.49 </td> <td align="right"> 0.71 </td> <td align="right"> 0.46 </td> <td> NA12877 </td> <td align="right"> 254 </td> <td align="right"> 274 </td> <td align="right"> 234 </td> <td align="right"> 252 </td> </tr>
@@ -614,14 +612,14 @@ FROM (
         # Skip 1/2 genotypes
         num_alts = 1
         )))
-# Optionally add a clause here sort and limit the results.
+# Optionally add a clause here to sort and limit the results.
 ORDER BY CHR, POS, ref, alt
 ```
 Number of rows returned by this query: 333.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:48 2015 -->
+<!-- Thu Feb  5 16:35:03 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
@@ -667,7 +665,7 @@ print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:49 2015 -->
+<!-- Thu Feb  5 16:35:03 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
@@ -714,7 +712,7 @@ print(xtable(arrange(onlyVcftools, CHR, POS)), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:49 2015 -->
+<!-- Thu Feb  5 16:35:04 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ChiSq </th> <th> P </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407.00 </td> <td align="right"> 1.39 </td> <td align="right"> 0.53 </td> <td align="right">   8 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 8.82 </td> <td align="right"> 5.37 </td> <td align="right"> 0.82 </td> </tr>
@@ -758,7 +756,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:51 2015 -->
+<!-- Thu Feb  5 16:35:05 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196196 </td> <td align="right"> 41196429 </td> <td> A </td> <td>  </td> <td> NA12891 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
@@ -838,7 +836,7 @@ ORDER BY
 ```
 The result:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:56 2015 -->
+<!-- Thu Feb  5 16:35:09 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41000000 </td> <td align="right"> 143 </td> <td align="right"> 132 </td> <td align="right"> 1.08 </td> <td align="right"> 275 </td> </tr>
@@ -850,7 +848,7 @@ Let's compare this to what we get from vcftools.  For information about the vcft
 expectedResult <- read.table("./titv/platinum_genomes_brca1_expanded_merged.TsTv.summary", header=TRUE)
 ```
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:56 2015 -->
+<!-- Thu Feb  5 16:35:09 2015 -->
 <table border=1>
 <tr> <th> MODEL </th> <th> COUNT </th>  </tr>
   <tr> <td> AC </td> <td align="right">  48 </td> </tr>
@@ -900,7 +898,7 @@ SELECT
 ```
 Here's the first few variants reported by BigQuery:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:58 2015 -->
+<!-- Thu Feb  5 16:35:12 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> </tr>
@@ -930,11 +928,11 @@ onlyBQ <- anti_join(result, expectedResult)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:19:58 2015 -->
+<!-- Thu Feb  5 16:35:13 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> A </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> C </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> A </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> A </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> C </td> </tr>
    </table>

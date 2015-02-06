@@ -1,5 +1,5 @@
 # The following query computes the Hardy-Weinberg equilibrium for BRCA1 SNPs.
-SELECT 
+SELECT
   calcs.CHR AS CHR,
   calcs.POS AS POS,
   calcs.ref AS ref,
@@ -10,20 +10,20 @@ SELECT
   calcs.EXP_HOM1 AS EXP_HOM1,
   calcs.EXP_HET AS EXP_HET,
   calcs.EXP_HOM2 AS EXP_HOM2,
-  
+
   # Chi Squared Calculation
   # SUM(((Observed - Expected)^2) / Expected )
   ROUND((POW(calcs.OBS_HOM1 - calcs.EXP_HOM1, 2) / calcs.EXP_HOM1)
   + (POW(calcs.OBS_HET - calcs.EXP_HET, 2) / calcs.EXP_HET)
   + (POW(calcs.OBS_HOM2 - calcs.EXP_HOM2, 2) / calcs.EXP_HOM2), 3)
   AS CHI_SQ,
-  
+
   # Determine if Chi Sq value is significant
   IF((POW(calcs.OBS_HOM1 - calcs.EXP_HOM1, 2) / calcs.EXP_HOM1)
   + (POW(calcs.OBS_HET - calcs.EXP_HET, 2) / calcs.EXP_HET)
-  + (POW(calcs.OBS_HOM2 - calcs.EXP_HOM2, 2) / calcs.EXP_HOM2) 
+  + (POW(calcs.OBS_HOM2 - calcs.EXP_HOM2, 2) / calcs.EXP_HOM2)
   > 5.991, "TRUE", "FALSE") AS PVALUE_SIG
-  
+
 FROM (
     SELECT
       vals.CHR AS CHR,
@@ -33,33 +33,33 @@ FROM (
       vals.OBS_HOM1 AS OBS_HOM1,
       vals.OBS_HET AS OBS_HET,
       vals.OBS_HOM2 AS OBS_HOM2,
-    
+
       # Expected AA
       # p^2
-      # ((COUNT(AA) + (COUNT(Aa)/2) / 
+      # ((COUNT(AA) + (COUNT(Aa)/2) /
       #  SAMPLE_COUNT) ^ 2) * SAMPLE_COUNT
       ROUND(POW((vals.OBS_HOM1 + (vals.OBS_HET/2)) /
         vals.SAMPLE_COUNT, 2) * vals.SAMPLE_COUNT, 2)
         AS EXP_HOM1,
-    
+
       # Expected Aa
       # 2pq
-      # 2 * (COUNT(AA) + (COUNT(Aa)/2) / SAMPLE_COUNT) * 
-      # (COUNT(aa) + (COUNT(Aa)/2) / SAMPLE_COUNT) 
+      # 2 * (COUNT(AA) + (COUNT(Aa)/2) / SAMPLE_COUNT) *
+      # (COUNT(aa) + (COUNT(Aa)/2) / SAMPLE_COUNT)
       # * SAMPLE_COUNT
       ROUND(2 * ((vals.OBS_HOM1 + (vals.OBS_HET/2)) / vals.SAMPLE_COUNT) *
-        ((vals.OBS_HOM2 + (vals.OBS_HET/2)) / vals.SAMPLE_COUNT) 
+        ((vals.OBS_HOM2 + (vals.OBS_HET/2)) / vals.SAMPLE_COUNT)
         * vals.SAMPLE_COUNT, 2)
         AS EXP_HET,
-    
+
       # Expected aa
       # q^2
-      # (COUNT(aa) + (COUNT(Aa)/2) / 
-      #  SAMPLE_COUNT) ^ 2 * SAMPLE_COUNT    
+      # (COUNT(aa) + (COUNT(Aa)/2) /
+      #  SAMPLE_COUNT) ^ 2 * SAMPLE_COUNT
       ROUND(POW((vals.OBS_HOM2 + (vals.OBS_HET/2)) /
         vals.SAMPLE_COUNT, 2) * vals.SAMPLE_COUNT, 2)
         AS EXP_HOM2,
-      
+
     FROM (
         SELECT
           vars.reference_name AS CHR,
@@ -68,9 +68,9 @@ FROM (
           alternate_bases AS alt,
           SUM(refs.HOM_REF) + vars.HOM_REF AS OBS_HOM1,
           vars.HET AS OBS_HET,
-          vars.HOM_ALT AS OBS_HOM2, 
+          vars.HOM_ALT AS OBS_HOM2,
           SUM(refs.HOM_REF) + vars.HOM_REF + vars.HET + vars.HOM_ALT AS SAMPLE_COUNT,
-        
+
         FROM (
               # Constrain the left hand side of the _join to reference-matching blocks.
             SELECT
@@ -82,8 +82,7 @@ FROM (
               [genomics-public-data:platinum_genomes.variants]
             WHERE
               reference_name = 'chr17'
-            OMIT
-              RECORD IF EVERY(alternate_bases IS NOT NULL)
+            OMIT RECORD IF EVERY(alternate_bases IS NOT NULL)
               ) AS refs
           JOIN (
               SELECT
@@ -96,7 +95,7 @@ FROM (
                 SUM(EVERY(0 = call.genotype)) WITHIN call AS HOM_REF,
                 SUM(EVERY(1 = call.genotype)) WITHIN call AS HOM_ALT,
                 SUM(SOME(0 = call.genotype) AND SOME(1 = call.genotype)) WITHIN call AS HET,
-                
+
               FROM
                 [genomics-public-data:platinum_genomes.variants]
               WHERE
@@ -132,4 +131,4 @@ FROM (
               POS,
               ref,
               alt ) AS vals ) AS calcs
-  
+

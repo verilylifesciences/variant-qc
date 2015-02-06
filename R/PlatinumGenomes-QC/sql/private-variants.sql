@@ -43,8 +43,7 @@ FROM (
           OMIT call IF EVERY(call.genotype = -1)
         ), alternate_bases)
         )
-    OMIT
-      RECORD IF alternate_bases IS NULL
+    OMIT RECORD IF alternate_bases IS NULL
     HAVING
       cnt > 0
       )

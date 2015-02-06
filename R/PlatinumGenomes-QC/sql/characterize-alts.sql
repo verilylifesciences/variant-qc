@@ -7,7 +7,6 @@ SELECT
   MAX(LENGTH(alternate_bases)) AS max_alt_len
 FROM
   [_THE_TABLE_]
-OMIT
-  RECORD IF EVERY(alternate_bases IS NULL)
+OMIT RECORD IF EVERY(alternate_bases IS NULL)
 GROUP BY
   alt_contains_no_special_characters

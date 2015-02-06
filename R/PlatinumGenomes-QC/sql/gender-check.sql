@@ -3,13 +3,13 @@
 # correct for each individual.
 SELECT
   sample_id,
+  ROUND((het_RA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_het_alt_in_snvs,
+  ROUND((hom_AA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_hom_alt_in_snvs,
   (hom_AA_count + het_RA_count + hom_RR_count) AS all_callable_sites,
   hom_AA_count,
   het_RA_count,
   hom_RR_count,
   (hom_AA_count + het_RA_count) AS all_snvs,
-  ROUND((het_RA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_het_alt_in_snvs,
-  ROUND((hom_AA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_hom_alt_in_snvs
 FROM
   (
   SELECT

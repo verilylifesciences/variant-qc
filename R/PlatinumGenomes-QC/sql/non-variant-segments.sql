@@ -13,8 +13,7 @@ WHERE
   reference_name = 'chr17'
   AND start BETWEEN 41196311
   AND 41277499
-OMIT
-  RECORD IF SOME(alternate_bases IS NOT NULL)
+OMIT RECORD IF SOME(alternate_bases IS NOT NULL)
 ORDER BY
   start,
   call.call_set_name

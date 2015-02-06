@@ -20,8 +20,7 @@ FROM (
     [_THE_TABLE_]
   WHERE
     reference_name = 'chr17'
-  OMIT
-    RECORD IF EVERY(alternate_bases IS NOT NULL)
+  OMIT RECORD IF EVERY(alternate_bases IS NOT NULL)
     ) AS refs
 JOIN (
   SELECT

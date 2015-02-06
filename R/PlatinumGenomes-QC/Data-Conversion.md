@@ -1,4 +1,4 @@
-# Data Conversion
+# Part 2: Data Conversion
 
 Data in [genome VCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions) (gVCF) format can be challenging to query.  For more detail see this [comparison](https://github.com/googlegenomics/bigquery-examples/tree/master/pgp/data-stories/schema-comparisons#motivation).
 
@@ -8,3 +8,5 @@ More coming soon!  Its a combination of:
 * https://github.com/googlegenomics/dataflow-java/blob/master/src/main/java/com/google/cloud/genomics/dataflow/pipelines/ConvertGvcfToVcf.java which will be moved into codelabs/Java
 * https://github.com/deflaux/codelabs/tree/qc-codelab/Python/PlatinumGenomes-gVCF-to-VCF with an update for PySpark in addition to the current support for Hadoop Streaming
 
+--------------------------------------------------------
+_Next_: [Part 3: Sample-Level QC](./Sample-Level-QC.md)

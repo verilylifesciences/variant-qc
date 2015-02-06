@@ -14,20 +14,97 @@
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
 
-# Sample-Level QC
+# Part 3: Sample-Level QC
 
-* [Singleton Rate](#singleton-rate)
+
+
+
+
+In Part 3 of the codelab, we perform some quality control analyses that could help to identify any problematic genomes that should be removed from the cohort before proceeding with further analysis.  The appropriate cut off thresholds will depend upon the input dataset.
+
 * [Missingness Rate](#missingness-rate)
+* [Singleton Rate](#singleton-rate)
 * [Heterozygosity Rate and Inbreeding Coefficient](#homozygosity-rate-and-inbreeding-coefficient)
 * [Sex Inference](#sex-inference)
 * [Ethnicity Inference](#ethnicity-inference)
 * [Genome Similarity](#genome-similarity)
 
+By default this codelab runs upon the Illumina Platinum Genomes Variants. Change the tables here if you wish to run these queries against a different dataset.
+
+```r
+table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+```
+
+## Missingness Rate
+
+For each genome, determine the percentage of sites explicitly called as a no-call.  If this percentage is too high, the genome may be problematic.
 
 
+```r
+result <- DisplayAndDispatchQuery("./sql/sample-level-missingness.sql",
+                                  project=project,
+                                  replacements=table_replacement)
+```
 
+```
+# Compute the ratio of positions corresponding to no-calls versus all positions
+# called (reference, variant, and no-calls).
+SELECT
+  sample_id,
+  no_calls,
+  all_calls,
+  (no_calls/all_calls) AS missingness_rate
+FROM (
+  SELECT
+    sample_id,
+    SUM(IF(has_no_calls, delta, 0)) AS no_calls,
+    SUM(delta) AS all_calls
+  FROM (
+    SELECT
+      END - start AS delta,
+      call.call_set_name AS sample_id,
+      SOME(call.genotype == -1) WITHIN call AS has_no_calls,
+    FROM
+      [genomics-public-data:platinum_genomes.variants]
+    # Optionally add clause here to limit the query to a particular
+    # region of the genome.
+    #_WHERE_
+    )
+  GROUP BY
+    sample_id)
+ORDER BY
+  sample_id
+```
+Number of rows returned by this query: 17.
+
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Thu Feb  5 16:34:20 2015 -->
+<table border=1>
+<tr> <th> sample_id </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
+  <tr> <td> NA12878 </td> <td align="right"> 58122228 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 59224162 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 58539440 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 58261455 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 42249595 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
+  <tr> <td> NA12883 </td> <td align="right"> 42898398 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
+  <tr> <td> NA12884 </td> <td align="right"> 43068456 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12885 </td> <td align="right"> 59611219 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12886 </td> <td align="right"> 42030311 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
+  <tr> <td> NA12887 </td> <td align="right"> 58855381 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12888 </td> <td align="right"> 43427753 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12889 </td> <td align="right"> 42357008 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
+  <tr> <td> NA12890 </td> <td align="right"> 59109599 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12891 </td> <td align="right"> 44879167 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12892 </td> <td align="right"> 58520385 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12893 </td> <td align="right"> 42705227 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
+   </table>
 
 ## Singleton Rate
+
+For each genome, count the number of variants shared by no other member of the cohort.  Too many private calls for a particular individual may indicate a problem.
+
 
 ```r
 result <- DisplayAndDispatchQuery("./sql/private-variants.sql",
@@ -81,8 +158,7 @@ FROM (
           OMIT call IF EVERY(call.genotype = -1)
         ), alternate_bases)
         )
-    OMIT
-      RECORD IF alternate_bases IS NULL
+    OMIT RECORD IF alternate_bases IS NULL
     HAVING
       cnt > 0
       )
@@ -102,7 +178,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:35:21 2015 -->
+<!-- Thu Feb  5 16:34:24 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -124,69 +200,9 @@ Number of rows returned by this query: 17.
   <tr> <td> NA12882 </td> <td align="right"> 62161 </td> </tr>
    </table>
 
-## Missingness Rate
-
-```r
-result <- DisplayAndDispatchQuery("./sql/sample-level-missingness.sql",
-                                  project=project,
-                                  replacements=table_replacement)
-```
-
-```
-# Compute the ratio of positions corresponding to no-calls versus all positions
-# called (reference, variant, and no-calls).
-SELECT
-  sample_id,
-  no_calls,
-  all_calls,
-  (no_calls/all_calls) AS missingness_rate
-FROM (
-  SELECT
-    sample_id,
-    SUM(IF(has_no_calls, delta, 0)) AS no_calls,
-    SUM(delta) AS all_calls
-  FROM (
-    SELECT
-      END - start AS delta,
-      call.call_set_name AS sample_id,
-      SOME(call.genotype == -1) WITHIN call AS has_no_calls,
-    FROM
-      [genomics-public-data:platinum_genomes.variants]
-    # Optionally add clause here to limit the query to a particular
-    # region of the genome.
-    #_WHERE_
-    )
-  GROUP BY
-    sample_id)
-ORDER BY
-  sample_id
-```
-Number of rows returned by this query: 17.
-
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:35:22 2015 -->
-<table border=1>
-<tr> <th> sample_id </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 58122228 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 59224162 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 58539440 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 58261455 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 42249595 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
-  <tr> <td> NA12883 </td> <td align="right"> 42898398 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
-  <tr> <td> NA12884 </td> <td align="right"> 43068456 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12885 </td> <td align="right"> 59611219 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12886 </td> <td align="right"> 42030311 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
-  <tr> <td> NA12887 </td> <td align="right"> 58855381 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12888 </td> <td align="right"> 43427753 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12889 </td> <td align="right"> 42357008 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
-  <tr> <td> NA12890 </td> <td align="right"> 59109599 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12891 </td> <td align="right"> 44879167 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12892 </td> <td align="right"> 58520385 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12893 </td> <td align="right"> 42705227 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
-   </table>
-
 ## Homozygosity Rate and Inbreeding Coefficient
+
+For each genome, compare the expected and observed rates of homozygosity.
 
 
 ```r
@@ -245,7 +261,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:35:26 2015 -->
+<!-- Thu Feb  5 16:34:27 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
@@ -269,6 +285,7 @@ Number of rows returned by this query: 17.
 
 ## Sex Inference
 
+For each genome, compare the gender from the sample information to the heterozygosity rate on the chromosome X calls.
 
 ```r
 result <- DisplayAndDispatchQuery("./sql/gender-check.sql",
@@ -282,13 +299,13 @@ result <- DisplayAndDispatchQuery("./sql/gender-check.sql",
 # correct for each individual.
 SELECT
   sample_id,
+  ROUND((het_RA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_het_alt_in_snvs,
+  ROUND((hom_AA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_hom_alt_in_snvs,
   (hom_AA_count + het_RA_count + hom_RR_count) AS all_callable_sites,
   hom_AA_count,
   het_RA_count,
   hom_RR_count,
   (hom_AA_count + het_RA_count) AS all_snvs,
-  ROUND((het_RA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_het_alt_in_snvs,
-  ROUND((hom_AA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_hom_alt_in_snvs
 FROM
   (
   SELECT
@@ -325,30 +342,29 @@ ORDER BY
 ```
 Number of rows returned by this query: 17.
 
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:35:28 2015 -->
-<table border=1>
-<tr> <th> sample_id </th> <th> all_callable_sites </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th> <th> all_snvs </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 329461 </td> <td align="right"> 79721 </td> <td align="right"> 37317 </td> <td align="right"> 212423 </td> <td align="right"> 117038 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 326950 </td> <td align="right"> 43626 </td> <td align="right"> 106398 </td> <td align="right"> 176926 </td> <td align="right"> 150024 </td> <td align="right"> 0.71 </td> <td align="right"> 0.29 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 326052 </td> <td align="right"> 45636 </td> <td align="right"> 105711 </td> <td align="right"> 174705 </td> <td align="right"> 151347 </td> <td align="right"> 0.70 </td> <td align="right"> 0.30 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 325288 </td> <td align="right"> 47237 </td> <td align="right"> 105768 </td> <td align="right"> 172283 </td> <td align="right"> 153005 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 325437 </td> <td align="right"> 47424 </td> <td align="right"> 105386 </td> <td align="right"> 172627 </td> <td align="right"> 152810 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 328200 </td> <td align="right"> 78797 </td> <td align="right"> 34911 </td> <td align="right"> 214492 </td> <td align="right"> 113708 </td> <td align="right"> 0.31 </td> <td align="right"> 0.69 </td> </tr>
-  <tr> <td> NA12883 </td> <td align="right"> 329159 </td> <td align="right"> 76907 </td> <td align="right"> 38032 </td> <td align="right"> 214220 </td> <td align="right"> 114939 </td> <td align="right"> 0.33 </td> <td align="right"> 0.67 </td> </tr>
-  <tr> <td> NA12884 </td> <td align="right"> 327724 </td> <td align="right"> 78601 </td> <td align="right"> 38645 </td> <td align="right"> 210478 </td> <td align="right"> 117246 </td> <td align="right"> 0.33 </td> <td align="right"> 0.67 </td> </tr>
-  <tr> <td> NA12885 </td> <td align="right"> 325591 </td> <td align="right"> 46838 </td> <td align="right"> 102998 </td> <td align="right"> 175755 </td> <td align="right"> 149836 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> </tr>
-  <tr> <td> NA12886 </td> <td align="right"> 327948 </td> <td align="right"> 78590 </td> <td align="right"> 39225 </td> <td align="right"> 210133 </td> <td align="right"> 117815 </td> <td align="right"> 0.33 </td> <td align="right"> 0.67 </td> </tr>
-  <tr> <td> NA12887 </td> <td align="right"> 325777 </td> <td align="right"> 45117 </td> <td align="right"> 107107 </td> <td align="right"> 173553 </td> <td align="right"> 152224 </td> <td align="right"> 0.70 </td> <td align="right"> 0.30 </td> </tr>
-  <tr> <td> NA12888 </td> <td align="right"> 324782 </td> <td align="right"> 78392 </td> <td align="right"> 37682 </td> <td align="right"> 208708 </td> <td align="right"> 116074 </td> <td align="right"> 0.33 </td> <td align="right"> 0.68 </td> </tr>
-  <tr> <td> NA12889 </td> <td align="right"> 328313 </td> <td align="right"> 77435 </td> <td align="right"> 37636 </td> <td align="right"> 213242 </td> <td align="right"> 115071 </td> <td align="right"> 0.33 </td> <td align="right"> 0.67 </td> </tr>
-  <tr> <td> NA12890 </td> <td align="right"> 328233 </td> <td align="right"> 44075 </td> <td align="right"> 104357 </td> <td align="right"> 179801 </td> <td align="right"> 148432 </td> <td align="right"> 0.70 </td> <td align="right"> 0.30 </td> </tr>
-  <tr> <td> NA12891 </td> <td align="right"> 323041 </td> <td align="right"> 78885 </td> <td align="right"> 37234 </td> <td align="right"> 206922 </td> <td align="right"> 116119 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> </tr>
-  <tr> <td> NA12892 </td> <td align="right"> 326992 </td> <td align="right"> 43570 </td> <td align="right"> 105552 </td> <td align="right"> 177870 </td> <td align="right"> 149122 </td> <td align="right"> 0.71 </td> <td align="right"> 0.29 </td> </tr>
-  <tr> <td> NA12893 </td> <td align="right"> 325037 </td> <td align="right"> 79020 </td> <td align="right"> 36655 </td> <td align="right"> 209362 </td> <td align="right"> 115675 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> </tr>
-   </table>
+Let's join this with the sample information:
+
+```r
+sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
+joined_result <- inner_join(result, select(sample_info, Catalog.ID, Gender), by=c("sample_id" = "Catalog.ID"))
+```
+
+And visualize the results
+
+```r
+ggplot(joined_result) +
+  geom_point(aes(x=sample_id, y=perct_het_alt_in_snvs, color=Gender)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  xlab("Sample") +
+  ylab("Heterozygosity Rate ") +
+  ggtitle("Heterozygosity Rate on the X Chromosome")
+```
+
+<img src="figure/gender-1.png" title="plot of chunk gender" alt="plot of chunk gender" style="display: block; margin: auto;" />
 
 ## Ethnicity Inference
+
+For each genome, compare the ethncity from the sample information to the clustering in this analysis.
 
 For this check, we:
 * use the intersection of common variants found in both 1,000 Genomes phase 1 variants and Platinum Genomes
@@ -359,18 +375,23 @@ This is a work-in-progress.  See https://github.com/elmer-garduno/spark-examples
 
 ## Genome Similarity
 
+Perform a simplistic similarity check on each pair of genomes to identify any mislabled or cross-contaminated samples.
+
 ### Results
 
 
 ```r
 ibs <- read.table("./data/platinum-genomes-ibs.tsv",
                   col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
-ggplot(data=ibs, aes(x=sample1, y=sample2)) +
-       geom_tile(aes(fill=ibsScore), colour="white") +
-       scale_fill_gradient(low="white", high="steelblue", na.value="black", trans="log",
-                           guide=guide_colourbar(title= "IBS Score")) +
-       labs(list(title="Identity By State (IBS) Heat Map",
-                 x="Sample 1", y="Sample 2"))
+ggplot(ibs) +
+  geom_tile(aes(x=sample1, y=sample2, fill=ibsScore), colour="white") +
+  scale_fill_gradient(low="white", high="steelblue",
+                      na.value="black", trans="log",
+                      guide=guide_colourbar(title= "IBS Score")) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  xlab("Sample 1") +
+  ylab("Sample 2") +
+  ggtitle("Identity By State (IBS) Heat Map")
 ```
 
 <img src="figure/ibs-1.png" title="plot of chunk ibs" alt="plot of chunk ibs" style="display: block; margin: auto;" />
@@ -395,7 +416,19 @@ com.google.cloud.genomics.dataflow.pipelines.IdentityByState \
 
 Note that there are several IBS calculators from which to choose.  Use the `--callSimilarityCalculatorFactory` to switch between them.
 
+To run the job on a different dataset, change the variant set id for the `--datasetId` id parameter.  (Also, remove the `--gvcf` parameter if the data is not in gVCF format.)
+
 To gather the results into a single file:
 ```
 gsutil cat gs://YOUR-BUCKET/output/platinum-genomes-ibs.tsv* | sort > platinum-genomes-ibs.tsv
 ```
+
+# Removing Genomes from the Cohort
+
+To remove a genome from a variant set in the Genomics API, see the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
+* To do this using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
+
+To only remove a genome from BigQuery only, re-export the table to BigQuery using the `--call_set_id` flag on the `exportvariants` command in [api-client-java](http://github.com/googlegenomics/api-client-java) to list which callsets to _include_ in the export.
+
+--------------------------------------------------------
+_Next_: [Part 4: Variant-Level QC](./Variant-Level-QC.md)

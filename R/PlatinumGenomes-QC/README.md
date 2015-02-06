@@ -16,10 +16,10 @@ In this codelab you will use [Google Genomics](https://cloud.google.com/genomics
 ## Instructions
 1. Make sure you have completed the necessary [prerequisites](../README.md).
 2. Read the rendered version of the RMarkdown for a particular analysis.
- + [Data Overview](./Data-Overview.md)
- + [Data Conversion](./Data-Conversion.md)
- + [Sample-Level QC](./Sample-Level-QC.md)
- + [Variant-Level QC](./Variant-Level-QC.md)
+ + [Part 1: Data Overview](./Data-Overview.md)
+ + [Part 2: Data Conversion](./Data-Conversion.md)
+ + [Part 3: Sample-Level QC](./Sample-Level-QC.md)
+ + [Part 4: Variant-Level QC](./Variant-Level-QC.md)
 3. Execute the code *chunk by chunk* in RStudio or *line by line* in R.
 4. Optionally, [read more](./comparison/QC-Comparison.md) about how these results compare to those from tools such as [vcftools](http://vcftools.sourceforge.net/).
 

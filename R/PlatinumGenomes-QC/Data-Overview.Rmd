@@ -14,7 +14,7 @@
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
 
-# Data Overview
+# Part 1: Data Overview
 
 The following example makes use of [Illumina Platinum Genomes](http://www.illumina.com/platinumgenomes/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/platinum-genomes).
 
@@ -66,7 +66,7 @@ Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
 print(xtable(head(result)), type="html", include.rownames=F)
 ```
-So for any QC analyses that require us to know how many samples do and do not have a particular SNP, we'll need to make sure that the non-variant segments are considered in addition to the variants.
+So for any analyses that require us to know how many samples do and do not have a particular SNP, we'll need to make sure that the non-variant segments are considered in addition to the variants.
 
 ## Alternative Allele Field
 
@@ -98,8 +98,11 @@ We see from the query results the variety of genotypes within BRCA1.
 
 # Summary
 
-To summarize attributes of this particular dataset that we need to consider when performing QC:
+To summarize attributes of this particular dataset that we need to consider when working with this data:
 * It is in gVCF format which adds complexity above and beyond [similar examples for the 1,000 Genomes dataset](https://github.com/googlegenomics/bigquery-examples/blob/master/1000genomes/sql/README.md).
 * It is comprised only of SNPs and INDELs (contains no structural variants).
 * The values for `alternate_bases` are just comprised of the letters A,C,G,T (e.g., contains no `<DEL>` values).
 * It contains some single-allele and 1/2 genotypes.
+
+--------------------------------------------------------
+_Next_: [Part 2: Data Conversion](./Data-Conversion.md)

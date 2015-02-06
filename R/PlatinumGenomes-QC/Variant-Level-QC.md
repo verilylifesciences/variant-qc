@@ -14,19 +14,30 @@
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
 
-# Variant-Level QC
+# Part 4: Variant-Level QC
+
+
+
+
+
+In Part 4 of the codelab, we perform some quality control analyses that could help to identify any problematic variants which should be excluded from further analysis.  The appropriate cut off thresholds will depend upon the input dataset.
 
 * [Missingness Rate](#missingness-rate)
 * [Hardy-Weinberg Equilibrium](#hardy-weinberg-equilibrium)
 * [Ti/Tv by Depth](#titv-by-depth)
 * [Ti/Tv by Alternate Allele Counts](#titv-by-alternate-allele-counts)
-* [Heterozygous Haploitype](#heterozygous-haploitype)
+* [Heterozygous Haplotype](#heterozygous-haplotype)
 
+By default this codelab runs upon the Illumina Platinum Genomes Variants. Change the tables here if you wish to run these queries against a different dataset.
 
-
-
+```r
+table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+```
 
 ## Missingness Rate
+
+TODO: add this
 
 ## Hardy-Weinberg Equilibrium
 
@@ -134,14 +145,14 @@ FROM (
         # Skip 1/2 genotypes
         num_alts = 1
         )))
-# Optionally add a clause here sort and limit the results.
+# Optionally add a clause here to sort and limit the results.
 ORDER BY ChiSq DESC, CHR, POS, ref, alt LIMIT 1000
 ```
 Number of rows returned by this query: 1000.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb  4 15:33:32 2015 -->
+<!-- Thu Feb  5 16:37:35 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -271,4 +282,53 @@ ggplot(result) +
 
 <img src="figure/titvByAlt-1.png" title="plot of chunk titvByAlt" alt="plot of chunk titvByAlt" style="display: block; margin: auto;" />
 
-## Heterozygous Haploitype
+## Heterozygous Haplotype
+
+
+```r
+sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
+male_sample_ids <- paste("'", filter(sample_info, Gender == "Male")$Catalog.ID, "'", sep="", collapse=",")
+sort_and_limit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 25"
+result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.sql",
+                                  project=project,
+                                  replacements=c(table_replacement,
+                                                 "_MALE_SAMPLE_IDS_"=male_sample_ids,
+                                                 "#_ORDER_BY_"=sort_and_limit))
+```
+
+```
+# Retrieve heterozygous haplotype calls on chromosomes X and Y.
+SELECT
+  reference_name,
+  start,
+  end,
+  reference_bases,
+  GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+  call.call_set_name,
+  GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
+FROM
+  [genomics-public-data:platinum_genomes.variants]
+WHERE
+  reference_name IN ('chrX', 'chrY')
+OMIT
+  call if (2 > COUNT(call.genotype))
+  OR EVERY(call.genotype <= 0)
+  OR EVERY(call.genotype = 1)
+HAVING call.call_set_name IN ('NA12877','NA12882','NA12883','NA12884','NA12886','NA12888','NA12889','NA12891','NA12893')
+# Optionally add a clause here to sort and limit the results.
+ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 25
+```
+Number of rows returned by this query: 25.
+
+Displaying the first few results:
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Thu Feb  5 16:37:45 2015 -->
+<table border=1>
+<tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> genotype </th>  </tr>
+  <tr> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> <td> NA12884 </td> <td> 0,1 </td> </tr>
+  <tr> <td> chrX </td> <td align="right"> 2701401 </td> <td align="right"> 2701402 </td> <td> T </td> <td> G </td> <td> NA12886 </td> <td> 0,1 </td> </tr>
+  <tr> <td> chrX </td> <td align="right"> 2702609 </td> <td align="right"> 2702610 </td> <td> C </td> <td> A </td> <td> NA12877 </td> <td> 0,1 </td> </tr>
+  <tr> <td> chrX </td> <td align="right"> 2702609 </td> <td align="right"> 2702610 </td> <td> C </td> <td> A </td> <td> NA12893 </td> <td> 0,1 </td> </tr>
+  <tr> <td> chrX </td> <td align="right"> 2703499 </td> <td align="right"> 2703500 </td> <td> A </td> <td> T </td> <td> NA12886 </td> <td> 0,1 </td> </tr>
+  <tr> <td> chrX </td> <td align="right"> 2703499 </td> <td align="right"> 2703500 </td> <td> A </td> <td> T </td> <td> NA12889 </td> <td> 0,1 </td> </tr>
+   </table>

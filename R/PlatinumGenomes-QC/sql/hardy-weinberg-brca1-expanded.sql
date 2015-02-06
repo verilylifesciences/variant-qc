@@ -91,5 +91,5 @@ FROM (
         # Skip 1/2 genotypes
         num_alts = 1
         )))
-# Optionally add a clause here sort and limit the results.
+# Optionally add a clause here to sort and limit the results.
 #_ORDER_BY_

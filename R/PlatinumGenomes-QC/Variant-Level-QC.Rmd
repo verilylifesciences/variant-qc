@@ -14,13 +14,7 @@
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
 
-# Variant-Level QC
-
-* [Missingness Rate](#missingness-rate)
-* [Hardy-Weinberg Equilibrium](#hardy-weinberg-equilibrium)
-* [Ti/Tv by Depth](#titv-by-depth)
-* [Ti/Tv by Alternate Allele Counts](#titv-by-alternate-allele-counts)
-* [Heterozygous Haploitype](#heterozygous-haploitype)
+# Part 4: Variant-Level QC
 
 ```{r echo=FALSE, eval=FALSE}
 ######################[ CHANGE ME ]##################################
@@ -35,14 +29,25 @@ project <- "YOUR-PROJECT-ID"
 ```{r echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # Set up for BigQuery access.
 source("./helper.R")
+```
 
-# By default this codelab runs upon the Illumina Platinum Genomes Variants.
-# Change the table here if you wish to run these queries against a different table.
+In Part 4 of the codelab, we perform some quality control analyses that could help to identify any problematic variants which should be excluded from further analysis.  The appropriate cut off thresholds will depend upon the input dataset.
+
+* [Missingness Rate](#missingness-rate)
+* [Hardy-Weinberg Equilibrium](#hardy-weinberg-equilibrium)
+* [Ti/Tv by Depth](#titv-by-depth)
+* [Ti/Tv by Alternate Allele Counts](#titv-by-alternate-allele-counts)
+* [Heterozygous Haplotype](#heterozygous-haplotype)
+
+By default this codelab runs upon the Illumina Platinum Genomes Variants. Change the tables here if you wish to run these queries against a different dataset.
+```{r}
 table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 ```
 
 ## Missingness Rate
+
+TODO: add this
 
 ## Hardy-Weinberg Equilibrium
 ```{r message=FALSE, warning=FALSE, comment=NA}
@@ -98,4 +103,21 @@ ggplot(result) +
   ggtitle("Ti/Tv by Alternate Allele Count")
 ```
 
-## Heterozygous Haploitype
+## Heterozygous Haplotype
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
+male_sample_ids <- paste("'", filter(sample_info, Gender == "Male")$Catalog.ID, "'", sep="", collapse=",")
+sort_and_limit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 25"
+result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.sql",
+                                  project=project,
+                                  replacements=c(table_replacement,
+                                                 "_MALE_SAMPLE_IDS_"=male_sample_ids,
+                                                 "#_ORDER_BY_"=sort_and_limit))
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+Displaying the first few results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(head(result)), type="html", include.rownames=F)
+```
