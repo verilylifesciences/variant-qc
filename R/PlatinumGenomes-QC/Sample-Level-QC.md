@@ -32,7 +32,7 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Change the tables here if you wish to run these queries against a different dataset.
 
 ```r
-table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 ```
 
@@ -44,7 +44,7 @@ For each genome, determine the percentage of sites explicitly called as a no-cal
 ```r
 result <- DisplayAndDispatchQuery("./sql/sample-level-missingness.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 
 ```
@@ -78,8 +78,9 @@ ORDER BY
 ```
 Number of rows returned by this query: 17.
 
+Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb  5 16:34:20 2015 -->
+<!-- Tue Feb 10 11:05:54 2015 -->
 <table border=1>
 <tr> <th> sample_id </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -88,18 +89,21 @@ Number of rows returned by this query: 17.
   <tr> <td> NA12880 </td> <td align="right"> 58539440 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
   <tr> <td> NA12881 </td> <td align="right"> 58261455 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
   <tr> <td> NA12882 </td> <td align="right"> 42249595 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
-  <tr> <td> NA12883 </td> <td align="right"> 42898398 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
-  <tr> <td> NA12884 </td> <td align="right"> 43068456 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12885 </td> <td align="right"> 59611219 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12886 </td> <td align="right"> 42030311 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
-  <tr> <td> NA12887 </td> <td align="right"> 58855381 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12888 </td> <td align="right"> 43427753 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12889 </td> <td align="right"> 42357008 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
-  <tr> <td> NA12890 </td> <td align="right"> 59109599 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12891 </td> <td align="right"> 44879167 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12892 </td> <td align="right"> 58520385 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12893 </td> <td align="right"> 42705227 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
    </table>
+
+And visualizing the results:
+
+```r
+ggplot(result) +
+  geom_point(aes(x=sample_id, y=missingness_rate)) +
+  theme(axis.text.x=if(nrow(result) <= 20)
+    {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
+  xlab("Sample") +
+  ylab("Missingness Rate") +
+  ggtitle("Genome-Specific Missingness")
+```
+
+<img src="figure/sampleMissingness-1.png" title="plot of chunk sampleMissingness" alt="plot of chunk sampleMissingness" style="display: block; margin: auto;" />
 
 ## Singleton Rate
 
@@ -109,7 +113,7 @@ For each genome, count the number of variants shared by no other member of the c
 ```r
 result <- DisplayAndDispatchQuery("./sql/private-variants.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 
 ```
@@ -177,8 +181,9 @@ ORDER BY
 ```
 Number of rows returned by this query: 17.
 
+Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb  5 16:34:24 2015 -->
+<!-- Tue Feb 10 11:06:01 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -187,18 +192,21 @@ Number of rows returned by this query: 17.
   <tr> <td> NA12891 </td> <td align="right"> 394767 </td> </tr>
   <tr> <td> NA12881 </td> <td align="right"> 86565 </td> </tr>
   <tr> <td> NA12878 </td> <td align="right"> 82767 </td> </tr>
-  <tr> <td> NA12884 </td> <td align="right"> 82571 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 81159 </td> </tr>
-  <tr> <td> NA12883 </td> <td align="right"> 78648 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 78461 </td> </tr>
-  <tr> <td> NA12887 </td> <td align="right"> 76395 </td> </tr>
-  <tr> <td> NA12893 </td> <td align="right"> 75042 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 74672 </td> </tr>
-  <tr> <td> NA12888 </td> <td align="right"> 73311 </td> </tr>
-  <tr> <td> NA12886 </td> <td align="right"> 72490 </td> </tr>
-  <tr> <td> NA12885 </td> <td align="right"> 72283 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 62161 </td> </tr>
    </table>
+
+And visualizing the results:
+
+```r
+ggplot(result) +
+  geom_point(aes(x=INDV, y=private_variant_count)) +
+  theme(axis.text.x=if(nrow(result) <= 20)
+    {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
+  xlab("Sample") +
+  ylab("Number of Singletons") +
+  ggtitle("Count of Singletons Per Genome")
+```
+
+<img src="figure/singletons-1.png" title="plot of chunk singletons" alt="plot of chunk singletons" style="display: block; margin: auto;" />
 
 ## Homozygosity Rate and Inbreeding Coefficient
 
@@ -208,7 +216,7 @@ For each genome, compare the expected and observed rates of homozygosity.
 ```r
 result <- DisplayAndDispatchQuery("./sql/homozygous-variants.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 
 ```
@@ -260,8 +268,9 @@ ORDER BY
 ```
 Number of rows returned by this query: 17.
 
+Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb  5 16:34:27 2015 -->
+<!-- Tue Feb 10 11:06:06 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
@@ -270,18 +279,19 @@ Number of rows returned by this query: 17.
   <tr> <td> NA12880 </td> <td align="right"> 6590387 </td> <td align="right"> 7929608.34 </td> <td align="right"> 10150696 </td> <td align="right"> -0.60 </td> </tr>
   <tr> <td> NA12881 </td> <td align="right"> 6567127 </td> <td align="right"> 7935804.42 </td> <td align="right"> 10153820 </td> <td align="right"> -0.62 </td> </tr>
   <tr> <td> NA12882 </td> <td align="right"> 6805829 </td> <td align="right"> 7965142.57 </td> <td align="right"> 10202639 </td> <td align="right"> -0.52 </td> </tr>
-  <tr> <td> NA12883 </td> <td align="right"> 6711035 </td> <td align="right"> 7960645.88 </td> <td align="right"> 10196517 </td> <td align="right"> -0.56 </td> </tr>
-  <tr> <td> NA12884 </td> <td align="right"> 6724829 </td> <td align="right"> 7968575.28 </td> <td align="right"> 10194307 </td> <td align="right"> -0.56 </td> </tr>
-  <tr> <td> NA12885 </td> <td align="right"> 6646687 </td> <td align="right"> 7915953.64 </td> <td align="right"> 10143362 </td> <td align="right"> -0.57 </td> </tr>
-  <tr> <td> NA12886 </td> <td align="right"> 6711907 </td> <td align="right"> 7958039.74 </td> <td align="right"> 10198639 </td> <td align="right"> -0.56 </td> </tr>
-  <tr> <td> NA12887 </td> <td align="right"> 6596235 </td> <td align="right"> 7922772.49 </td> <td align="right"> 10145655 </td> <td align="right"> -0.60 </td> </tr>
-  <tr> <td> NA12888 </td> <td align="right"> 6689570 </td> <td align="right"> 7948212.37 </td> <td align="right"> 10168686 </td> <td align="right"> -0.57 </td> </tr>
-  <tr> <td> NA12889 </td> <td align="right"> 6754839 </td> <td align="right"> 8227918.79 </td> <td align="right"> 10229176 </td> <td align="right"> -0.74 </td> </tr>
-  <tr> <td> NA12890 </td> <td align="right"> 6732772 </td> <td align="right"> 8148035.81 </td> <td align="right"> 10189031 </td> <td align="right"> -0.69 </td> </tr>
-  <tr> <td> NA12891 </td> <td align="right"> 6717266 </td> <td align="right"> 8155071.16 </td> <td align="right"> 10184943 </td> <td align="right"> -0.71 </td> </tr>
-  <tr> <td> NA12892 </td> <td align="right"> 6656245 </td> <td align="right"> 8140185.61 </td> <td align="right"> 10181667 </td> <td align="right"> -0.73 </td> </tr>
-  <tr> <td> NA12893 </td> <td align="right"> 6694329 </td> <td align="right"> 7952465.33 </td> <td align="right"> 10172280 </td> <td align="right"> -0.57 </td> </tr>
    </table>
+
+And visualizing the results:
+
+```r
+ggplot(result) +
+  geom_text(aes(x=O_HOM, y=E_HOM, label=INDV), hjust=-1, vjust=0) +
+  xlab("Observed Homozygous Variants") +
+  ylab("Expected Homozygous Variants") +
+  ggtitle("Homozygosity")
+```
+
+<img src="figure/homozygosity-1.png" title="plot of chunk homozygosity" alt="plot of chunk homozygosity" style="display: block; margin: auto;" />
 
 ## Sex Inference
 
@@ -290,7 +300,7 @@ For each genome, compare the gender from the sample information to the heterozyg
 ```r
 result <- DisplayAndDispatchQuery("./sql/gender-check.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 
 ```
@@ -342,17 +352,30 @@ ORDER BY
 ```
 Number of rows returned by this query: 17.
 
+Displaying the first few results:
+<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
+<!-- Tue Feb 10 11:06:14 2015 -->
+<table border=1>
+<tr> <th> sample_id </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> all_callable_sites </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th> <th> all_snvs </th>  </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 329461 </td> <td align="right"> 79721 </td> <td align="right"> 37317 </td> <td align="right"> 212423 </td> <td align="right"> 117038 </td> </tr>
+  <tr> <td> NA12878 </td> <td align="right"> 0.71 </td> <td align="right"> 0.29 </td> <td align="right"> 326950 </td> <td align="right"> 43626 </td> <td align="right"> 106398 </td> <td align="right"> 176926 </td> <td align="right"> 150024 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 0.70 </td> <td align="right"> 0.30 </td> <td align="right"> 326052 </td> <td align="right"> 45636 </td> <td align="right"> 105711 </td> <td align="right"> 174705 </td> <td align="right"> 151347 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> <td align="right"> 325288 </td> <td align="right"> 47237 </td> <td align="right"> 105768 </td> <td align="right"> 172283 </td> <td align="right"> 153005 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> <td align="right"> 325437 </td> <td align="right"> 47424 </td> <td align="right"> 105386 </td> <td align="right"> 172627 </td> <td align="right"> 152810 </td> </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 0.31 </td> <td align="right"> 0.69 </td> <td align="right"> 328200 </td> <td align="right"> 78797 </td> <td align="right"> 34911 </td> <td align="right"> 214492 </td> <td align="right"> 113708 </td> </tr>
+   </table>
+
 Let's join this with the sample information:
 
 ```r
-sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-joined_result <- inner_join(result, select(sample_info, Catalog.ID, Gender), by=c("sample_id" = "Catalog.ID"))
+sampleInfo <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
+joinedResult <- inner_join(result, select(sampleInfo, Catalog.ID, Gender), by=c("sample_id" = "Catalog.ID"))
 ```
 
-And visualize the results
+And visualize the results:
 
 ```r
-ggplot(joined_result) +
+ggplot(joinedResult) +
   geom_point(aes(x=sample_id, y=perct_het_alt_in_snvs, color=Gender)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   xlab("Sample") +

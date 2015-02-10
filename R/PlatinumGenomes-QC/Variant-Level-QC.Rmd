@@ -41,7 +41,7 @@ In Part 4 of the codelab, we perform some quality control analyses that could he
 
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Change the tables here if you wish to run these queries against a different dataset.
 ```{r}
-table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 ```
 
@@ -53,7 +53,7 @@ TODO: add this
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1-expanded.sql",
                                   project=project,
-                                  replacements=c(table_replacement,
+                                  replacements=c(tableReplacement,
                                                  "#_ORDER_BY_"=
                                                    paste("ORDER BY",
                                                          "ChiSq DESC, CHR, POS, ref, alt",
@@ -72,7 +72,7 @@ TODO: this is actually by genomic window, not depth
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
                                   project=project,
-                                  replacements=c(table_replacement,
+                                  replacements=c(tableReplacement,
                                                  "#_WHERE_"="WHERE reference_name='chr1'",
                                                  "_WINDOW_SIZE_"="100000"))
 ```
@@ -91,7 +91,7 @@ ggplot(result) +
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/ti-tv-by-alternate-allele-count.sql",
                                   project=project,
-                                  replacements=c(table_replacement))
+                                  replacements=c(tableReplacement))
 ```
 
 Visualizing the results:
@@ -106,14 +106,14 @@ ggplot(result) +
 ## Heterozygous Haplotype
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-male_sample_ids <- paste("'", filter(sample_info, Gender == "Male")$Catalog.ID, "'", sep="", collapse=",")
-sort_and_limit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 25"
+sampleInfo <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
+maleSampleIds <- paste("'", filter(sampleInfo, Gender == "Male")$Catalog.ID, "'", sep="", collapse=",")
+sortAndLimit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 25"
 result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.sql",
                                   project=project,
-                                  replacements=c(table_replacement,
-                                                 "_MALE_SAMPLE_IDS_"=male_sample_ids,
-                                                 "#_ORDER_BY_"=sort_and_limit))
+                                  replacements=c(tableReplacement,
+                                                 "_MALE_SAMPLE_IDS_"=maleSampleIds,
+                                                 "#_ORDER_BY_"=sortAndLimit))
 ```
 Number of rows returned by this query: `r nrow(result)`.
 

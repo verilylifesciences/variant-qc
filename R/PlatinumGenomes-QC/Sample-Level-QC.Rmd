@@ -42,7 +42,7 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Change the tables here if you wish to run these queries against a different dataset.
 ```{r}
-table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 ```
 
@@ -53,12 +53,24 @@ For each genome, determine the percentage of sites explicitly called as a no-cal
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/sample-level-missingness.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
+Displaying the first few results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(result), type="html", include.rownames=F)
+print(xtable(head(result)), type="html", include.rownames=F)
+```
+
+And visualizing the results:
+```{r sampleMissingness, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(result) +
+  geom_point(aes(x=sample_id, y=missingness_rate)) +
+  theme(axis.text.x=if(nrow(result) <= 20)
+    {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
+  xlab("Sample") +
+  ylab("Missingness Rate") +
+  ggtitle("Genome-Specific Missingness")
 ```
 
 ## Singleton Rate
@@ -68,12 +80,24 @@ For each genome, count the number of variants shared by no other member of the c
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/private-variants.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
+Displaying the first few results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(result), type="html", include.rownames=F)
+print(xtable(head(result)), type="html", include.rownames=F)
+```
+
+And visualizing the results:
+```{r singletons, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(result) +
+  geom_point(aes(x=INDV, y=private_variant_count)) +
+  theme(axis.text.x=if(nrow(result) <= 20)
+    {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
+  xlab("Sample") +
+  ylab("Number of Singletons") +
+  ggtitle("Count of Singletons Per Genome")
 ```
 
 ## Homozygosity Rate and Inbreeding Coefficient
@@ -83,12 +107,22 @@ For each genome, compare the expected and observed rates of homozygosity.
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/homozygous-variants.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
+Displaying the first few results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(result), type="html", include.rownames=F)
+print(xtable(head(result)), type="html", include.rownames=F)
+```
+
+And visualizing the results:
+```{r homozygosity, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(result) +
+  geom_text(aes(x=O_HOM, y=E_HOM, label=INDV), hjust=-1, vjust=0) +
+  xlab("Observed Homozygous Variants") +
+  ylab("Expected Homozygous Variants") +
+  ggtitle("Homozygosity")
 ```
 
 ## Sex Inference
@@ -97,19 +131,24 @@ For each genome, compare the gender from the sample information to the heterozyg
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/gender-check.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
-Let's join this with the sample information:
-```{r message=FALSE, warning=FALSE, comment=NA}
-sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-joined_result <- inner_join(result, select(sample_info, Catalog.ID, Gender), by=c("sample_id" = "Catalog.ID"))
+Displaying the first few results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(head(result)), type="html", include.rownames=F)
 ```
 
-And visualize the results
+Let's join this with the sample information:
+```{r message=FALSE, warning=FALSE, comment=NA}
+sampleInfo <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
+joinedResult <- inner_join(result, select(sampleInfo, Catalog.ID, Gender), by=c("sample_id" = "Catalog.ID"))
+```
+
+And visualize the results:
 ```{r gender, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-ggplot(joined_result) +
+ggplot(joinedResult) +
   geom_point(aes(x=sample_id, y=perct_het_alt_in_snvs, color=Gender)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   xlab("Sample") +

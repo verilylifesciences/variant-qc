@@ -31,7 +31,7 @@ In Part 4 of the codelab, we perform some quality control analyses that could he
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Change the tables here if you wish to run these queries against a different dataset.
 
 ```r
-table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 ```
 
@@ -44,7 +44,7 @@ TODO: add this
 ```r
 result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1-expanded.sql",
                                   project=project,
-                                  replacements=c(table_replacement,
+                                  replacements=c(tableReplacement,
                                                  "#_ORDER_BY_"=
                                                    paste("ORDER BY",
                                                          "ChiSq DESC, CHR, POS, ref, alt",
@@ -152,7 +152,7 @@ Number of rows returned by this query: 1000.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb  5 16:37:35 2015 -->
+<!-- Tue Feb 10 11:03:43 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -170,7 +170,7 @@ TODO: this is actually by genomic window, not depth
 ```r
 result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
                                   project=project,
-                                  replacements=c(table_replacement,
+                                  replacements=c(tableReplacement,
                                                  "#_WHERE_"="WHERE reference_name='chr1'",
                                                  "_WINDOW_SIZE_"="100000"))
 ```
@@ -233,7 +233,7 @@ ggplot(result) +
 ```r
 result <- DisplayAndDispatchQuery("./sql/ti-tv-by-alternate-allele-count.sql",
                                   project=project,
-                                  replacements=c(table_replacement))
+                                  replacements=c(tableReplacement))
 ```
 
 ```
@@ -286,14 +286,14 @@ ggplot(result) +
 
 
 ```r
-sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-male_sample_ids <- paste("'", filter(sample_info, Gender == "Male")$Catalog.ID, "'", sep="", collapse=",")
-sort_and_limit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 25"
+sampleInfo <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
+maleSampleIds <- paste("'", filter(sampleInfo, Gender == "Male")$Catalog.ID, "'", sep="", collapse=",")
+sortAndLimit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 25"
 result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.sql",
                                   project=project,
-                                  replacements=c(table_replacement,
-                                                 "_MALE_SAMPLE_IDS_"=male_sample_ids,
-                                                 "#_ORDER_BY_"=sort_and_limit))
+                                  replacements=c(tableReplacement,
+                                                 "_MALE_SAMPLE_IDS_"=maleSampleIds,
+                                                 "#_ORDER_BY_"=sortAndLimit))
 ```
 
 ```
@@ -322,7 +322,7 @@ Number of rows returned by this query: 25.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb  5 16:37:45 2015 -->
+<!-- Tue Feb 10 11:04:09 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> genotype </th>  </tr>
   <tr> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> <td> NA12884 </td> <td> 0,1 </td> </tr>
