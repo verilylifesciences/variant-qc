@@ -20,7 +20,7 @@
 
 
 
-In Part 3 of the codelab, we perform some quality control analyses that could help to identify any problematic genomes that should be removed from the cohort before proceeding with further analysis.  The appropriate cut off thresholds will depend upon the input dataset.
+In Part 3 of the codelab, we perform some quality control analyses that could help to identify any problematic genomes that should be removed from the cohort before proceeding with further analysis.  The appropriate cut off thresholds will depend upon the input dataset and/or other factors.
 
 * [Missingness Rate](#missingness-rate)
 * [Singleton Rate](#singleton-rate)
@@ -80,7 +80,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 11:05:54 2015 -->
+<!-- Tue Feb 10 15:57:01 2015 -->
 <table border=1>
 <tr> <th> sample_id </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -183,7 +183,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 11:06:01 2015 -->
+<!-- Tue Feb 10 15:57:04 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -270,7 +270,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 11:06:06 2015 -->
+<!-- Tue Feb 10 15:57:09 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
@@ -354,7 +354,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 11:06:14 2015 -->
+<!-- Tue Feb 10 15:57:13 2015 -->
 <table border=1>
 <tr> <th> sample_id </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> all_callable_sites </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th> <th> all_snvs </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 329461 </td> <td align="right"> 79721 </td> <td align="right"> 37317 </td> <td align="right"> 212423 </td> <td align="right"> 117038 </td> </tr>
@@ -448,10 +448,12 @@ gsutil cat gs://YOUR-BUCKET/output/platinum-genomes-ibs.tsv* | sort > platinum-g
 
 # Removing Genomes from the Cohort
 
-To remove a genome from a variant set in the Genomics API, see the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
-* To do this using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
+To remove a genome from a variant set in the Genomics API:
+* See the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
+* To delete a callset using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
 
-To only remove a genome from BigQuery only, re-export the table to BigQuery using the `--call_set_id` flag on the `exportvariants` command in [api-client-java](http://github.com/googlegenomics/api-client-java) to list which callsets to _include_ in the export.
+To only remove a genome from BigQuery only:
+* Re-export the table to BigQuery using the `--call_set_id` flag on the `exportvariants` command in [api-client-java](http://github.com/googlegenomics/api-client-java) to list which callsets to _include_ in the export.
 
 --------------------------------------------------------
 _Next_: [Part 4: Variant-Level QC](./Variant-Level-QC.md)

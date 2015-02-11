@@ -31,7 +31,7 @@ project <- "YOUR-PROJECT-ID"
 source("./helper.R")
 ```
 
-In Part 3 of the codelab, we perform some quality control analyses that could help to identify any problematic genomes that should be removed from the cohort before proceeding with further analysis.  The appropriate cut off thresholds will depend upon the input dataset.
+In Part 3 of the codelab, we perform some quality control analyses that could help to identify any problematic genomes that should be removed from the cohort before proceeding with further analysis.  The appropriate cut off thresholds will depend upon the input dataset and/or other factors.
 
 * [Missingness Rate](#missingness-rate)
 * [Singleton Rate](#singleton-rate)
@@ -217,10 +217,12 @@ gsutil cat gs://YOUR-BUCKET/output/platinum-genomes-ibs.tsv* | sort > platinum-g
 
 # Removing Genomes from the Cohort
 
-To remove a genome from a variant set in the Genomics API, see the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
-* To do this using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
+To remove a genome from a variant set in the Genomics API:
+* See the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
+* To delete a callset using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
 
-To only remove a genome from BigQuery only, re-export the table to BigQuery using the `--call_set_id` flag on the `exportvariants` command in [api-client-java](http://github.com/googlegenomics/api-client-java) to list which callsets to _include_ in the export.
+To only remove a genome from BigQuery only:
+* Re-export the table to BigQuery using the `--call_set_id` flag on the `exportvariants` command in [api-client-java](http://github.com/googlegenomics/api-client-java) to list which callsets to _include_ in the export.
 
 --------------------------------------------------------
 _Next_: [Part 4: Variant-Level QC](./Variant-Level-QC.md)

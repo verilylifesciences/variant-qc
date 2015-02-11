@@ -31,12 +31,12 @@ project <- "YOUR-PROJECT-ID"
 source("./helper.R")
 ```
 
-In Part 4 of the codelab, we perform some quality control analyses that could help to identify any problematic variants which should be excluded from further analysis.  The appropriate cut off thresholds will depend upon the input dataset.
+In Part 4 of the codelab, we perform some quality control analyses that could help to identify any problematic variants which should be excluded from further analysis.  The appropriate cut off thresholds will depend upon the input dataset and/or other factors.
 
+* [Ti/Tv by Genomic Window](#titv-by-genomic-window)
+* [Ti/Tv by Alternate Allele Counts](#titv-by-alternate-allele-counts)
 * [Missingness Rate](#missingness-rate)
 * [Hardy-Weinberg Equilibrium](#hardy-weinberg-equilibrium)
-* [Ti/Tv by Depth](#titv-by-depth)
-* [Ti/Tv by Alternate Allele Counts](#titv-by-alternate-allele-counts)
 * [Heterozygous Haplotype](#heterozygous-haplotype)
 
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Change the tables here if you wish to run these queries against a different dataset.
@@ -45,36 +45,22 @@ tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.va
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 ```
 
-## Missingness Rate
+## Ti/Tv by Genomic Window
 
-TODO: add this
+Check whether the ratio of transitions vs. transversions in SNPs appears to be reasonable in each window of genomic positions.  This query may help identify problematic regions.
 
-## Hardy-Weinberg Equilibrium
-```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1-expanded.sql",
-                                  project=project,
-                                  replacements=c(tableReplacement,
-                                                 "#_ORDER_BY_"=
-                                                   paste("ORDER BY",
-                                                         "ChiSq DESC, CHR, POS, ref, alt",
-                                                         "LIMIT 1000")))
-```
-Number of rows returned by this query: `r nrow(result)`.
-
-Displaying the first few results:
-```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
-```
-
-## Ti/Tv by Depth
-
-TODO: this is actually by genomic window, not depth
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
                                   project=project,
                                   replacements=c(tableReplacement,
                                                  "#_WHERE_"="WHERE reference_name='chr1'",
                                                  "_WINDOW_SIZE_"="100000"))
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+Displaying the first few results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(head(result)), type="html", include.rownames=F)
 ```
 
 Visualizing the results:
@@ -88,10 +74,18 @@ ggplot(result) +
 
 ## Ti/Tv by Alternate Allele Counts
 
+Check whether the ratio of transitions vs. transversions in SNPs appears to be resonable across the range of rare variants to common variants.  This query may help to identify problems with rare or common variants.
+
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/ti-tv-by-alternate-allele-count.sql",
                                   project=project,
                                   replacements=c(tableReplacement))
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+Displaying the first few results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(head(result)), type="html", include.rownames=F)
 ```
 
 Visualizing the results:
@@ -103,15 +97,57 @@ ggplot(result) +
   ggtitle("Ti/Tv by Alternate Allele Count")
 ```
 
-## Heterozygous Haplotype
+## Missingness Rate
+
+For each variant, compute the missingness rate.  This query can be used to identify variants with a poor call rate.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-sampleInfo <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-maleSampleIds <- paste("'", filter(sampleInfo, Gender == "Male")$Catalog.ID, "'", sep="", collapse=",")
-sortAndLimit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 25"
-result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.sql",
+sortAndLimit <- "ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alternate_bases LIMIT 1000"
+result <- DisplayAndDispatchQuery("./sql/variant-level-missingness.sql",
                                   project=project,
                                   replacements=c(tableReplacement,
+                                                 "#_ORDER_BY_"=sortAndLimit))
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+Displaying the first few results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(head(result)), type="html", include.rownames=F)
+```
+
+## Hardy-Weinberg Equilibrium
+
+For each variant, compute the expected versus observed relationship between allele frequencies and genotype frequencies per the Hardy-Weinberg Equilibrium.
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+sortAndLimit <- "ORDER BY ChiSq DESC, CHR, POS, ref, alt LIMIT 1000"
+result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1-expanded.sql",
+                                  project=project,
+                                  replacements=c(tableReplacement,
+                                                 "#_ORDER_BY_"=sortAndLimit))
+```
+Number of rows returned by this query: `r nrow(result)`.
+
+Displaying the first few results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(head(result)), type="html", include.rownames=F)
+```
+
+## Heterozygous Haplotype
+For each variant within the X and Y chromosome, identify heterozygous variants in male genomes.
+
+First we use our sample information to determine which genomes are male.  By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run this query against a different dataset.
+```{r message=FALSE, warning=FALSE, comment=NA}
+theTable="genomics-public-data:platinum_genomes.variants"
+sampleInfo <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
+maleSampleIds <- paste("'", filter(sampleInfo, Gender == "Male")$Catalog.ID, "'", sep="", collapse=",")
+```
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+sortAndLimit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000"
+result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.sql",
+                                  project=project,
+                                  replacements=c("_THE_TABLE_"=theTable,
                                                  "_MALE_SAMPLE_IDS_"=maleSampleIds,
                                                  "#_ORDER_BY_"=sortAndLimit))
 ```
@@ -121,3 +157,16 @@ Displaying the first few results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
 print(xtable(head(result)), type="html", include.rownames=F)
 ```
+
+# Removing variants from the Cohort
+
+To remove a variant from a variant set in the Genomics API:
+* See the [variant delete](https://cloud.google.com/genomics/v1beta2/reference/variants/delete) method.
+
+To instead mark a variant as problematic so that downstream analyses can filter it out:
+* See the [variant update](https://cloud.google.com/genomics/v1beta2/reference/variants/update) method
+
+To only remove variants from BigQuery only:
+* Materialize the results of queries that include the non-problematic variants to a new table.
+* Alternatively, write a custom filtering job similar to what we explored in [Part 2: Data Conversion](./Data-Conversion.md) of this codelab.
+
