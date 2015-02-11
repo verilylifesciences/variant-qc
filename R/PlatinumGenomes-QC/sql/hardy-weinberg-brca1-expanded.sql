@@ -1,4 +1,4 @@
-# The following query computes the Hardy-Weinberg equilibrium for BRCA1 variants.
+# The following query computes the Hardy-Weinberg equilibrium for variants.
 SELECT
   CHR,
   POS,
