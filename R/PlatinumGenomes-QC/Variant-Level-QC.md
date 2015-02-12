@@ -28,11 +28,13 @@ In Part 4 of the codelab, we perform some quality control analyses that could he
 * [Hardy-Weinberg Equilibrium](#hardy-weinberg-equilibrium)
 * [Heterozygous Haplotype](#heterozygous-haplotype)
 
-By default this codelab runs upon the Illumina Platinum Genomes Variants. Change the tables here if you wish to run these queries against a different dataset.
+By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 
 ```r
 tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
+sampleInfo <- select(sampleData, sample_id=Catalog.ID, gender=Gender)
 ```
 
 ## Ti/Tv by Genomic Window
@@ -91,7 +93,7 @@ Number of rows returned by this query: 2279.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 16:01:06 2015 -->
+<!-- Wed Feb 11 17:29:10 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr1 </td> <td align="right">   0 </td> <td align="right"> 293 </td> <td align="right"> 198 </td> <td align="right"> 1.48 </td> <td align="right"> 491 </td> </tr>
@@ -162,7 +164,7 @@ Number of rows returned by this query: 35.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 16:01:10 2015 -->
+<!-- Wed Feb 11 17:29:14 2015 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> alternate_allele_count </th>  </tr>
   <tr> <td align="right"> 350843 </td> <td align="right"> 172896 </td> <td align="right"> 2.03 </td> <td align="right">  34 </td> </tr>
@@ -231,7 +233,7 @@ Number of rows returned by this query: 1000.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 16:01:13 2015 -->
+<!-- Wed Feb 11 17:29:20 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
@@ -356,7 +358,7 @@ Number of rows returned by this query: 1000.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 16:01:16 2015 -->
+<!-- Wed Feb 11 17:29:24 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -370,12 +372,10 @@ Displaying the first few results:
 ## Heterozygous Haplotype
 For each variant within the X and Y chromosome, identify heterozygous variants in male genomes.
 
-First we use our sample information to determine which genomes are male.  By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run this query against a different dataset.
+First we use our sample information to determine which genomes are male.  
 
 ```r
-theTable="genomics-public-data:platinum_genomes.variants"
-sampleInfo <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-maleSampleIds <- paste("'", filter(sampleInfo, Gender == "Male")$Catalog.ID, "'", sep="", collapse=",")
+maleSampleIds <- paste("'", filter(sampleInfo, gender == "Male")$sample_id, "'", sep="", collapse=",")
 ```
 
 
@@ -383,7 +383,7 @@ maleSampleIds <- paste("'", filter(sampleInfo, Gender == "Male")$Catalog.ID, "'"
 sortAndLimit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.sql",
                                   project=project,
-                                  replacements=c("_THE_TABLE_"=theTable,
+                                  replacements=c(tableReplacement,
                                                  "_MALE_SAMPLE_IDS_"=maleSampleIds,
                                                  "#_ORDER_BY_"=sortAndLimit))
 ```
@@ -414,7 +414,7 @@ Number of rows returned by this query: 1000.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 16:01:19 2015 -->
+<!-- Wed Feb 11 17:29:28 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> genotype </th>  </tr>
   <tr> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> <td> NA12884 </td> <td> 0,1 </td> </tr>
@@ -433,7 +433,7 @@ To remove a variant from a variant set in the Genomics API:
 To instead mark a variant as problematic so that downstream analyses can filter it out:
 * See the [variant update](https://cloud.google.com/genomics/v1beta2/reference/variants/update) method
 
-To only remove variants from BigQuery only:
+To remove variants from BigQuery only:
 * Materialize the results of queries that include the non-problematic variants to a new table.
 * Alternatively, write a custom filtering job similar to what we explored in [Part 2: Data Conversion](./Data-Conversion.md) of this codelab.
 

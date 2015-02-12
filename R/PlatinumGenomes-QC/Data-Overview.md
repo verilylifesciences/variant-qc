@@ -22,6 +22,14 @@ The following example makes use of [Illumina Platinum Genomes](http://www.illumi
 
 
 
+
+```r
+# By default this codelab runs upon the Illumina Platinum Genomes Variants.
+# Change the table here if you wish to run these queries against a different table.
+tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+```
+
 ## Variants
 
 Let's take a look at a few of the [variants within BRCA1 via BigQuery](https://github.com/googlegenomics/getting-started-bigquery/blob/master/RMarkdown/literate-programming-demo.md#data-visualization):
@@ -29,7 +37,7 @@ Let's take a look at a few of the [variants within BRCA1 via BigQuery](https://g
 ```r
 result <- DisplayAndDispatchQuery("https://raw.githubusercontent.com/googlegenomics/getting-started-bigquery/master/sql/variant-level-data-for-brca1.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 
 ```
@@ -50,8 +58,7 @@ WHERE
   reference_name = 'chr17'
   AND start BETWEEN 41196311
   AND 41277499
-HAVING
-  alternate_bases IS NOT NULL
+OMIT RECORD IF EVERY(alternate_bases IS NULL)
 ORDER BY
   start,
   alternate_bases
@@ -60,7 +67,7 @@ Number of rows returned by this query: 335.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb  5 16:33:51 2015 -->
+<!-- Wed Feb 11 17:28:29 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
@@ -77,7 +84,7 @@ This Platinum Genomes data is in [genome VCF](https://sites.google.com/site/gvcf
 ```r
 result <- DisplayAndDispatchQuery("./sql/non-variant-segments.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 
 ```
@@ -100,13 +107,13 @@ OMIT RECORD IF SOME(alternate_bases IS NOT NULL)
 ORDER BY
   start,
   call.call_set_name
-Retrieving data: 10.1sRetrieving data: 20.3s
+Retrieving data:  2.6sRetrieving data:  5.1s
 ```
 Number of rows returned by this query: 22777.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb  5 16:34:15 2015 -->
+<!-- Wed Feb 11 17:28:38 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> genotype </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td> NA12886 </td> <td> 0,0 </td> </tr>
@@ -125,7 +132,7 @@ And then let's take a look at the domain and range of values for alternate_bases
 ```r
 result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 
 ```
@@ -144,7 +151,7 @@ GROUP BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb  5 16:34:16 2015 -->
+<!-- Wed Feb 11 17:28:42 2015 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
@@ -158,7 +165,7 @@ And finally let's take a look at the domain and range of values for genotype:
 ```r
 result <- DisplayAndDispatchQuery("./sql/genotypes-brca1.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 
 ```
@@ -184,7 +191,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb  5 16:34:19 2015 -->
+<!-- Wed Feb 11 17:28:45 2015 -->
 <table border=1>
 <tr> <th> genotype </th> <th> genotype_count </th>  </tr>
   <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>

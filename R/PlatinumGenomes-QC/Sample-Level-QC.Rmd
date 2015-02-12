@@ -40,10 +40,12 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 * [Ethnicity Inference](#ethnicity-inference)
 * [Genome Similarity](#genome-similarity)
 
-By default this codelab runs upon the Illumina Platinum Genomes Variants. Change the tables here if you wish to run these queries against a different dataset.
+By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 ```{r}
 tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
+sampleInfo <- select(sampleData, sample_id=Catalog.ID, gender=Gender)
 ```
 
 ## Missingness Rate
@@ -142,15 +144,15 @@ print(xtable(head(result)), type="html", include.rownames=F)
 
 Let's join this with the sample information:
 ```{r message=FALSE, warning=FALSE, comment=NA}
-sampleInfo <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-joinedResult <- inner_join(result, select(sampleInfo, Catalog.ID, Gender), by=c("sample_id" = "Catalog.ID"))
+joinedResult <- inner_join(result, sampleInfo)
 ```
 
 And visualize the results:
 ```{r gender, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(joinedResult) +
-  geom_point(aes(x=sample_id, y=perct_het_alt_in_snvs, color=Gender)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_point(aes(x=sample_id, y=perct_het_alt_in_snvs, color=gender)) +
+  theme(axis.text.x=if(nrow(result) <= 20)
+    {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
   xlab("Sample") +
   ylab("Heterozygosity Rate ") +
   ggtitle("Heterozygosity Rate on the X Chromosome")

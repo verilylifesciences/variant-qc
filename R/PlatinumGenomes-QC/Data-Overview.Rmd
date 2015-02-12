@@ -31,10 +31,12 @@ project <- "YOUR-PROJECT-ID"
 ```{r echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # Set up for BigQuery access.
 source("./helper.R")
+```
 
+```{r}
 # By default this codelab runs upon the Illumina Platinum Genomes Variants.
 # Change the table here if you wish to run these queries against a different table.
-table_replacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 ```
 
@@ -44,7 +46,7 @@ Let's take a look at a few of the [variants within BRCA1 via BigQuery](https://g
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("https://raw.githubusercontent.com/googlegenomics/getting-started-bigquery/master/sql/variant-level-data-for-brca1.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -58,7 +60,7 @@ This Platinum Genomes data is in [genome VCF](https://sites.google.com/site/gvcf
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/non-variant-segments.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -74,7 +76,7 @@ And then let's take a look at the domain and range of values for alternate_bases
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
@@ -88,7 +90,7 @@ And finally let's take a look at the domain and range of values for genotype:
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/genotypes-brca1.sql",
                                   project=project,
-                                  replacements=table_replacement)
+                                  replacements=tableReplacement)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}

@@ -29,11 +29,13 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 * [Ethnicity Inference](#ethnicity-inference)
 * [Genome Similarity](#genome-similarity)
 
-By default this codelab runs upon the Illumina Platinum Genomes Variants. Change the tables here if you wish to run these queries against a different dataset.
+By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 
 ```r
 tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
+sampleInfo <- select(sampleData, sample_id=Catalog.ID, gender=Gender)
 ```
 
 ## Missingness Rate
@@ -80,7 +82,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 15:57:01 2015 -->
+<!-- Wed Feb 11 17:28:48 2015 -->
 <table border=1>
 <tr> <th> sample_id </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -183,7 +185,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 15:57:04 2015 -->
+<!-- Wed Feb 11 17:28:53 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -270,7 +272,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 15:57:09 2015 -->
+<!-- Wed Feb 11 17:28:57 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
@@ -354,7 +356,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 10 15:57:13 2015 -->
+<!-- Wed Feb 11 17:29:02 2015 -->
 <table border=1>
 <tr> <th> sample_id </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> all_callable_sites </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th> <th> all_snvs </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 329461 </td> <td align="right"> 79721 </td> <td align="right"> 37317 </td> <td align="right"> 212423 </td> <td align="right"> 117038 </td> </tr>
@@ -368,16 +370,16 @@ Displaying the first few results:
 Let's join this with the sample information:
 
 ```r
-sampleInfo <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-joinedResult <- inner_join(result, select(sampleInfo, Catalog.ID, Gender), by=c("sample_id" = "Catalog.ID"))
+joinedResult <- inner_join(result, sampleInfo)
 ```
 
 And visualize the results:
 
 ```r
 ggplot(joinedResult) +
-  geom_point(aes(x=sample_id, y=perct_het_alt_in_snvs, color=Gender)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_point(aes(x=sample_id, y=perct_het_alt_in_snvs, color=gender)) +
+  theme(axis.text.x=if(nrow(result) <= 20)
+    {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
   xlab("Sample") +
   ylab("Heterozygosity Rate ") +
   ggtitle("Heterozygosity Rate on the X Chromosome")
