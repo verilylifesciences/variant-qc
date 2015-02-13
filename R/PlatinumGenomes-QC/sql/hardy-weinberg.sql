@@ -1,9 +1,9 @@
 # The following query computes the Hardy-Weinberg equilibrium for variants.
 SELECT
-  CHR,
-  POS,
-  ref,
-  alt,
+  reference_name,
+  start,
+  reference_bases,
+  alternate_bases,
   OBS_HOM1,
   OBS_HET,
   OBS_HOM2,
@@ -26,10 +26,10 @@ SELECT
 
 FROM (
     SELECT
-      CHR,
-      POS,
-      ref,
-      alt,
+      reference_name,
+      start,
+      reference_bases,
+      alternate_bases,
       OBS_HOM1,
       OBS_HET,
       OBS_HOM2,
@@ -62,10 +62,10 @@ FROM (
 
   FROM (
     SELECT
-      reference_name AS CHR,
-      start AS POS,
-      reference_bases AS ref,
-      alternate_bases AS alt,
+      reference_name,
+      start,
+      reference_bases,
+      alternate_bases,
       HOM_REF AS OBS_HOM1,
       HET AS OBS_HET,
       HOM_ALT AS OBS_HOM2,

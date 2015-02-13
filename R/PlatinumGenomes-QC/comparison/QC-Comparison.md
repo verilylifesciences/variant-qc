@@ -104,7 +104,7 @@ ORDER BY
 Number of rows returned by this query: 63.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:44 2015 -->
+<!-- Thu Feb 12 17:49:57 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> S </td> <td> CT </td> <td> C </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
@@ -212,7 +212,7 @@ print(xtable(onlyBQ), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:44 2015 -->
+<!-- Thu Feb 12 17:49:57 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> S </td> <td> CACA </td> <td> CACAACA </td> <td> NA12878 </td> <td> "1,2" </td> <td align="right">   1 </td> </tr>
@@ -233,7 +233,7 @@ print(xtable(onlyVcftools), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:44 2015 -->
+<!-- Thu Feb 12 17:49:57 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> ALLELE </th> <th> INDV </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694.00 </td> <td> S </td> <td> AAT </td> <td> NA12886 </td> </tr>
@@ -285,7 +285,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:49 2015 -->
+<!-- Thu Feb 12 17:49:59 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td> NA12886 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
@@ -336,14 +336,14 @@ result <- DisplayAndDispatchQuery("../sql/homozygous-variants.sql",
 ```
 # Compute the expected and observed homozygosity rate for each individual.
 SELECT
-  INDV,
+  call.call_set_name,
   O_HOM,
   ROUND(E_HOM, 2) as E_HOM,
   N_SITES,
   ROUND((O_HOM - E_HOM) / (N_SITES - E_HOM), 5) AS F
 FROM (
   SELECT
-    call.call_set_name AS INDV,
+    call.call_set_name,
     SUM(first_allele = second_allele) AS O_HOM,
     SUM(1.0 - (2.0 * freq * (1.0 - freq) * (called_allele_count / (called_allele_count - 1.0)))) AS E_HOM,
     COUNT(call.call_set_name) AS N_SITES,
@@ -375,17 +375,17 @@ FROM (
       AND alternate_bases IN ('A','C','G','T')
       )
   GROUP BY
-    INDV
+    call.call_set_name
     )
 ORDER BY
-  INDV
+  call.call_set_name
 ```
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:54 2015 -->
+<!-- Thu Feb 12 17:50:02 2015 -->
 <table border=1>
-<tr> <th> INDV </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
+<tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 252 </td> <td align="right"> 233.49 </td> <td align="right"> 274 </td> <td align="right"> 0.46 </td> </tr>
   <tr> <td> NA12878 </td> <td align="right"> 100 </td> <td align="right"> 210.84 </td> <td align="right"> 268 </td> <td align="right"> -1.94 </td> </tr>
   <tr> <td> NA12879 </td> <td align="right"> 246 </td> <td align="right"> 233.49 </td> <td align="right"> 274 </td> <td align="right"> 0.31 </td> </tr>
@@ -418,12 +418,13 @@ colnames(expectedResult) <- gsub('\\.+', '_', colnames(expectedResult))
 
 
 ```r
+result <- rename(result, INDV=call_call_set_name)
 joinedResult <- inner_join(expectedResult, result, by=c("INDV"))
 print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:54 2015 -->
+<!-- Thu Feb 12 17:50:02 2015 -->
 <table border=1>
 <tr> <th> E_HOM.x </th> <th> E_HOM.y </th> <th> F.x </th> <th> F.y </th> <th> INDV </th> <th> N_SITES.x </th> <th> N_SITES.y </th> <th> O_HOM.x </th> <th> O_HOM.y </th>  </tr>
   <tr> <td align="right"> 185.60 </td> <td align="right"> 233.49 </td> <td align="right"> 0.71 </td> <td align="right"> 0.46 </td> <td> NA12877 </td> <td align="right"> 254 </td> <td align="right"> 274 </td> <td align="right"> 234 </td> <td align="right"> 252 </td> </tr>
@@ -520,19 +521,20 @@ Check Hardy-Weinberg Equilibrium
 -----------------------------------
 
 ```r
-result <- DisplayAndDispatchQuery("../sql/hardy-weinberg-brca1-expanded.sql",
+sortAndLimit <- "ORDER BY reference_name, start, alternate_bases"
+result <- DisplayAndDispatchQuery("../sql/hardy-weinberg.sql",
                                   project=project,
                                   replacements=c(replacements,
-                                                 "#_ORDER_BY_"="ORDER BY CHR, POS, ref, alt"))
+                                                 "#_ORDER_BY_"=sortAndLimit))
 ```
 
 ```
 # The following query computes the Hardy-Weinberg equilibrium for variants.
 SELECT
-  CHR,
-  POS,
-  ref,
-  alt,
+  reference_name,
+  start,
+  reference_bases,
+  alternate_bases,
   OBS_HOM1,
   OBS_HET,
   OBS_HOM2,
@@ -555,10 +557,10 @@ SELECT
 
 FROM (
     SELECT
-      CHR,
-      POS,
-      ref,
-      alt,
+      reference_name,
+      start,
+      reference_bases,
+      alternate_bases,
       OBS_HOM1,
       OBS_HET,
       OBS_HOM2,
@@ -591,10 +593,10 @@ FROM (
 
   FROM (
     SELECT
-      reference_name AS CHR,
-      start AS POS,
-      reference_bases AS ref,
-      alternate_bases AS alt,
+      reference_name,
+      start,
+      reference_bases,
+      alternate_bases,
       HOM_REF AS OBS_HOM1,
       HET AS OBS_HET,
       HOM_ALT AS OBS_HOM2,
@@ -621,15 +623,15 @@ FROM (
         num_alts = 1
         )))
 # Optionally add a clause here to sort and limit the results.
-ORDER BY CHR, POS, ref, alt
+ORDER BY reference_name, start, alternate_bases
 ```
 Number of rows returned by this query: 333.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:58 2015 -->
+<!-- Thu Feb 12 17:50:07 2015 -->
 <table border=1>
-<tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
+<tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> CT </td> <td> C </td> <td align="right">   0 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 0.25 </td> <td align="right"> 0.50 </td> <td align="right"> 0.25 </td> <td align="right"> 1.00 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196840 </td> <td> G </td> <td> T </td> <td align="right">  15 </td> <td align="right">   2 </td> <td align="right">   0 </td> <td align="right"> 15.06 </td> <td align="right"> 1.88 </td> <td align="right"> 0.06 </td> <td align="right"> 0.07 </td> <td> FALSE </td> </tr>
@@ -643,6 +645,7 @@ Compare to [brca1.hwe](./hwe/brca1.hwe) (see the [vcftools command line](./hwe/b
 
 ```r
 require(dplyr)
+result <- rename(result, CHR=reference_name, POS=start)
 df <- read.table("./hwe/brca1.hwe", header=TRUE)
 obsSplitCol <- "OBS.HOM1.HET.HOM2."
 obsTemp <- read.table(text=as.character(df[, obsSplitCol]), sep = "/")
@@ -673,16 +676,16 @@ print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:58 2015 -->
+<!-- Thu Feb 12 17:50:07 2015 -->
 <table border=1>
-<tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
+<tr> <th> CHR </th> <th> POS </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> CT </td> <td> C </td> <td align="right">   0 </td> <td align="right">   1 </td> <td align="right">   0 </td> <td align="right"> 0.25 </td> <td align="right"> 0.50 </td> <td align="right"> 0.25 </td> <td align="right"> 1.00 </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204837 </td> <td> A </td> <td> T </td> <td align="right">  14 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 14.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204839 </td> <td> A </td> <td> T </td> <td align="right">  14 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 14.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841 </td> <td> T </td> <td> A </td> <td align="right">   0 </td> <td align="right">   1 </td> <td align="right">  12 </td> <td align="right"> 0.02 </td> <td align="right"> 0.96 </td> <td align="right"> 12.02 </td> <td align="right"> 0.02 </td> <td> FALSE </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> CACA </td> <td> C </td> <td align="right">   0 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 1.75 </td> <td align="right"> 3.50 </td> <td align="right"> 1.75 </td> <td align="right"> 7.00 </td> <td> TRUE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> C </td> <td> CACA </td> <td align="right">   0 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right"> 0.13 </td> <td align="right"> 0.75 </td> <td align="right"> 1.13 </td> <td align="right"> 0.23 </td> <td> FALSE </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> CACA </td> <td> C </td> <td align="right">   0 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 1.75 </td> <td align="right"> 3.50 </td> <td align="right"> 1.75 </td> <td align="right"> 7.00 </td> <td> TRUE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41214209 </td> <td> A </td> <td> T </td> <td align="right">  16 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 16.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41214210 </td> <td> A </td> <td> C </td> <td align="right">  16 </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right"> 16.00 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41219906 </td> <td> T </td> <td> TA </td> <td align="right">   0 </td> <td align="right">   0 </td> <td align="right">   3 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> <td align="right"> 3.00 </td> <td align="right">  </td> <td> FALSE </td> </tr>
@@ -720,7 +723,7 @@ print(xtable(arrange(onlyVcftools, CHR, POS)), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:58 2015 -->
+<!-- Thu Feb 12 17:50:07 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ChiSq </th> <th> P </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407.00 </td> <td align="right"> 1.39 </td> <td align="right"> 0.53 </td> <td align="right">   8 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 8.82 </td> <td align="right"> 5.37 </td> <td align="right"> 0.82 </td> </tr>
@@ -764,7 +767,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:59 2015 -->
+<!-- Thu Feb 12 17:50:10 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> gt </th> <th> quality </th> <th> filter </th> <th> likelihood </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196196 </td> <td align="right"> 41196429 </td> <td> A </td> <td>  </td> <td> NA12891 </td> <td> 0,0 </td> <td align="right"> 0.00 </td> <td> PASS </td> <td>  </td> </tr>
@@ -844,7 +847,7 @@ ORDER BY
 ```
 The result:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:10:03 2015 -->
+<!-- Thu Feb 12 17:50:14 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41000000 </td> <td align="right"> 143 </td> <td align="right"> 132 </td> <td align="right"> 1.08 </td> <td align="right"> 275 </td> </tr>
@@ -856,7 +859,7 @@ Let's compare this to what we get from vcftools.  For information about the vcft
 expectedResult <- read.table("./titv/platinum_genomes_brca1_expanded_merged.TsTv.summary", header=TRUE)
 ```
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:10:03 2015 -->
+<!-- Thu Feb 12 17:50:14 2015 -->
 <table border=1>
 <tr> <th> MODEL </th> <th> COUNT </th>  </tr>
   <tr> <td> AC </td> <td align="right">  48 </td> </tr>
@@ -906,7 +909,7 @@ SELECT
 ```
 Here's the first few variants reported by BigQuery:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:10:05 2015 -->
+<!-- Thu Feb 12 17:50:16 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> </tr>
@@ -936,7 +939,7 @@ onlyBQ <- anti_join(result, expectedResult)
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:10:05 2015 -->
+<!-- Thu Feb 12 17:50:16 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> A </td> </tr>

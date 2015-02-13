@@ -1,17 +1,17 @@
 # Compute private variants counts for each sample.
 SELECT
-  INDV,
-  COUNT(INDV) AS private_variant_count,
+  call.call_set_name,
+  COUNT(call.call_set_name) AS private_variant_count,
 FROM (
   SELECT
-    reference_name AS CHROM,
-    start AS POS,
+    reference_name,
+    start,
     GROUP_CONCAT(CASE WHEN cnt = 1 THEN 'S'
       WHEN cnt = 2 THEN 'D'
       ELSE STRING(cnt) END) AS SINGLETON_DOUBLETON,
-    reference_bases AS REF,
-    alternate_bases AS ALT,
-    GROUP_CONCAT(call.call_set_name) AS INDV,
+    reference_bases,
+    alternate_bases,
+    GROUP_CONCAT(call.call_set_name) AS call.call_set_name,
     GROUP_CONCAT(genotype) AS genotype,
     SUM(num_samples_with_variant) AS num_samples_with_variant
   FROM (
@@ -48,14 +48,14 @@ FROM (
       cnt > 0
       )
     GROUP EACH BY
-    chrom,
-    pos,
-    ref,
-    alt
+      reference_name,
+      start,
+      reference_bases,
+      alternate_bases
   HAVING
     num_samples_with_variant = 1
     )
 GROUP BY
-  INDV
+  call.call_set_name
 ORDER BY
   private_variant_count DESC

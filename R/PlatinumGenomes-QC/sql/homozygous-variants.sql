@@ -1,13 +1,13 @@
 # Compute the expected and observed homozygosity rate for each individual.
 SELECT
-  INDV,
+  call.call_set_name,
   O_HOM,
   ROUND(E_HOM, 2) as E_HOM,
   N_SITES,
   ROUND((O_HOM - E_HOM) / (N_SITES - E_HOM), 5) AS F
 FROM (
   SELECT
-    call.call_set_name AS INDV,
+    call.call_set_name,
     SUM(first_allele = second_allele) AS O_HOM,
     SUM(1.0 - (2.0 * freq * (1.0 - freq) * (called_allele_count / (called_allele_count - 1.0)))) AS E_HOM,
     COUNT(call.call_set_name) AS N_SITES,
@@ -39,7 +39,7 @@ FROM (
       AND alternate_bases IN ('A','C','G','T')
       )
   GROUP BY
-    INDV
+    call.call_set_name
     )
 ORDER BY
-  INDV
+  call.call_set_name

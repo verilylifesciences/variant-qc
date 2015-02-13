@@ -34,7 +34,7 @@ By default this codelab runs upon the Illumina Platinum Genomes Variants. Update
 tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-sampleInfo <- select(sampleData, sample_id=Catalog.ID, gender=Gender)
+sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
 ```
 
 ## Ti/Tv by Genomic Window
@@ -93,7 +93,7 @@ Number of rows returned by this query: 2279.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:23 2015 -->
+<!-- Thu Feb 12 17:45:40 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr1 </td> <td align="right">   0 </td> <td align="right"> 293 </td> <td align="right"> 198 </td> <td align="right"> 1.48 </td> <td align="right"> 491 </td> </tr>
@@ -164,7 +164,7 @@ Number of rows returned by this query: 35.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:27 2015 -->
+<!-- Thu Feb 12 17:45:45 2015 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> alternate_allele_count </th>  </tr>
   <tr> <td align="right"> 350843 </td> <td align="right"> 172896 </td> <td align="right"> 2.03 </td> <td align="right">  34 </td> </tr>
@@ -233,7 +233,7 @@ Number of rows returned by this query: 1000.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:31 2015 -->
+<!-- Thu Feb 12 17:45:48 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
@@ -250,8 +250,8 @@ For each variant, compute the expected versus observed relationship between alle
 
 
 ```r
-sortAndLimit <- "ORDER BY ChiSq DESC, CHR, POS, ref, alt LIMIT 1000"
-result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1-expanded.sql",
+sortAndLimit <- "ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000"
+result <- DisplayAndDispatchQuery("./sql/hardy-weinberg.sql",
                                   project=project,
                                   replacements=c(tableReplacement,
                                                  "#_ORDER_BY_"=sortAndLimit))
@@ -260,10 +260,10 @@ result <- DisplayAndDispatchQuery("./sql/hardy-weinberg-brca1-expanded.sql",
 ```
 # The following query computes the Hardy-Weinberg equilibrium for variants.
 SELECT
-  CHR,
-  POS,
-  ref,
-  alt,
+  reference_name,
+  start,
+  reference_bases,
+  alternate_bases,
   OBS_HOM1,
   OBS_HET,
   OBS_HOM2,
@@ -286,10 +286,10 @@ SELECT
 
 FROM (
     SELECT
-      CHR,
-      POS,
-      ref,
-      alt,
+      reference_name,
+      start,
+      reference_bases,
+      alternate_bases,
       OBS_HOM1,
       OBS_HET,
       OBS_HOM2,
@@ -322,10 +322,10 @@ FROM (
 
   FROM (
     SELECT
-      reference_name AS CHR,
-      start AS POS,
-      reference_bases AS ref,
-      alternate_bases AS alt,
+      reference_name,
+      start,
+      reference_bases,
+      alternate_bases,
       HOM_REF AS OBS_HOM1,
       HET AS OBS_HET,
       HOM_ALT AS OBS_HOM2,
@@ -352,15 +352,15 @@ FROM (
         num_alts = 1
         )))
 # Optionally add a clause here to sort and limit the results.
-ORDER BY ChiSq DESC, CHR, POS, ref, alt LIMIT 1000
+ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000
 ```
 Number of rows returned by this query: 1000.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:36 2015 -->
+<!-- Thu Feb 12 17:45:53 2015 -->
 <table border=1>
-<tr> <th> CHR </th> <th> POS </th> <th> ref </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
+<tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
   <tr> <td> chr1 </td> <td align="right"> 64839482 </td> <td> G </td> <td> A </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
   <tr> <td> chr1 </td> <td align="right"> 80603209 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -375,7 +375,7 @@ For each variant within the X and Y chromosome, identify heterozygous variants i
 First we use our sample information to determine which genomes are male.  
 
 ```r
-maleSampleIds <- paste("'", filter(sampleInfo, gender == "Male")$sample_id, "'", sep="", collapse=",")
+maleSampleIds <- paste("'", filter(sampleInfo, gender == "Male")$call_call_set_name, "'", sep="", collapse=",")
 ```
 
 
@@ -414,7 +414,7 @@ Number of rows returned by this query: 1000.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:40 2015 -->
+<!-- Thu Feb 12 17:45:55 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> genotype </th>  </tr>
   <tr> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> <td> NA12884 </td> <td> 0,1 </td> </tr>

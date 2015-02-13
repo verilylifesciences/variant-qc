@@ -123,6 +123,7 @@ colnames(expectedResult) <- gsub('\\.+', '_', colnames(expectedResult))
 ```
 
 ```{r results="asis"}
+result <- rename(result, INDV=call_call_set_name)
 joinedResult <- inner_join(expectedResult, result, by=c("INDV"))
 print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include.rownames=F)
 ```
@@ -167,10 +168,11 @@ Cohort Level QC
 Check Hardy-Weinberg Equilibrium
 -----------------------------------
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("../sql/hardy-weinberg-brca1-expanded.sql",
+sortAndLimit <- "ORDER BY reference_name, start, alternate_bases"
+result <- DisplayAndDispatchQuery("../sql/hardy-weinberg.sql",
                                   project=project,
                                   replacements=c(replacements,
-                                                 "#_ORDER_BY_"="ORDER BY CHR, POS, ref, alt"))
+                                                 "#_ORDER_BY_"=sortAndLimit))
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -183,6 +185,7 @@ Compare to [brca1.hwe](./hwe/brca1.hwe) (see the [vcftools command line](./hwe/b
 
 ```{r}
 require(dplyr)
+result <- rename(result, CHR=reference_name, POS=start)
 df <- read.table("./hwe/brca1.hwe", header=TRUE)
 obsSplitCol <- "OBS.HOM1.HET.HOM2."
 obsTemp <- read.table(text=as.character(df[, obsSplitCol]), sep = "/")

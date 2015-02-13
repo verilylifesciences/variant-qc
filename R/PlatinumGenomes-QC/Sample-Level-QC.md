@@ -35,7 +35,7 @@ By default this codelab runs upon the Illumina Platinum Genomes Variants. Update
 tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-sampleInfo <- select(sampleData, sample_id=Catalog.ID, gender=Gender)
+sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
 ```
 
 ## Missingness Rate
@@ -53,19 +53,19 @@ result <- DisplayAndDispatchQuery("./sql/sample-level-missingness.sql",
 # Compute the ratio of positions corresponding to no-calls versus all positions
 # called (reference, variant, and no-calls).
 SELECT
-  sample_id,
+  call.call_set_name,
   no_calls,
   all_calls,
   (no_calls/all_calls) AS missingness_rate
 FROM (
   SELECT
-    sample_id,
+    call.call_set_name,
     SUM(IF(has_no_calls, delta, 0)) AS no_calls,
     SUM(delta) AS all_calls
   FROM (
     SELECT
       END - start AS delta,
-      call.call_set_name AS sample_id,
+      call.call_set_name,
       SOME(call.genotype == -1) WITHIN call AS has_no_calls,
     FROM
       [genomics-public-data:platinum_genomes.variants]
@@ -74,17 +74,17 @@ FROM (
     #_WHERE_
     )
   GROUP BY
-    sample_id)
+    call.call_set_name)
 ORDER BY
-  sample_id
+  call.call_set_name
 ```
 Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:03 2015 -->
+<!-- Thu Feb 12 17:45:24 2015 -->
 <table border=1>
-<tr> <th> sample_id </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
+<tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
   <tr> <td> NA12878 </td> <td align="right"> 58122228 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
   <tr> <td> NA12879 </td> <td align="right"> 59224162 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
@@ -97,7 +97,7 @@ And visualizing the results:
 
 ```r
 ggplot(result) +
-  geom_point(aes(x=sample_id, y=missingness_rate)) +
+  geom_point(aes(x=call_call_set_name, y=missingness_rate)) +
   theme(axis.text.x=if(nrow(result) <= 20)
     {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
   xlab("Sample") +
@@ -121,18 +121,18 @@ result <- DisplayAndDispatchQuery("./sql/private-variants.sql",
 ```
 # Compute private variants counts for each sample.
 SELECT
-  INDV,
-  COUNT(INDV) AS private_variant_count,
+  call.call_set_name,
+  COUNT(call.call_set_name) AS private_variant_count,
 FROM (
   SELECT
-    reference_name AS CHROM,
-    start AS POS,
+    reference_name,
+    start,
     GROUP_CONCAT(CASE WHEN cnt = 1 THEN 'S'
       WHEN cnt = 2 THEN 'D'
       ELSE STRING(cnt) END) AS SINGLETON_DOUBLETON,
-    reference_bases AS REF,
-    alternate_bases AS ALT,
-    GROUP_CONCAT(call.call_set_name) AS INDV,
+    reference_bases,
+    alternate_bases,
+    GROUP_CONCAT(call.call_set_name) AS call.call_set_name,
     GROUP_CONCAT(genotype) AS genotype,
     SUM(num_samples_with_variant) AS num_samples_with_variant
   FROM (
@@ -169,15 +169,15 @@ FROM (
       cnt > 0
       )
     GROUP EACH BY
-    chrom,
-    pos,
-    ref,
-    alt
+      reference_name,
+      start,
+      reference_bases,
+      alternate_bases
   HAVING
     num_samples_with_variant = 1
     )
 GROUP BY
-  INDV
+  call.call_set_name
 ORDER BY
   private_variant_count DESC
 ```
@@ -185,9 +185,9 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:09 2015 -->
+<!-- Thu Feb 12 17:45:27 2015 -->
 <table border=1>
-<tr> <th> INDV </th> <th> private_variant_count </th>  </tr>
+<tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
   <tr> <td> NA12892 </td> <td align="right"> 415630 </td> </tr>
   <tr> <td> NA12889 </td> <td align="right"> 415513 </td> </tr>
@@ -200,7 +200,7 @@ And visualizing the results:
 
 ```r
 ggplot(result) +
-  geom_point(aes(x=INDV, y=private_variant_count)) +
+  geom_point(aes(x=call_call_set_name, y=private_variant_count)) +
   theme(axis.text.x=if(nrow(result) <= 20)
     {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
   xlab("Sample") +
@@ -224,14 +224,14 @@ result <- DisplayAndDispatchQuery("./sql/homozygous-variants.sql",
 ```
 # Compute the expected and observed homozygosity rate for each individual.
 SELECT
-  INDV,
+  call.call_set_name,
   O_HOM,
   ROUND(E_HOM, 2) as E_HOM,
   N_SITES,
   ROUND((O_HOM - E_HOM) / (N_SITES - E_HOM), 5) AS F
 FROM (
   SELECT
-    call.call_set_name AS INDV,
+    call.call_set_name,
     SUM(first_allele = second_allele) AS O_HOM,
     SUM(1.0 - (2.0 * freq * (1.0 - freq) * (called_allele_count / (called_allele_count - 1.0)))) AS E_HOM,
     COUNT(call.call_set_name) AS N_SITES,
@@ -263,18 +263,18 @@ FROM (
       AND alternate_bases IN ('A','C','G','T')
       )
   GROUP BY
-    INDV
+    call.call_set_name
     )
 ORDER BY
-  INDV
+  call.call_set_name
 ```
 Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:12 2015 -->
+<!-- Thu Feb 12 17:45:31 2015 -->
 <table border=1>
-<tr> <th> INDV </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
+<tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
   <tr> <td> NA12878 </td> <td align="right"> 6700705 </td> <td align="right"> 7955077.42 </td> <td align="right"> 10171953 </td> <td align="right"> -0.57 </td> </tr>
   <tr> <td> NA12879 </td> <td align="right"> 6620470 </td> <td align="right"> 7933125.29 </td> <td align="right"> 10147411 </td> <td align="right"> -0.59 </td> </tr>
@@ -287,7 +287,7 @@ And visualizing the results:
 
 ```r
 ggplot(result) +
-  geom_text(aes(x=O_HOM, y=E_HOM, label=INDV), hjust=-1, vjust=0) +
+  geom_text(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), hjust=-1, vjust=0) +
   xlab("Observed Homozygous Variants") +
   ylab("Expected Homozygous Variants") +
   ggtitle("Homozygosity")
@@ -310,7 +310,7 @@ result <- DisplayAndDispatchQuery("./sql/gender-check.sql",
 # within chromosome X to help determine whether the gender phenotype value is
 # correct for each individual.
 SELECT
-  sample_id,
+  call.call_set_name,
   ROUND((het_RA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_het_alt_in_snvs,
   ROUND((hom_AA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_hom_alt_in_snvs,
   (hom_AA_count + het_RA_count + hom_RR_count) AS all_callable_sites,
@@ -321,7 +321,7 @@ SELECT
 FROM
   (
   SELECT
-    sample_id,
+    call.call_set_name,
     SUM(0 = first_allele
       AND 0 = second_allele) AS hom_RR_count,
     SUM(first_allele = second_allele AND first_allele > 0) AS hom_AA_count,
@@ -332,7 +332,7 @@ FROM
       reference_bases,
       GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
       COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-      call.call_set_name AS sample_id,
+      call.call_set_name,
       NTH(1, call.genotype) WITHIN call AS first_allele,
       NTH(2, call.genotype) WITHIN call AS second_allele,
     FROM
@@ -348,17 +348,17 @@ FROM
       AND alternate_bases IN ('A','C','G','T')
       )
   GROUP BY
-    sample_id)
+    call.call_set_name)
 ORDER BY
-  sample_id
+  call.call_set_name
 ```
 Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:16 2015 -->
+<!-- Thu Feb 12 17:45:35 2015 -->
 <table border=1>
-<tr> <th> sample_id </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> all_callable_sites </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th> <th> all_snvs </th>  </tr>
+<tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> all_callable_sites </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th> <th> all_snvs </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 329461 </td> <td align="right"> 79721 </td> <td align="right"> 37317 </td> <td align="right"> 212423 </td> <td align="right"> 117038 </td> </tr>
   <tr> <td> NA12878 </td> <td align="right"> 0.71 </td> <td align="right"> 0.29 </td> <td align="right"> 326950 </td> <td align="right"> 43626 </td> <td align="right"> 106398 </td> <td align="right"> 176926 </td> <td align="right"> 150024 </td> </tr>
   <tr> <td> NA12879 </td> <td align="right"> 0.70 </td> <td align="right"> 0.30 </td> <td align="right"> 326052 </td> <td align="right"> 45636 </td> <td align="right"> 105711 </td> <td align="right"> 174705 </td> <td align="right"> 151347 </td> </tr>
@@ -377,7 +377,7 @@ And visualize the results:
 
 ```r
 ggplot(joinedResult) +
-  geom_point(aes(x=sample_id, y=perct_het_alt_in_snvs, color=gender)) +
+  geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=gender)) +
   theme(axis.text.x=if(nrow(result) <= 20)
     {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
   xlab("Sample") +

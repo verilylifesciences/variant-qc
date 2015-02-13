@@ -45,7 +45,7 @@ By default this codelab runs upon the Illumina Platinum Genomes Variants. Update
 tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-sampleInfo <- select(sampleData, sample_id=Catalog.ID, gender=Gender)
+sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
 ```
 
 ## Missingness Rate
@@ -67,7 +67,7 @@ print(xtable(head(result)), type="html", include.rownames=F)
 And visualizing the results:
 ```{r sampleMissingness, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(result) +
-  geom_point(aes(x=sample_id, y=missingness_rate)) +
+  geom_point(aes(x=call_call_set_name, y=missingness_rate)) +
   theme(axis.text.x=if(nrow(result) <= 20)
     {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
   xlab("Sample") +
@@ -94,7 +94,7 @@ print(xtable(head(result)), type="html", include.rownames=F)
 And visualizing the results:
 ```{r singletons, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(result) +
-  geom_point(aes(x=INDV, y=private_variant_count)) +
+  geom_point(aes(x=call_call_set_name, y=private_variant_count)) +
   theme(axis.text.x=if(nrow(result) <= 20)
     {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
   xlab("Sample") +
@@ -121,7 +121,7 @@ print(xtable(head(result)), type="html", include.rownames=F)
 And visualizing the results:
 ```{r homozygosity, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(result) +
-  geom_text(aes(x=O_HOM, y=E_HOM, label=INDV), hjust=-1, vjust=0) +
+  geom_text(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), hjust=-1, vjust=0) +
   xlab("Observed Homozygous Variants") +
   ylab("Expected Homozygous Variants") +
   ggtitle("Homozygosity")
@@ -150,7 +150,7 @@ joinedResult <- inner_join(result, sampleInfo)
 And visualize the results:
 ```{r gender, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(joinedResult) +
-  geom_point(aes(x=sample_id, y=perct_het_alt_in_snvs, color=gender)) +
+  geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=gender)) +
   theme(axis.text.x=if(nrow(result) <= 20)
     {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
   xlab("Sample") +

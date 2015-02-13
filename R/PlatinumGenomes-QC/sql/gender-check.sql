@@ -2,7 +2,7 @@
 # within chromosome X to help determine whether the gender phenotype value is
 # correct for each individual.
 SELECT
-  sample_id,
+  call.call_set_name,
   ROUND((het_RA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_het_alt_in_snvs,
   ROUND((hom_AA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_hom_alt_in_snvs,
   (hom_AA_count + het_RA_count + hom_RR_count) AS all_callable_sites,
@@ -13,7 +13,7 @@ SELECT
 FROM
   (
   SELECT
-    sample_id,
+    call.call_set_name,
     SUM(0 = first_allele
       AND 0 = second_allele) AS hom_RR_count,
     SUM(first_allele = second_allele AND first_allele > 0) AS hom_AA_count,
@@ -24,7 +24,7 @@ FROM
       reference_bases,
       GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
       COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-      call.call_set_name AS sample_id,
+      call.call_set_name,
       NTH(1, call.genotype) WITHIN call AS first_allele,
       NTH(2, call.genotype) WITHIN call AS second_allele,
     FROM
@@ -40,6 +40,6 @@ FROM
       AND alternate_bases IN ('A','C','G','T')
       )
   GROUP BY
-    sample_id)
+    call.call_set_name)
 ORDER BY
-  sample_id
+  call.call_set_name
