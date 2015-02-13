@@ -28,9 +28,9 @@ project <- "YOUR-PROJECT-ID"
 #####################################################################
 ```
 
-```{r echo=FALSE, eval=TRUE}
+```{r}
 # Set up for BigQuery access.
-source("../helper.R")
+source("../rHelpers/setup.R")
 
 replacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                      "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants",

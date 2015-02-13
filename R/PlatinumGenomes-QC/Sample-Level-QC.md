@@ -82,7 +82,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb 11 17:28:48 2015 -->
+<!-- Thu Feb 12 17:09:03 2015 -->
 <table border=1>
 <tr> <th> sample_id </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -185,7 +185,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb 11 17:28:53 2015 -->
+<!-- Thu Feb 12 17:09:09 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -272,7 +272,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb 11 17:28:57 2015 -->
+<!-- Thu Feb 12 17:09:12 2015 -->
 <table border=1>
 <tr> <th> INDV </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
@@ -356,7 +356,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Wed Feb 11 17:29:02 2015 -->
+<!-- Thu Feb 12 17:09:16 2015 -->
 <table border=1>
 <tr> <th> sample_id </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> all_callable_sites </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th> <th> all_snvs </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 329461 </td> <td align="right"> 79721 </td> <td align="right"> 37317 </td> <td align="right"> 212423 </td> <td align="right"> 117038 </td> </tr>
@@ -396,14 +396,19 @@ For this check, we:
 * compute PCA on those variants in common between the two data
 * examine whether the individuals in Platinum Genomes cluster with other samples of the same ethnicity
 
+Note that this `n^2` analysis is a cluster compute job instead of a BigQuery query.
+
 This is a work-in-progress.  See https://github.com/elmer-garduno/spark-examples/tree/multiple_dataset_pca for the current state.
 
 ## Genome Similarity
 
 Perform a simplistic similarity check on each pair of genomes to identify any mislabled or cross-contaminated samples.
 
+Note that this `n^2` analysis is a cluster compute job instead of a BigQuery query.
+
 ### Results
 
+This is hard-coded to Identity-By-State results for Platinum Genomes.
 
 ```r
 ibs <- read.table("./data/platinum-genomes-ibs.tsv",
@@ -421,7 +426,7 @@ ggplot(ibs) +
 
 <img src="figure/ibs-1.png" title="plot of chunk ibs" alt="plot of chunk ibs" style="display: block; margin: auto;" />
 
-### To Run the Job
+### To Run the Cluster Compute Job
 
 If you wish to run the Dataflow job, see the [dataflow-java README](https://github.com/googlegenomics/dataflow-java) for instructions to compile and run the job.
 ```
@@ -435,13 +440,13 @@ com.google.cloud.genomics.dataflow.pipelines.IdentityByState \
 --numWorkers=40 \
 --basesPerShard=1000000 \
 --datasetId=3049512673186936334 \
---gvcf \
---allContigs
+--nonVariantSegments \
+--allReferences
 ```
 
 Note that there are several IBS calculators from which to choose.  Use the `--callSimilarityCalculatorFactory` to switch between them.
 
-To run the job on a different dataset, change the variant set id for the `--datasetId` id parameter.  (Also, remove the `--gvcf` parameter if the data is not in gVCF format.)
+To run the job on a different dataset, change the variant set id for the `--datasetId` id parameter.  (Also, remove the `--nonVariantSegments` parameter if the data does not contain them.)
 
 To gather the results into a single file:
 ```

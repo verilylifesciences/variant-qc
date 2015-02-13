@@ -28,7 +28,7 @@ project <- "YOUR-PROJECT-ID"
 
 ```{r echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # Set up for BigQuery access.
-source("./helper.R")
+source("./rHelpers/setup.R")
 ```
 
 In Part 4 of the codelab, we perform some quality control analyses that could help to identify any problematic variants which should be excluded from further analysis.  The appropriate cut off thresholds will depend upon the input dataset and/or other factors.
@@ -94,7 +94,7 @@ Visualizing the results:
 ```{r titvByAlt, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(result) +
   geom_point(aes(x=alternate_allele_count, y=titv)) +
-  xlab("Alternate Allele Count") +
+  xlab("Total Number of Sample Alleles with the Variant") +
   ylab("Ti/Tv") +
   ggtitle("Ti/Tv by Alternate Allele Count")
 ```

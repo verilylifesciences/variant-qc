@@ -30,7 +30,7 @@ project <- "YOUR-PROJECT-ID"
 
 ```{r echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # Set up for BigQuery access.
-source("./helper.R")
+source("./rHelpers/setup.R")
 ```
 
 ```{r}
@@ -55,8 +55,10 @@ Displaying the first few rows of the dataframe of results:
 print(xtable(head(result)), type="html", include.rownames=F)
 ```
 
-## Non-Variants Segments
-This Platinum Genomes data is in [genome VCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions) (gVCF) format.  Let's take a look at a few non-variant segments within BRCA1:
+## Non-Variant Segments
+The source Platinum Genomes data loaded into the Google Genomics API was in [genome VCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions) (gVCF) format.
+
+Let's take a look at a few non-variant segments within BRCA1:
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/non-variant-segments.sql",
                                   project=project,
@@ -68,7 +70,9 @@ Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
 print(xtable(head(result)), type="html", include.rownames=F)
 ```
-So for any analyses that require us to know how many samples do and do not have a particular SNP, we'll need to make sure that the non-variant segments are considered in addition to the variants.
+So for any analyses that require us to know for example _"how many samples do and do not have a particular SNP?"_, we'll need to make sure that the non-variant segments are considered in addition to the variants.
+
+Note that Complete Genomics data also includes non-variant segments and requires the same consideration.
 
 ## Alternative Allele Field
 
@@ -100,8 +104,8 @@ We see from the query results the variety of genotypes within BRCA1.
 
 # Summary
 
-To summarize attributes of this particular dataset that we need to consider when working with this data:
-* It is in gVCF format which adds complexity above and beyond [similar examples for the 1,000 Genomes dataset](https://github.com/googlegenomics/bigquery-examples/blob/master/1000genomes/sql/README.md).
+To summarize attributes of this particular dataset that we need to consider when working with Platinum Genomes data:
+* It has non-variant segments which adds complexity above and beyond [similar examples for the 1,000 Genomes dataset](https://github.com/googlegenomics/bigquery-examples/blob/master/1000genomes/sql/README.md).
 * It is comprised only of SNPs and INDELs (contains no structural variants).
 * The values for `alternate_bases` are just comprised of the letters A,C,G,T (e.g., contains no `<DEL>` values).
 * It contains some single-allele and 1/2 genotypes.

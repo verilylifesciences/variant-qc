@@ -28,7 +28,7 @@ project <- "YOUR-PROJECT-ID"
 
 ```{r echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
 # Set up for BigQuery access.
-source("./helper.R")
+source("./rHelpers/setup.R")
 ```
 
 In Part 3 of the codelab, we perform some quality control analyses that could help to identify any problematic genomes that should be removed from the cohort before proceeding with further analysis.  The appropriate cut off thresholds will depend upon the input dataset and/or other factors.
@@ -168,14 +168,19 @@ For this check, we:
 * compute PCA on those variants in common between the two data
 * examine whether the individuals in Platinum Genomes cluster with other samples of the same ethnicity
 
+Note that this `n^2` analysis is a cluster compute job instead of a BigQuery query.
+
 This is a work-in-progress.  See https://github.com/elmer-garduno/spark-examples/tree/multiple_dataset_pca for the current state.
 
 ## Genome Similarity
 
 Perform a simplistic similarity check on each pair of genomes to identify any mislabled or cross-contaminated samples.
 
+Note that this `n^2` analysis is a cluster compute job instead of a BigQuery query.
+
 ### Results
 
+This is hard-coded to Identity-By-State results for Platinum Genomes.
 ```{r ibs, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ibs <- read.table("./data/platinum-genomes-ibs.tsv",
                   col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
@@ -190,7 +195,7 @@ ggplot(ibs) +
   ggtitle("Identity By State (IBS) Heat Map")
 ```
 
-### To Run the Job
+### To Run the Cluster Compute Job
 
 If you wish to run the Dataflow job, see the [dataflow-java README](https://github.com/googlegenomics/dataflow-java) for instructions to compile and run the job.
 ```
@@ -204,13 +209,13 @@ com.google.cloud.genomics.dataflow.pipelines.IdentityByState \
 --numWorkers=40 \
 --basesPerShard=1000000 \
 --datasetId=3049512673186936334 \
---gvcf \
---allContigs
+--nonVariantSegments \
+--allReferences
 ```
 
 Note that there are several IBS calculators from which to choose.  Use the `--callSimilarityCalculatorFactory` to switch between them.
 
-To run the job on a different dataset, change the variant set id for the `--datasetId` id parameter.  (Also, remove the `--gvcf` parameter if the data is not in gVCF format.)
+To run the job on a different dataset, change the variant set id for the `--datasetId` id parameter.  (Also, remove the `--nonVariantSegments` parameter if the data does not contain them.)
 
 To gather the results into a single file:
 ```

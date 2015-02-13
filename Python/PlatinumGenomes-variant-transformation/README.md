@@ -1,5 +1,10 @@
-Using Hadoop Streaming to convert gVCF to VCF
-==============================================
+# Using Hadoop Streaming to reshape data with Non-Variant Segments
+
+In this codelab we convert data with non-variant segments (such as data that was in source format Genome VCF (gVCF) or Complete Genomics) to variant-only data with calls from non-variant-segments merged into the variants with which they overlap. The resultant data is emitted to a BigQuery table.
+ 
+This is currently done only for SNP variants. Indels and structural variants are left as-is.
+
+SCALING: For a large cohort with many, many more rare variants we may wish to instead modify the logic here to summarize the number of calls that match the reference for each variant instead of adding those individual calls to the record.
 
 The following example makes use of [Illumina Platinum Genomes](http://www.illumina.com/platinumgenomes/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/platinum-genomes).
 
