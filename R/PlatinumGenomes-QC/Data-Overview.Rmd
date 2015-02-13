@@ -36,8 +36,7 @@ source("./rHelpers/setup.R")
 ```{r}
 # By default this codelab runs upon the Illumina Platinum Genomes Variants.
 # Change the table here if you wish to run these queries against a different table.
-tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants")
 ```
 
 ## Variants

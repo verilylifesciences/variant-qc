@@ -26,8 +26,7 @@ The following example makes use of [Illumina Platinum Genomes](http://www.illumi
 ```r
 # By default this codelab runs upon the Illumina Platinum Genomes Variants.
 # Change the table here if you wish to run these queries against a different table.
-tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants")
 ```
 
 ## Variants
@@ -67,7 +66,7 @@ Number of rows returned by this query: 335.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:08:40 2015 -->
+<!-- Fri Feb 13 08:36:24 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
@@ -109,13 +108,13 @@ OMIT RECORD IF SOME(alternate_bases IS NOT NULL)
 ORDER BY
   start,
   call.call_set_name
-Retrieving data:  7.0sRetrieving data: 13.7s
+Retrieving data:  2.6sRetrieving data:  5.7s
 ```
 Number of rows returned by this query: 22777.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:08:58 2015 -->
+<!-- Fri Feb 13 08:36:32 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> genotype </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td> NA12886 </td> <td> 0,0 </td> </tr>
@@ -155,7 +154,7 @@ GROUP BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:00 2015 -->
+<!-- Fri Feb 13 08:36:34 2015 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
@@ -195,7 +194,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:09:01 2015 -->
+<!-- Fri Feb 13 08:36:38 2015 -->
 <table border=1>
 <tr> <th> genotype </th> <th> genotype_count </th>  </tr>
   <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>
