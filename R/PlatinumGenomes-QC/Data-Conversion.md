@@ -10,7 +10,7 @@ We will use either data from variant set [3049512673186936334](https://cloud.goo
 
 More coming soon!  Its a combination of:
 * **Java** https://github.com/googlegenomics/dataflow-java/blob/master/src/main/java/com/google/cloud/genomics/dataflow/pipelines/ConvertNonVariantSegmentsToVariants.java which will be moved into codelabs/Java
-* **Python** https://github.com/deflaux/codelabs/tree/qc-codelab/Python/PlatinumGenomes-gVCF-to-VCF with an update for PySpark in addition to the current support for Hadoop Streaming
+* **Python** https://github.com/deflaux/codelabs/tree/qc-codelab/Python/PlatinumGenomes-variant-transformation with an update for PySpark in addition to the current support for Hadoop Streaming
 
 ## Results
 
