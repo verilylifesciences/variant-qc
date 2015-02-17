@@ -1,6 +1,6 @@
 # Part 2: Data Conversion
 
-Data from source files in [genome VCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions) (gVCF) format or in Complete Genomics format can be challenging to query due to the presense of non-variant segment records.  For more detail see this [comparison](https://github.com/googlegenomics/bigquery-examples/tree/master/pgp/data-stories/schema-comparisons#motivation).
+Data from source files in [genome VCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions) (gVCF) format or in Complete Genomics format can be challenging to query due to the presence of non-variant segment records.  For more detail see this [comparison](https://github.com/googlegenomics/bigquery-examples/tree/master/pgp/data-stories/schema-comparisons#motivation).
 
 In this portion of the codelab we will use a cluster computing job to transform data with non-variant segments to variant-only data with calls from non-variant-segments merged into the variants with which they overlap. This is currently done only for SNP variants. Indels and structural variants are left as-is.
 

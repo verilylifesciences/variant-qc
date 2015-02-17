@@ -82,7 +82,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:45:24 2015 -->
+<!-- Tue Feb 17 11:59:26 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -185,7 +185,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:45:27 2015 -->
+<!-- Tue Feb 17 11:59:29 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -272,7 +272,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:45:31 2015 -->
+<!-- Tue Feb 17 11:59:32 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
@@ -311,44 +311,34 @@ result <- DisplayAndDispatchQuery("./sql/gender-check.sql",
 # correct for each individual.
 SELECT
   call.call_set_name,
-  ROUND((het_RA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_het_alt_in_snvs,
-  ROUND((hom_AA_count/(hom_AA_count + het_RA_count))*1000)/1000 AS perct_hom_alt_in_snvs,
-  (hom_AA_count + het_RA_count + hom_RR_count) AS all_callable_sites,
-  hom_AA_count,
-  het_RA_count,
-  hom_RR_count,
-  (hom_AA_count + het_RA_count) AS all_snvs,
-FROM
-  (
+  ROUND(SUM(het_RA)/(SUM(hom_AA) + SUM(het_RA)), 3) AS perct_het_alt_in_snvs,
+  ROUND(SUM(hom_AA)/(SUM(hom_AA) + SUM(het_RA)), 3) AS perct_hom_alt_in_snvs,
+  SUM(hom_AA) AS hom_AA_count,
+  SUM(het_RA) AS het_RA_count,
+  SUM(hom_RR) AS hom_RR_count,
+FROM (
   SELECT
+    reference_bases,
+    GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+    COUNT(alternate_bases) WITHIN RECORD AS num_alts,
     call.call_set_name,
-    SUM(0 = first_allele
-      AND 0 = second_allele) AS hom_RR_count,
-    SUM(first_allele = second_allele AND first_allele > 0) AS hom_AA_count,
-    SUM((first_allele != second_allele OR second_allele IS NULL)
-      AND (first_allele > 0 OR second_allele > 0)) AS het_RA_count
-  FROM (
-    SELECT
-      reference_bases,
-      GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-      COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-      call.call_set_name,
-      NTH(1, call.genotype) WITHIN call AS first_allele,
-      NTH(2, call.genotype) WITHIN call AS second_allele,
-    FROM
-      [google.com:biggene:platinum_genomes.expanded_variants]
-    WHERE
-      reference_name = 'chrX'
-      AND start NOT BETWEEN 59999 AND 2699519
-      AND start NOT BETWEEN 154931042 AND 155260559
-    HAVING
-      # Skip 1/2 genotypes _and non-SNP variants
-      num_alts = 1
-      AND reference_bases IN ('A','C','G','T')
-      AND alternate_bases IN ('A','C','G','T')
-      )
-  GROUP BY
-    call.call_set_name)
+    SOME(call.genotype = 0) AND NOT SOME(call.genotype > 0) WITHIN call AS hom_RR,
+    SOME(call.genotype > 0) AND NOT SOME(call.genotype = 0) WITHIN call AS hom_AA,
+    SOME(call.genotype > 0) AND SOME(call.genotype = 0) WITHIN call AS het_RA
+  FROM
+    [google.com:biggene:platinum_genomes.expanded_variants]
+  WHERE
+    reference_name = 'chrX'
+    AND start NOT BETWEEN 59999 AND 2699519
+    AND start NOT BETWEEN 154931042 AND 155260559
+  HAVING
+    # Skip 1/2 genotypes _and non-SNP variants
+    num_alts = 1
+    AND reference_bases IN ('A','C','G','T')
+    AND alternate_bases IN ('A','C','G','T')
+  )
+GROUP BY
+  call.call_set_name
 ORDER BY
   call.call_set_name
 ```
@@ -356,15 +346,15 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:45:35 2015 -->
+<!-- Tue Feb 17 11:59:36 2015 -->
 <table border=1>
-<tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> all_callable_sites </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th> <th> all_snvs </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 329461 </td> <td align="right"> 79721 </td> <td align="right"> 37317 </td> <td align="right"> 212423 </td> <td align="right"> 117038 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 0.71 </td> <td align="right"> 0.29 </td> <td align="right"> 326950 </td> <td align="right"> 43626 </td> <td align="right"> 106398 </td> <td align="right"> 176926 </td> <td align="right"> 150024 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 0.70 </td> <td align="right"> 0.30 </td> <td align="right"> 326052 </td> <td align="right"> 45636 </td> <td align="right"> 105711 </td> <td align="right"> 174705 </td> <td align="right"> 151347 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> <td align="right"> 325288 </td> <td align="right"> 47237 </td> <td align="right"> 105768 </td> <td align="right"> 172283 </td> <td align="right"> 153005 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> <td align="right"> 325437 </td> <td align="right"> 47424 </td> <td align="right"> 105386 </td> <td align="right"> 172627 </td> <td align="right"> 152810 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 0.31 </td> <td align="right"> 0.69 </td> <td align="right"> 328200 </td> <td align="right"> 78797 </td> <td align="right"> 34911 </td> <td align="right"> 214492 </td> <td align="right"> 113708 </td> </tr>
+<tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
+  <tr> <td> NA12878 </td> <td align="right"> 0.71 </td> <td align="right"> 0.29 </td> <td align="right"> 43666 </td> <td align="right"> 106358 </td> <td align="right"> 183525 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 0.70 </td> <td align="right"> 0.30 </td> <td align="right"> 45655 </td> <td align="right"> 105692 </td> <td align="right"> 180162 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> <td align="right"> 47261 </td> <td align="right"> 105744 </td> <td align="right"> 178206 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> <td align="right"> 47446 </td> <td align="right"> 105364 </td> <td align="right"> 178591 </td> </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 0.31 </td> <td align="right"> 0.69 </td> <td align="right"> 78815 </td> <td align="right"> 34893 </td> <td align="right"> 214852 </td> </tr>
    </table>
 
 Let's join this with the sample information:
