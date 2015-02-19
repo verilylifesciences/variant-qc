@@ -2,15 +2,15 @@
 
 In this codelab you will use [Google Genomics](https://cloud.google.com/genomics/), [Google BigQuery](https://cloud.google.com/bigquery/what-is-bigquery), [Google Cloud Dataflow](https://cloud.google.com/dataflow/), [Apache Spark](http://spark.apache.org/), and [R](http://www.r-project.org/) to perform quality control checks on the [Illumina Platinum Genomes dataset](https://cloud.google.com/genomics/data/platinum-genomes).  Specifically, you will:
 
-1. examine the format, domain and range of the Illumina Platinum Genomes data
-2. convert data with non-variant segment records to variant-only data with reference-matching calls from overlapping non-variant segment records included via your choice of
+1. Examine the format, domain and range of the Illumina Platinum Genomes data.
+2. Convert data with non-variant segment records to variant-only data with reference-matching calls from overlapping non-variant segment records included via your choice of:
  + Java: a Google Cloud Dataflow job
  + Python: an Apache PySpark job or a Hadoop Streaming job
-3. perform sample-level Quality Control checks such as
+3. Perform sample-level Quality Control checks such as:
  + homozygosity rate via BigQuery
  + ethnicity using Principal Coordinate Analysis (either by running this Apache Spark job from scratch or reading in pre-computed results)
  + relatedness among individuals using Identity-By-State results (either by running the Google Cloud Dataflow from scratch or reading in pre-computed results)
-4. perform variant-level Quality Control checks via BigQuery such as
+4. Perform variant-level Quality Control checks via BigQuery such as:
  + Hardy-Weinberg Equilibrium via BigQuery
 
 ## Instructions

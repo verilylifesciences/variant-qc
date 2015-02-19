@@ -36,7 +36,6 @@ tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.va
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
 sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
 ```
-
 ## Ti/Tv by Genomic Window
 
 Check whether the ratio of transitions vs. transversions in SNPs appears to be reasonable in each window of genomic positions.  This query may help identify problematic regions.
@@ -92,8 +91,8 @@ ORDER BY
 Number of rows returned by this query: 2279.
 
 Displaying the first few results:
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:45:40 2015 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Feb 19 15:41:35 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr1 </td> <td align="right">   0 </td> <td align="right"> 293 </td> <td align="right"> 198 </td> <td align="right"> 1.48 </td> <td align="right"> 491 </td> </tr>
@@ -107,8 +106,10 @@ Displaying the first few results:
 Visualizing the results:
 
 ```r
-ggplot(result) +
-  geom_point(aes(x=window_start, y=titv)) +
+ggplot(result, aes(x=window_start, y=titv)) +
+  geom_point() +
+  stat_smooth() +
+  scale_x_continuous(labels=comma) +
   xlab("Genomic Position") +
   ylab("Ti/Tv") +
   ggtitle("Ti/Tv by 100,000 base pair windows on Chromosome 1")
@@ -163,8 +164,8 @@ ORDER BY
 Number of rows returned by this query: 35.
 
 Displaying the first few results:
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:45:45 2015 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Feb 19 15:41:41 2015 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> alternate_allele_count </th>  </tr>
   <tr> <td align="right"> 350843 </td> <td align="right"> 172896 </td> <td align="right"> 2.03 </td> <td align="right">  34 </td> </tr>
@@ -178,8 +179,10 @@ Displaying the first few results:
 Visualizing the results:
 
 ```r
-ggplot(result) +
-  geom_point(aes(x=alternate_allele_count, y=titv)) +
+ggplot(result, aes(x=alternate_allele_count, y=titv)) +
+  geom_point() +
+  stat_smooth() +
+  scale_x_continuous(labels=comma) +
   xlab("Total Number of Sample Alleles with the Variant") +
   ylab("Ti/Tv") +
   ggtitle("Ti/Tv by Alternate Allele Count")
@@ -232,8 +235,8 @@ ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alternat
 Number of rows returned by this query: 1000.
 
 Displaying the first few results:
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:45:48 2015 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Feb 19 15:41:43 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
@@ -357,8 +360,8 @@ ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000
 Number of rows returned by this query: 1000.
 
 Displaying the first few results:
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:45:53 2015 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Feb 19 15:41:48 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -391,13 +394,13 @@ result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.
 ```
 # Retrieve heterozygous haplotype calls on chromosomes X and Y.
 SELECT
+  call.call_set_name,
+  GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
   reference_name,
   start,
   end,
   reference_bases,
   GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-  call.call_set_name,
-  GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
 FROM
   [genomics-public-data:platinum_genomes.variants]
 WHERE
@@ -413,27 +416,28 @@ ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000
 Number of rows returned by this query: 1000.
 
 Displaying the first few results:
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Thu Feb 12 17:45:55 2015 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Feb 19 15:41:51 2015 -->
 <table border=1>
-<tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> call_call_set_name </th> <th> genotype </th>  </tr>
-  <tr> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> <td> NA12884 </td> <td> 0,1 </td> </tr>
-  <tr> <td> chrX </td> <td align="right"> 2701401 </td> <td align="right"> 2701402 </td> <td> T </td> <td> G </td> <td> NA12886 </td> <td> 0,1 </td> </tr>
-  <tr> <td> chrX </td> <td align="right"> 2702609 </td> <td align="right"> 2702610 </td> <td> C </td> <td> A </td> <td> NA12877 </td> <td> 0,1 </td> </tr>
-  <tr> <td> chrX </td> <td align="right"> 2702609 </td> <td align="right"> 2702610 </td> <td> C </td> <td> A </td> <td> NA12893 </td> <td> 0,1 </td> </tr>
-  <tr> <td> chrX </td> <td align="right"> 2703499 </td> <td align="right"> 2703500 </td> <td> A </td> <td> T </td> <td> NA12886 </td> <td> 0,1 </td> </tr>
-  <tr> <td> chrX </td> <td align="right"> 2703499 </td> <td align="right"> 2703500 </td> <td> A </td> <td> T </td> <td> NA12889 </td> <td> 0,1 </td> </tr>
+<tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
+  <tr> <td> NA12884 </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> </tr>
+  <tr> <td> NA12886 </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2701401 </td> <td align="right"> 2701402 </td> <td> T </td> <td> G </td> </tr>
+  <tr> <td> NA12877 </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2702609 </td> <td align="right"> 2702610 </td> <td> C </td> <td> A </td> </tr>
+  <tr> <td> NA12893 </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2702609 </td> <td align="right"> 2702610 </td> <td> C </td> <td> A </td> </tr>
+  <tr> <td> NA12886 </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2703499 </td> <td align="right"> 2703500 </td> <td> A </td> <td> T </td> </tr>
+  <tr> <td> NA12889 </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2703499 </td> <td align="right"> 2703500 </td> <td> A </td> <td> T </td> </tr>
    </table>
 
 # Removing variants from the Cohort
 
-To remove a variant from a variant set in the Genomics API:
-* See the [variant delete](https://cloud.google.com/genomics/v1beta2/reference/variants/delete) method.
-
-To instead mark a variant as problematic so that downstream analyses can filter it out:
-* See the [variant update](https://cloud.google.com/genomics/v1beta2/reference/variants/update) method
+To mark a variant as problematic so that downstream analyses can filter it out:
+* See the [variant update](https://cloud.google.com/genomics/v1beta2/reference/variants/update) method.
 
 To remove variants from BigQuery only:
 * Materialize the results of queries that include the non-problematic variants to a new table.
 * Alternatively, write a custom filtering job similar to what we explored in [Part 2: Data Conversion](./Data-Conversion.md) of this codelab.
 
+To entirely remove a variant from a variant set in the Genomics API:
+* See the [variant delete](https://cloud.google.com/genomics/v1beta2/reference/variants/delete) method.
+* *Note:* deletion cannot be undone.
+* If you wish to copy a variant to a different variantSet prior to deleting it, see the [variantSet mergeVariants](https://cloud.google.com/genomics/v1beta2/reference/variantsets/mergeVariants) method.

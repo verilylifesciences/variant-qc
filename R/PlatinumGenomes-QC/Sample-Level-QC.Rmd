@@ -44,8 +44,12 @@ By default this codelab runs upon the Illumina Platinum Genomes Variants. Update
 ```{r}
 tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
 sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
+
+ibs <- read.table("./data/platinum-genomes-ibs.tsv",
+                  col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
 ```
 
 ## Missingness Rate
@@ -68,8 +72,10 @@ And visualizing the results:
 ```{r sampleMissingness, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(result) +
   geom_point(aes(x=call_call_set_name, y=missingness_rate)) +
-  theme(axis.text.x=if(nrow(result) <= 20)
-    {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
+  theme(plot.background=element_rect(fill="snow1"),
+        axis.text.x=if(nrow(result) <= 20)
+    {element_text(angle=50, hjust=1)} else {element_blank()}) +
+  scale_y_continuous(labels = percent_format()) +
   xlab("Sample") +
   ylab("Missingness Rate") +
   ggtitle("Genome-Specific Missingness")
@@ -95,8 +101,10 @@ And visualizing the results:
 ```{r singletons, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(result) +
   geom_point(aes(x=call_call_set_name, y=private_variant_count)) +
-  theme(axis.text.x=if(nrow(result) <= 20)
-    {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
+  theme(plot.background=element_rect(fill="snow1"),
+        axis.text.x=if(nrow(result) <= 20)
+    {element_text(angle=50, hjust=1)} else {element_blank()}) +
+  scale_y_continuous(labels=comma) +
   xlab("Sample") +
   ylab("Number of Singletons") +
   ggtitle("Count of Singletons Per Genome")
@@ -121,7 +129,11 @@ print(xtable(head(result)), type="html", include.rownames=F)
 And visualizing the results:
 ```{r homozygosity, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(result) +
-  geom_text(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), hjust=-1, vjust=0) +
+  geom_text(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), alpha=1/1.5, hjust=-1, vjust=0) +
+  geom_abline() +
+  theme(plot.background=element_rect(fill="snow1")) +
+  scale_x_continuous(labels=comma) +
+  scale_y_continuous(labels=comma) +
   xlab("Observed Homozygous Variants") +
   ylab("Expected Homozygous Variants") +
   ggtitle("Homozygosity")
@@ -151,8 +163,10 @@ And visualize the results:
 ```{r gender, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(joinedResult) +
   geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=gender)) +
-  theme(axis.text.x=if(nrow(result) <= 20)
-    {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
+  theme(plot.background=element_rect(fill="snow1"),
+        axis.text.x=if(nrow(result) <= 20)
+    {element_text(angle=50, hjust=1)} else {element_blank()}) +
+  scale_y_continuous(labels = percent_format()) +
   xlab("Sample") +
   ylab("Heterozygosity Rate ") +
   ggtitle("Heterozygosity Rate on the X Chromosome")
@@ -180,16 +194,14 @@ Note that this `n^2` analysis is a cluster compute job instead of a BigQuery que
 
 ### Results
 
-This is hard-coded to Identity-By-State results for Platinum Genomes.
-```{r ibs, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-ibs <- read.table("./data/platinum-genomes-ibs.tsv",
-                  col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
+```{r ibs, fig.align="center", fig.width=12, message=FALSE, comment=NA}
 ggplot(ibs) +
   geom_tile(aes(x=sample1, y=sample2, fill=ibsScore), colour="white") +
   scale_fill_gradient(low="white", high="steelblue",
                       na.value="black", trans="log",
                       guide=guide_colourbar(title= "IBS Score")) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(plot.background=element_rect(fill="snow1"),
+        axis.text.x=element_text(angle=50, hjust=1)) +
   xlab("Sample 1") +
   ylab("Sample 2") +
   ggtitle("Identity By State (IBS) Heat Map")
@@ -224,12 +236,16 @@ gsutil cat gs://YOUR-BUCKET/output/platinum-genomes-ibs.tsv* | sort > platinum-g
 
 # Removing Genomes from the Cohort
 
-To remove a genome from a variant set in the Genomics API:
-* See the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
-* To delete a callset using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
-
 To only remove a genome from BigQuery only:
 * Re-export the table to BigQuery using the `--call_set_id` flag on the `exportvariants` command in [api-client-java](http://github.com/googlegenomics/api-client-java) to list which callsets to _include_ in the export.
+
+To exclude a genome from data returned by the Genomics API:
+* See the `callSetIds` property on the [variants search](https://cloud.google.com/genomics/v1beta2/reference/variants/search) method.
+
+To entirely remove a genome from a variant set in the Genomics API:
+* See the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
+* To delete a callset using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
+* *Note:* deletion cannot be undone.
 
 --------------------------------------------------------
 _Next_: [Part 4: Variant-Level QC](./Variant-Level-QC.md)

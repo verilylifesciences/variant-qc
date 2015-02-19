@@ -34,8 +34,12 @@ By default this codelab runs upon the Illumina Platinum Genomes Variants. Update
 ```r
 tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
 sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
+
+ibs <- read.table("./data/platinum-genomes-ibs.tsv",
+                  col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
 ```
 
 ## Missingness Rate
@@ -81,8 +85,8 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 Displaying the first few results:
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 17 11:59:26 2015 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Feb 19 15:40:12 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -98,8 +102,10 @@ And visualizing the results:
 ```r
 ggplot(result) +
   geom_point(aes(x=call_call_set_name, y=missingness_rate)) +
-  theme(axis.text.x=if(nrow(result) <= 20)
-    {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
+  theme(plot.background=element_rect(fill="snow1"),
+        axis.text.x=if(nrow(result) <= 20)
+    {element_text(angle=50, hjust=1)} else {element_blank()}) +
+  scale_y_continuous(labels = percent_format()) +
   xlab("Sample") +
   ylab("Missingness Rate") +
   ggtitle("Genome-Specific Missingness")
@@ -184,8 +190,8 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 Displaying the first few results:
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 17 11:59:29 2015 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Feb 19 15:40:15 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -201,8 +207,10 @@ And visualizing the results:
 ```r
 ggplot(result) +
   geom_point(aes(x=call_call_set_name, y=private_variant_count)) +
-  theme(axis.text.x=if(nrow(result) <= 20)
-    {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
+  theme(plot.background=element_rect(fill="snow1"),
+        axis.text.x=if(nrow(result) <= 20)
+    {element_text(angle=50, hjust=1)} else {element_blank()}) +
+  scale_y_continuous(labels=comma) +
   xlab("Sample") +
   ylab("Number of Singletons") +
   ggtitle("Count of Singletons Per Genome")
@@ -271,8 +279,8 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 Displaying the first few results:
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 17 11:59:32 2015 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Feb 19 15:40:20 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
@@ -287,7 +295,11 @@ And visualizing the results:
 
 ```r
 ggplot(result) +
-  geom_text(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), hjust=-1, vjust=0) +
+  geom_text(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), alpha=1/1.5, hjust=-1, vjust=0) +
+  geom_abline() +
+  theme(plot.background=element_rect(fill="snow1")) +
+  scale_x_continuous(labels=comma) +
+  scale_y_continuous(labels=comma) +
   xlab("Observed Homozygous Variants") +
   ylab("Expected Homozygous Variants") +
   ggtitle("Homozygosity")
@@ -345,8 +357,8 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 Displaying the first few results:
-<!-- html table generated in R 3.1.1 by xtable 1.7-4 package -->
-<!-- Tue Feb 17 11:59:36 2015 -->
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Feb 19 15:40:23 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
@@ -368,8 +380,10 @@ And visualize the results:
 ```r
 ggplot(joinedResult) +
   geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=gender)) +
-  theme(axis.text.x=if(nrow(result) <= 20)
-    {element_text(angle = 90, hjust = 1)} else {element_blank()}) +
+  theme(plot.background=element_rect(fill="snow1"),
+        axis.text.x=if(nrow(result) <= 20)
+    {element_text(angle=50, hjust=1)} else {element_blank()}) +
+  scale_y_continuous(labels = percent_format()) +
   xlab("Sample") +
   ylab("Heterozygosity Rate ") +
   ggtitle("Heterozygosity Rate on the X Chromosome")
@@ -398,17 +412,15 @@ Note that this `n^2` analysis is a cluster compute job instead of a BigQuery que
 
 ### Results
 
-This is hard-coded to Identity-By-State results for Platinum Genomes.
 
 ```r
-ibs <- read.table("./data/platinum-genomes-ibs.tsv",
-                  col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
 ggplot(ibs) +
   geom_tile(aes(x=sample1, y=sample2, fill=ibsScore), colour="white") +
   scale_fill_gradient(low="white", high="steelblue",
                       na.value="black", trans="log",
                       guide=guide_colourbar(title= "IBS Score")) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(plot.background=element_rect(fill="snow1"),
+        axis.text.x=element_text(angle=50, hjust=1)) +
   xlab("Sample 1") +
   ylab("Sample 2") +
   ggtitle("Identity By State (IBS) Heat Map")
@@ -445,12 +457,16 @@ gsutil cat gs://YOUR-BUCKET/output/platinum-genomes-ibs.tsv* | sort > platinum-g
 
 # Removing Genomes from the Cohort
 
-To remove a genome from a variant set in the Genomics API:
-* See the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
-* To delete a callset using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
-
 To only remove a genome from BigQuery only:
 * Re-export the table to BigQuery using the `--call_set_id` flag on the `exportvariants` command in [api-client-java](http://github.com/googlegenomics/api-client-java) to list which callsets to _include_ in the export.
+
+To exclude a genome from data returned by the Genomics API:
+* See the `callSetIds` property on the [variants search](https://cloud.google.com/genomics/v1beta2/reference/variants/search) method.
+
+To entirely remove a genome from a variant set in the Genomics API:
+* See the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
+* To delete a callset using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
+* *Note:* deletion cannot be undone.
 
 --------------------------------------------------------
 _Next_: [Part 4: Variant-Level QC](./Variant-Level-QC.md)

@@ -17,6 +17,7 @@ require(xtable)
 require(RCurl)
 require(dplyr)
 require(ggplot2)
+require(scales)
 
 DisplayAndDispatchQuery <- function(queryUri, project, replacements=list()) {
   if (missing(queryUri)) {

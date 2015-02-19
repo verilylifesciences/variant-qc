@@ -1,12 +1,12 @@
 # Retrieve heterozygous haplotype calls on chromosomes X and Y.
 SELECT
+  call.call_set_name,
+  GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
   reference_name,
   start,
   end,
   reference_bases,
   GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-  call.call_set_name,
-  GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
 FROM
   [_THE_TABLE_]
 WHERE
