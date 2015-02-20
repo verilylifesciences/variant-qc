@@ -30,7 +30,7 @@ Suppose we want to calculate an aggregate for a particular variant, such as the 
 
 > If you are working with Platinum Genomes its okay to skip ahead to [Part 3: Sample-Level QC](./Sample-Level-QC.md) which makes use of previously computed results from this cluster compute job.
 
-_Or if you are running this codelab against data that does not contain non-variant segments, this data conversion is unnecessary.  Just use the same BigQuery table for both `_THE_TABLE_` and `_THE_EXPANDED_TABLE_`._
+If you are running this codelab against data that does not contain non-variant segments, this data conversion is unnecessary.  Just use the same BigQuery table for both `_THE_TABLE_` and `_THE_EXPANDED_TABLE_`.
 
 ## Running the Cluster Compute Job
 

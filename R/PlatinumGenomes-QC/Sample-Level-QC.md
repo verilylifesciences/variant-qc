@@ -86,7 +86,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:40:12 2015 -->
+<!-- Thu Feb 19 17:30:55 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -102,8 +102,7 @@ And visualizing the results:
 ```r
 ggplot(result) +
   geom_point(aes(x=call_call_set_name, y=missingness_rate)) +
-  theme(plot.background=element_rect(fill="snow1"),
-        axis.text.x=if(nrow(result) <= 20)
+  theme(axis.text.x=if(nrow(result) <= 20)
     {element_text(angle=50, hjust=1)} else {element_blank()}) +
   scale_y_continuous(labels = percent_format()) +
   xlab("Sample") +
@@ -191,7 +190,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:40:15 2015 -->
+<!-- Thu Feb 19 17:31:00 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -207,8 +206,7 @@ And visualizing the results:
 ```r
 ggplot(result) +
   geom_point(aes(x=call_call_set_name, y=private_variant_count)) +
-  theme(plot.background=element_rect(fill="snow1"),
-        axis.text.x=if(nrow(result) <= 20)
+  theme(axis.text.x=if(nrow(result) <= 20)
     {element_text(angle=50, hjust=1)} else {element_blank()}) +
   scale_y_continuous(labels=comma) +
   xlab("Sample") +
@@ -280,7 +278,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:40:20 2015 -->
+<!-- Thu Feb 19 17:31:03 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
@@ -294,12 +292,13 @@ Displaying the first few results:
 And visualizing the results:
 
 ```r
+limits <- c(min(result$O_HOM, result$E_HOM),
+            max(result$O_HOM, result$E_HOM))
 ggplot(result) +
   geom_text(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), alpha=1/1.5, hjust=-1, vjust=0) +
-  geom_abline() +
-  theme(plot.background=element_rect(fill="snow1")) +
-  scale_x_continuous(labels=comma) +
-  scale_y_continuous(labels=comma) +
+  geom_abline(color="darkslateblue") +
+  scale_x_continuous(limits=limits, labels=comma) +
+  scale_y_continuous(limits=limits, labels=comma) +
   xlab("Observed Homozygous Variants") +
   ylab("Expected Homozygous Variants") +
   ggtitle("Homozygosity")
@@ -358,7 +357,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:40:23 2015 -->
+<!-- Thu Feb 19 17:31:07 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
@@ -380,8 +379,7 @@ And visualize the results:
 ```r
 ggplot(joinedResult) +
   geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=gender)) +
-  theme(plot.background=element_rect(fill="snow1"),
-        axis.text.x=if(nrow(result) <= 20)
+  theme(axis.text.x=if(nrow(result) <= 20)
     {element_text(angle=50, hjust=1)} else {element_blank()}) +
   scale_y_continuous(labels = percent_format()) +
   xlab("Sample") +
@@ -419,8 +417,7 @@ ggplot(ibs) +
   scale_fill_gradient(low="white", high="steelblue",
                       na.value="black", trans="log",
                       guide=guide_colourbar(title= "IBS Score")) +
-  theme(plot.background=element_rect(fill="snow1"),
-        axis.text.x=element_text(angle=50, hjust=1)) +
+  theme(axis.text.x=element_text(angle=50, hjust=1)) +
   xlab("Sample 1") +
   ylab("Sample 2") +
   ggtitle("Identity By State (IBS) Heat Map")
