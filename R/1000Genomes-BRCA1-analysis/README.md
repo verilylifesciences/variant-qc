@@ -11,7 +11,9 @@ In this codelab, you will use [Google Genomics](https://cloud.google.com/genomic
 ### Instructions
 1. Make sure you have completed the necessary [prerequisites](../README.md).
 
-2. Read the rendered version of the RMarkdown [AllModalitiesDemo.md](./AllModalitiesDemo.md)
+2. Read or watch the analysis:
+ 3. Read the rendered version of the RMarkdown [AllModalitiesDemo.md](./AllModalitiesDemo.md)
+ 4. Watch the brief video [Google Genomics: Data Analysis Overview](https://www.youtube.com/watch?v=vINpqxhcTt0) or watch the extended video [Google Genomics Codelab: Data Analysis in R](https://www.youtube.com/watch?v=tPH5PwjzhBM)
 
 3. Execute the code *chunk by chunk* in RStudio [AllModalitiesDemo.Rmd](./AllModalitiesDemo.Rmd) or *line by line* in R.
 
