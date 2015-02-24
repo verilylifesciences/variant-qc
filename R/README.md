@@ -5,8 +5,7 @@
 ### Required
 1. Install the `bigrquery` package
   ```
-  install.packages("devtools")
-  devtools::install_github("hadley/bigrquery")
+  install.packages("bigrquery")
   ```
   
 1. Create a [BigQuery enabled project](https://console.developers.google.com/flows/enableapi?apiid=bigquery)
