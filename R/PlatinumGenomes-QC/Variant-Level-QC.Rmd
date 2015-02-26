@@ -41,11 +41,15 @@ In Part 4 of the codelab, we perform some quality control analyses that could he
 
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 ```{r}
-tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
 sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
+
+# To run this against other public data, source in one of the dataset helpers.  For example:
+# source("./rHelpers/pgpCGIOnlyDataset.R")
 ```
+
 ## Ti/Tv by Genomic Window
 
 Check whether the ratio of transitions vs. transversions in SNPs appears to be reasonable in each window of genomic positions.  This query may help identify problematic regions.
@@ -53,9 +57,9 @@ Check whether the ratio of transitions vs. transversions in SNPs appears to be r
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
                                   project=project,
-                                  replacements=c(tableReplacement,
-                                                 "#_WHERE_"="WHERE reference_name='chr1'",
-                                                 "_WINDOW_SIZE_"="100000"))
+                                  replacements=c("#_WHERE_"="WHERE reference_name = 'chr1'",
+                                                 "_WINDOW_SIZE_"="100000",
+                                                 queryReplacements))
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -82,7 +86,7 @@ Check whether the ratio of transitions vs. transversions in SNPs appears to be r
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/ti-tv-by-alternate-allele-count.sql",
                                   project=project,
-                                  replacements=c(tableReplacement))
+                                  replacements=c(queryReplacements))
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -110,8 +114,8 @@ For each variant, compute the missingness rate.  This query can be used to ident
 sortAndLimit <- "ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alternate_bases LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/variant-level-missingness.sql",
                                   project=project,
-                                  replacements=c(tableReplacement,
-                                                 "#_ORDER_BY_"=sortAndLimit))
+                                  replacements=c("#_ORDER_BY_"=sortAndLimit,
+                                                 queryReplacements))
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -128,8 +132,8 @@ For each variant, compute the expected versus observed relationship between alle
 sortAndLimit <- "ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/hardy-weinberg.sql",
                                   project=project,
-                                  replacements=c(tableReplacement,
-                                                 "#_ORDER_BY_"=sortAndLimit))
+                                  replacements=c("#_ORDER_BY_"=sortAndLimit,
+                                                 queryReplacements))
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -150,9 +154,9 @@ maleSampleIds <- paste("'", filter(sampleInfo, gender == "Male")$call_call_set_n
 sortAndLimit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.sql",
                                   project=project,
-                                  replacements=c(tableReplacement,
-                                                 "_MALE_SAMPLE_IDS_"=maleSampleIds,
-                                                 "#_ORDER_BY_"=sortAndLimit))
+                                  replacements=c("_MALE_SAMPLE_IDS_"=maleSampleIds,
+                                                 "#_ORDER_BY_"=sortAndLimit,
+                                                 queryReplacements))
 ```
 Number of rows returned by this query: `r nrow(result)`.
 

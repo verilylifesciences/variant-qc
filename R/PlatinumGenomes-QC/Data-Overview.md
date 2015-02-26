@@ -31,9 +31,12 @@ The following example makes use of [Illumina Platinum Genomes](http://www.illumi
 
 
 ```r
-# By default this codelab runs upon the Illumina Platinum Genomes Variants.
-# Change the table here if you wish to run these queries against a different table.
-tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants")
+# By default this codelab runs upon the Illumina Platinum Genomes Variants.  
+# Change the table here if you wish to run these queries against your own data.
+queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants")
+
+# To run this against other public data, source in one of the dataset helpers.  For example:
+# source("./rHelpers/pgpCGIOnlyDataset.R")
 ```
 
 ## Variants
@@ -43,7 +46,7 @@ Let's take a look at a few of the [variants within BRCA1 via BigQuery](https://g
 ```r
 result <- DisplayAndDispatchQuery("https://raw.githubusercontent.com/googlegenomics/getting-started-bigquery/master/sql/variant-level-data-for-brca1.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 
 ```
@@ -73,7 +76,7 @@ Number of rows returned by this query: 335.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:37:12 2015 -->
+<!-- Wed Feb 25 17:10:45 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
@@ -95,7 +98,7 @@ Let's take a look at a few non-variant segments within BRCA1:
 ```r
 result <- DisplayAndDispatchQuery("./sql/non-variant-segments.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 
 ```
@@ -118,13 +121,15 @@ OMIT RECORD IF SOME(alternate_bases IS NOT NULL)
 ORDER BY
   start,
   call.call_set_name
-Retrieving data:  7.0sRetrieving data: 11.2s
+
+Retrieving data:  6.4s
+Retrieving data: 17.9s
 ```
 Number of rows returned by this query: 22777.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:37:26 2015 -->
+<!-- Wed Feb 25 17:11:08 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> NA12886 </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> </tr>
@@ -150,7 +155,7 @@ And then let's take a look at the domain and range of values for alternate_bases
 ```r
 result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 
 ```
@@ -169,7 +174,7 @@ GROUP BY
 ```
 
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:37:28 2015 -->
+<!-- Wed Feb 25 17:11:10 2015 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
@@ -186,7 +191,7 @@ And finally let's take a look at the domain and range of values for genotype:
 ```r
 result <- DisplayAndDispatchQuery("./sql/genotypes-brca1.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 
 ```
@@ -212,7 +217,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:37:30 2015 -->
+<!-- Wed Feb 25 17:11:12 2015 -->
 <table border=1>
 <tr> <th> genotype </th> <th> genotype_count </th>  </tr>
   <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>

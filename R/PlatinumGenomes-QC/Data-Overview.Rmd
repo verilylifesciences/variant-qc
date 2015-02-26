@@ -41,9 +41,12 @@ source("./rHelpers/setup.R")
 ```
 
 ```{r}
-# By default this codelab runs upon the Illumina Platinum Genomes Variants.
-# Change the table here if you wish to run these queries against a different table.
-tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants")
+# By default this codelab runs upon the Illumina Platinum Genomes Variants.  
+# Change the table here if you wish to run these queries against your own data.
+queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants")
+
+# To run this against other public data, source in one of the dataset helpers.  For example:
+# source("./rHelpers/pgpCGIOnlyDataset.R")
 ```
 
 ## Variants
@@ -52,7 +55,7 @@ Let's take a look at a few of the [variants within BRCA1 via BigQuery](https://g
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("https://raw.githubusercontent.com/googlegenomics/getting-started-bigquery/master/sql/variant-level-data-for-brca1.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -71,13 +74,17 @@ Let's take a look at a few non-variant segments within BRCA1:
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/non-variant-segments.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
+if(is.null(result)) { 
+  print('None') 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
 
 When the data contains non-variant segments, for any analyses that require us to know for example _"how many samples do and do not have a particular SNP?"_, we'll need to make sure that the non-variant segments are considered in addition to the variants.
@@ -94,7 +101,7 @@ And then let's take a look at the domain and range of values for alternate_bases
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
@@ -111,7 +118,7 @@ And finally let's take a look at the domain and range of values for genotype:
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/genotypes-brca1.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}

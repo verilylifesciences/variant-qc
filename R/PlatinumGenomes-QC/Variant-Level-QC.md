@@ -31,11 +31,15 @@ In Part 4 of the codelab, we perform some quality control analyses that could he
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 
 ```r
-tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
 sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
+
+# To run this against other public data, source in one of the dataset helpers.  For example:
+# source("./rHelpers/pgpCGIOnlyDataset.R")
 ```
+
 ## Ti/Tv by Genomic Window
 
 Check whether the ratio of transitions vs. transversions in SNPs appears to be reasonable in each window of genomic positions.  This query may help identify problematic regions.
@@ -44,9 +48,9 @@ Check whether the ratio of transitions vs. transversions in SNPs appears to be r
 ```r
 result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
                                   project=project,
-                                  replacements=c(tableReplacement,
-                                                 "#_WHERE_"="WHERE reference_name='chr1'",
-                                                 "_WINDOW_SIZE_"="100000"))
+                                  replacements=c("#_WHERE_"="WHERE reference_name = 'chr1'",
+                                                 "_WINDOW_SIZE_"="100000",
+                                                 queryReplacements))
 ```
 
 ```
@@ -76,7 +80,7 @@ FROM (
       [genomics-public-data:platinum_genomes.variants]
     # Optionally add clause here to limit the query to a particular
     # region of the genome.
-    WHERE reference_name='chr1'
+    WHERE reference_name = 'chr1'
     HAVING
       # Skip 1/2 genotypes _and non-SNP variants
       num_alts = 1
@@ -92,7 +96,7 @@ Number of rows returned by this query: 2279.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:41:35 2015 -->
+<!-- Wed Feb 25 17:11:33 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr1 </td> <td align="right">   0 </td> <td align="right"> 293 </td> <td align="right"> 198 </td> <td align="right"> 1.48 </td> <td align="right"> 491 </td> </tr>
@@ -125,7 +129,7 @@ Check whether the ratio of transitions vs. transversions in SNPs appears to be r
 ```r
 result <- DisplayAndDispatchQuery("./sql/ti-tv-by-alternate-allele-count.sql",
                                   project=project,
-                                  replacements=c(tableReplacement))
+                                  replacements=c(queryReplacements))
 ```
 
 ```
@@ -165,7 +169,7 @@ Number of rows returned by this query: 35.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:41:41 2015 -->
+<!-- Wed Feb 25 17:11:37 2015 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> alternate_allele_count </th>  </tr>
   <tr> <td align="right"> 350843 </td> <td align="right"> 172896 </td> <td align="right"> 2.03 </td> <td align="right">  34 </td> </tr>
@@ -199,8 +203,8 @@ For each variant, compute the missingness rate.  This query can be used to ident
 sortAndLimit <- "ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alternate_bases LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/variant-level-missingness.sql",
                                   project=project,
-                                  replacements=c(tableReplacement,
-                                                 "#_ORDER_BY_"=sortAndLimit))
+                                  replacements=c("#_ORDER_BY_"=sortAndLimit,
+                                                 queryReplacements))
 ```
 
 ```
@@ -236,7 +240,7 @@ Number of rows returned by this query: 1000.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:41:43 2015 -->
+<!-- Wed Feb 25 17:11:40 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
@@ -256,8 +260,8 @@ For each variant, compute the expected versus observed relationship between alle
 sortAndLimit <- "ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/hardy-weinberg.sql",
                                   project=project,
-                                  replacements=c(tableReplacement,
-                                                 "#_ORDER_BY_"=sortAndLimit))
+                                  replacements=c("#_ORDER_BY_"=sortAndLimit,
+                                                 queryReplacements))
 ```
 
 ```
@@ -361,7 +365,7 @@ Number of rows returned by this query: 1000.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:41:48 2015 -->
+<!-- Wed Feb 25 17:11:45 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -386,9 +390,9 @@ maleSampleIds <- paste("'", filter(sampleInfo, gender == "Male")$call_call_set_n
 sortAndLimit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.sql",
                                   project=project,
-                                  replacements=c(tableReplacement,
-                                                 "_MALE_SAMPLE_IDS_"=maleSampleIds,
-                                                 "#_ORDER_BY_"=sortAndLimit))
+                                  replacements=c("_MALE_SAMPLE_IDS_"=maleSampleIds,
+                                                 "#_ORDER_BY_"=sortAndLimit,
+                                                 queryReplacements))
 ```
 
 ```
@@ -417,7 +421,7 @@ Number of rows returned by this query: 1000.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 15:41:51 2015 -->
+<!-- Wed Feb 25 17:11:47 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> NA12884 </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> </tr>

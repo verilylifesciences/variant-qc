@@ -32,7 +32,7 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 
 ```r
-tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
@@ -40,6 +40,9 @@ sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
 
 ibs <- read.table("./data/platinum-genomes-ibs.tsv",
                   col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
+
+# To run this against other public data, source in one of the dataset helpers.  For example:
+# source("./rHelpers/pgpCGIOnlyDataset.R")
 ```
 
 ## Missingness Rate
@@ -50,7 +53,7 @@ For each genome, determine the percentage of sites explicitly called as a no-cal
 ```r
 result <- DisplayAndDispatchQuery("./sql/sample-level-missingness.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 
 ```
@@ -86,7 +89,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 17:30:55 2015 -->
+<!-- Wed Feb 25 17:11:14 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -100,14 +103,17 @@ Displaying the first few results:
 And visualizing the results:
 
 ```r
-ggplot(result) +
+p <- ggplot(result) +
   geom_point(aes(x=call_call_set_name, y=missingness_rate)) +
-  theme(axis.text.x=if(nrow(result) <= 20)
-    {element_text(angle=50, hjust=1)} else {element_blank()}) +
-  scale_y_continuous(labels = percent_format()) +
+  scale_y_continuous(limits=c(0, NA), labels=percent_format()) +
   xlab("Sample") +
   ylab("Missingness Rate") +
   ggtitle("Genome-Specific Missingness")
+if(nrow(result) <= 20) {
+  p + theme(axis.text.x=element_text(angle=50, hjust=1))
+} else {
+  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+}
 ```
 
 <img src="figure/sampleMissingness-1.png" title="plot of chunk sampleMissingness" alt="plot of chunk sampleMissingness" style="display: block; margin: auto;" />
@@ -120,7 +126,7 @@ For each genome, count the number of variants shared by no other member of the c
 ```r
 result <- DisplayAndDispatchQuery("./sql/private-variants.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 
 ```
@@ -139,7 +145,7 @@ FROM (
     alternate_bases,
     GROUP_CONCAT(call.call_set_name) AS call.call_set_name,
     GROUP_CONCAT(genotype) AS genotype,
-    SUM(num_samples_with_variant) AS num_samples_with_variant
+    COUNT(call.call_set_name) AS num_samples_with_variant
   FROM (
     SELECT
       reference_name,
@@ -150,7 +156,6 @@ FROM (
       call.call_set_name,
       GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
       SUM(call.genotype == alt_num) WITHIN call AS cnt,
-      COUNT(call.call_set_name) WITHIN RECORD AS num_samples_with_variant
     FROM (
         FLATTEN((
           SELECT
@@ -190,7 +195,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 17:31:00 2015 -->
+<!-- Wed Feb 25 17:11:17 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -224,7 +229,7 @@ For each genome, compare the expected and observed rates of homozygosity.
 ```r
 result <- DisplayAndDispatchQuery("./sql/homozygous-variants.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 
 ```
@@ -278,7 +283,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 17:31:03 2015 -->
+<!-- Wed Feb 25 17:11:22 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
@@ -313,7 +318,7 @@ For each genome, compare the gender from the sample information to the heterozyg
 ```r
 result <- DisplayAndDispatchQuery("./sql/gender-check.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 
 ```
@@ -357,7 +362,7 @@ Number of rows returned by this query: 17.
 
 Displaying the first few results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Feb 19 17:31:07 2015 -->
+<!-- Wed Feb 25 17:11:27 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>

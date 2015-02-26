@@ -42,7 +42,7 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 ```{r}
-tableReplacement <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
@@ -50,6 +50,9 @@ sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
 
 ibs <- read.table("./data/platinum-genomes-ibs.tsv",
                   col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
+
+# To run this against other public data, source in one of the dataset helpers.  For example:
+# source("./rHelpers/pgpCGIOnlyDataset.R")
 ```
 
 ## Missingness Rate
@@ -59,7 +62,7 @@ For each genome, determine the percentage of sites explicitly called as a no-cal
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/sample-level-missingness.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -70,14 +73,17 @@ print(xtable(head(result)), type="html", include.rownames=F)
 
 And visualizing the results:
 ```{r sampleMissingness, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-ggplot(result) +
+p <- ggplot(result) +
   geom_point(aes(x=call_call_set_name, y=missingness_rate)) +
-  theme(axis.text.x=if(nrow(result) <= 20)
-    {element_text(angle=50, hjust=1)} else {element_blank()}) +
-  scale_y_continuous(labels = percent_format()) +
+  scale_y_continuous(limits=c(0, NA), labels=percent_format()) +
   xlab("Sample") +
   ylab("Missingness Rate") +
   ggtitle("Genome-Specific Missingness")
+if(nrow(result) <= 20) {
+  p + theme(axis.text.x=element_text(angle=50, hjust=1))
+} else {
+  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+}
 ```
 
 ## Singleton Rate
@@ -87,7 +93,7 @@ For each genome, count the number of variants shared by no other member of the c
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/private-variants.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -115,7 +121,7 @@ For each genome, compare the expected and observed rates of homozygosity.
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/homozygous-variants.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 
@@ -144,7 +150,7 @@ For each genome, compare the gender from the sample information to the heterozyg
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/gender-check.sql",
                                   project=project,
-                                  replacements=tableReplacement)
+                                  replacements=queryReplacements)
 ```
 Number of rows returned by this query: `r nrow(result)`.
 

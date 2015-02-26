@@ -13,7 +13,7 @@ FROM (
     alternate_bases,
     GROUP_CONCAT(call.call_set_name) AS call.call_set_name,
     GROUP_CONCAT(genotype) AS genotype,
-    SUM(num_samples_with_variant) AS num_samples_with_variant
+    COUNT(call.call_set_name) AS num_samples_with_variant
   FROM (
     SELECT
       reference_name,
@@ -24,7 +24,6 @@ FROM (
       call.call_set_name,
       GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
       SUM(call.genotype == alt_num) WITHIN call AS cnt,
-      COUNT(call.call_set_name) WITHIN RECORD AS num_samples_with_variant
     FROM (
         FLATTEN((
           SELECT
