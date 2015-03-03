@@ -137,7 +137,7 @@ Displaying the first few rows of the dataframe of results:
 if(is.null(result)) { 
   cat("**None**") 
 } else {
-  print(xtable(head(result)), type="html", include.rownames=F)
+  print(xtable(head(result, 10)), type="html", include.rownames=F)
 }
 ```
 
