@@ -85,11 +85,11 @@ FROM (
 ORDER BY
   call.call_set_name
 ```
-Number of rows returned by this query: 17.
+Number of rows returned by this query: **17**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 17:11:14 2015 -->
+<!-- Tue Mar  3 11:35:43 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -103,20 +103,39 @@ Displaying the first few results:
 And visualizing the results:
 
 ```r
+ggplot(result, aes(x=missingness_rate)) +
+  geom_histogram(color="black", fill="#FF6666") +
+  scale_x_continuous(limits=c(0, NA), labels=percent_format()) +
+  xlab("Missingness Rate") +
+  ylab("Sample Count") +
+  ggtitle("Histogram: Genome-Specific Missingness")
+```
+
+<img src="figure/sampleMissingnessSummary-1.png" title="plot of chunk sampleMissingnessSummary" alt="plot of chunk sampleMissingnessSummary" style="display: block; margin: auto;" />
+
+
+```r
 p <- ggplot(result) +
   geom_point(aes(x=call_call_set_name, y=missingness_rate)) +
+  scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(limits=c(0, NA), labels=percent_format()) +
   xlab("Sample") +
   ylab("Missingness Rate") +
-  ggtitle("Genome-Specific Missingness")
+  ggtitle("Scatter Plot: Genome-Specific Missingness")
 if(nrow(result) <= 20) {
   p + theme(axis.text.x=element_text(angle=50, hjust=1))
 } else {
-  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank(), panel.grid.major.x=element_blank())
 }
 ```
 
 <img src="figure/sampleMissingness-1.png" title="plot of chunk sampleMissingness" alt="plot of chunk sampleMissingness" style="display: block; margin: auto;" />
+
+Let's accumulate our sample-specific results for later use.
+
+```r
+allResults <- result
+```
 
 ## Singleton Rate
 
@@ -191,11 +210,11 @@ GROUP BY
 ORDER BY
   private_variant_count DESC
 ```
-Number of rows returned by this query: 17.
+Number of rows returned by this query: **17**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 17:11:17 2015 -->
+<!-- Tue Mar  3 11:35:47 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -209,17 +228,43 @@ Displaying the first few results:
 And visualizing the results:
 
 ```r
-ggplot(result) +
+ggplot(result, aes(x=private_variant_count)) +
+  geom_histogram(color="black", fill="#FF6666") +
+  scale_x_continuous(labels=comma) +
+  xlab("Number of Singletons") +
+  xlab("Sample Count") +
+  ggtitle("Histogram: Count of Singletons Per Genome")
+```
+
+<img src="figure/singletonsSummary-1.png" title="plot of chunk singletonsSummary" alt="plot of chunk singletonsSummary" style="display: block; margin: auto;" />
+
+
+```r
+p <- ggplot(result) +
   geom_point(aes(x=call_call_set_name, y=private_variant_count)) +
-  theme(axis.text.x=if(nrow(result) <= 20)
-    {element_text(angle=50, hjust=1)} else {element_blank()}) +
+  scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(labels=comma) +
   xlab("Sample") +
   ylab("Number of Singletons") +
-  ggtitle("Count of Singletons Per Genome")
+  ggtitle("Scatter Plot: Count of Singletons Per Genome")
+if(nrow(result) <= 20) {
+  p + theme(axis.text.x=element_text(angle=50, hjust=1))
+} else {
+  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank(), panel.grid.major.x=element_blank())
+}
 ```
 
 <img src="figure/singletons-1.png" title="plot of chunk singletons" alt="plot of chunk singletons" style="display: block; margin: auto;" />
+
+Let's accumulate our sample-specific results for later use.
+
+```r
+allResults <- full_join(allResults, result)
+```
+
+```
+## Joining by: "call_call_set_name"
+```
 
 ## Homozygosity Rate and Inbreeding Coefficient
 
@@ -279,11 +324,11 @@ FROM (
 ORDER BY
   call.call_set_name
 ```
-Number of rows returned by this query: 17.
+Number of rows returned by this query: **17**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 17:11:22 2015 -->
+<!-- Tue Mar  3 11:35:50 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
@@ -300,7 +345,7 @@ And visualizing the results:
 limits <- c(min(result$O_HOM, result$E_HOM),
             max(result$O_HOM, result$E_HOM))
 ggplot(result) +
-  geom_text(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), alpha=1/1.5, hjust=-1, vjust=0) +
+  geom_point(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), alpha=1/1.5) +
   geom_abline(color="darkslateblue") +
   scale_x_continuous(limits=limits, labels=comma) +
   scale_y_continuous(limits=limits, labels=comma) +
@@ -310,6 +355,31 @@ ggplot(result) +
 ```
 
 <img src="figure/homozygosity-1.png" title="plot of chunk homozygosity" alt="plot of chunk homozygosity" style="display: block; margin: auto;" />
+
+And with labels:
+
+```r
+ggplot(result) +
+  geom_text(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), alpha=1/1.5) +
+  geom_abline(color="darkslateblue") +
+  scale_x_continuous(limits=limits, labels=comma, expand=c(0.05, 5)) +
+  scale_y_continuous(limits=limits, labels=comma) +
+  xlab("Observed Homozygous Variants") +
+  ylab("Expected Homozygous Variants") +
+  ggtitle("Homozygosity")
+```
+
+<img src="figure/homozygosityLabelled-1.png" title="plot of chunk homozygosityLabelled" alt="plot of chunk homozygosityLabelled" style="display: block; margin: auto;" />
+
+Let's accumulate our sample-specific results for later use.
+
+```r
+allResults <- full_join(allResults, result)
+```
+
+```
+## Joining by: "call_call_set_name"
+```
 
 ## Sex Inference
 
@@ -358,11 +428,11 @@ GROUP BY
 ORDER BY
   call.call_set_name
 ```
-Number of rows returned by this query: 17.
+Number of rows returned by this query: **17**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 17:11:27 2015 -->
+<!-- Tue Mar  3 11:35:53 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
@@ -383,16 +453,42 @@ And visualize the results:
 
 ```r
 ggplot(joinedResult) +
+  geom_boxplot(aes(x=gender, y=perct_het_alt_in_snvs, fill=gender)) +
+  scale_y_continuous(labels = percent_format()) +
+  xlab("Gender") +
+  ylab("Heterozygosity Rate ") +
+  ggtitle("Box Plot: Heterozygosity Rate on the X Chromosome")
+```
+
+<img src="figure/genderSummary-1.png" title="plot of chunk genderSummary" alt="plot of chunk genderSummary" style="display: block; margin: auto;" />
+
+
+```r
+p <- ggplot(joinedResult) +
   geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=gender)) +
-  theme(axis.text.x=if(nrow(result) <= 20)
-    {element_text(angle=50, hjust=1)} else {element_blank()}) +
+  scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(labels = percent_format()) +
   xlab("Sample") +
   ylab("Heterozygosity Rate ") +
-  ggtitle("Heterozygosity Rate on the X Chromosome")
+  ggtitle("Scatter Plot: Heterozygosity Rate on the X Chromosome")
+if(nrow(result) <= 20) {
+  p + theme(axis.text.x=element_text(angle=50, hjust=1))
+} else {
+  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank(), panel.grid.major.x=element_blank())
+}
 ```
 
 <img src="figure/gender-1.png" title="plot of chunk gender" alt="plot of chunk gender" style="display: block; margin: auto;" />
+
+Let's accumulate our sample-specific results for later use.
+
+```r
+allResults <- full_join(allResults, result)
+```
+
+```
+## Joining by: "call_call_set_name"
+```
 
 ## Ethnicity Inference
 
@@ -469,6 +565,18 @@ To entirely remove a genome from a variant set in the Genomics API:
 * See the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
 * To delete a callset using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
 * *Note:* deletion cannot be undone.
+
+# Summary
+
+Let's wrap up with a quick comparison using all the variables we've collected for each sample:
+
+```r
+plot(select(allResults, -call_call_set_name))
+```
+
+<img src="figure/summary-1.png" title="plot of chunk summary" alt="plot of chunk summary" style="display: block; margin: auto;" />
+
+If we see any relationships that we do not expect, it may be worth a closer look.
 
 --------------------------------------------------------
 _Next_: [Part 4: Variant-Level QC](./Variant-Level-QC.md)

@@ -64,26 +64,45 @@ result <- DisplayAndDispatchQuery("./sql/sample-level-missingness.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
-Number of rows returned by this query: `r nrow(result)`.
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
 
 And visualizing the results:
+```{r sampleMissingnessSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(result, aes(x=missingness_rate)) +
+  geom_histogram(color="black", fill="#FF6666") +
+  scale_x_continuous(limits=c(0, NA), labels=percent_format()) +
+  xlab("Missingness Rate") +
+  ylab("Sample Count") +
+  ggtitle("Histogram: Genome-Specific Missingness")
+```
+
 ```{r sampleMissingness, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 p <- ggplot(result) +
   geom_point(aes(x=call_call_set_name, y=missingness_rate)) +
+  scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(limits=c(0, NA), labels=percent_format()) +
   xlab("Sample") +
   ylab("Missingness Rate") +
-  ggtitle("Genome-Specific Missingness")
+  ggtitle("Scatter Plot: Genome-Specific Missingness")
 if(nrow(result) <= 20) {
   p + theme(axis.text.x=element_text(angle=50, hjust=1))
 } else {
-  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank(), panel.grid.major.x=element_blank())
 }
+```
+
+Let's accumulate our sample-specific results for later use.
+```{r}
+allResults <- result
 ```
 
 ## Singleton Rate
@@ -95,23 +114,45 @@ result <- DisplayAndDispatchQuery("./sql/private-variants.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
-Number of rows returned by this query: `r nrow(result)`.
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
 
 And visualizing the results:
+```{r singletonsSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(result, aes(x=private_variant_count)) +
+  geom_histogram(color="black", fill="#FF6666") +
+  scale_x_continuous(labels=comma) +
+  xlab("Number of Singletons") +
+  xlab("Sample Count") +
+  ggtitle("Histogram: Count of Singletons Per Genome")
+```
+
 ```{r singletons, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-ggplot(result) +
+p <- ggplot(result) +
   geom_point(aes(x=call_call_set_name, y=private_variant_count)) +
-  theme(axis.text.x=if(nrow(result) <= 20)
-    {element_text(angle=50, hjust=1)} else {element_blank()}) +
+  scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(labels=comma) +
   xlab("Sample") +
   ylab("Number of Singletons") +
-  ggtitle("Count of Singletons Per Genome")
+  ggtitle("Scatter Plot: Count of Singletons Per Genome")
+if(nrow(result) <= 20) {
+  p + theme(axis.text.x=element_text(angle=50, hjust=1))
+} else {
+  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank(), panel.grid.major.x=element_blank())
+}
+```
+
+Let's accumulate our sample-specific results for later use.
+```{r}
+allResults <- full_join(allResults, result)
 ```
 
 ## Homozygosity Rate and Inbreeding Coefficient
@@ -123,11 +164,15 @@ result <- DisplayAndDispatchQuery("./sql/homozygous-variants.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
-Number of rows returned by this query: `r nrow(result)`.
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
 
 And visualizing the results:
@@ -135,13 +180,30 @@ And visualizing the results:
 limits <- c(min(result$O_HOM, result$E_HOM),
             max(result$O_HOM, result$E_HOM))
 ggplot(result) +
-  geom_text(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), alpha=1/1.5, hjust=-1, vjust=0) +
+  geom_point(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), alpha=1/1.5) +
   geom_abline(color="darkslateblue") +
   scale_x_continuous(limits=limits, labels=comma) +
   scale_y_continuous(limits=limits, labels=comma) +
   xlab("Observed Homozygous Variants") +
   ylab("Expected Homozygous Variants") +
   ggtitle("Homozygosity")
+```
+
+And with labels:
+```{r homozygosityLabelled, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(result) +
+  geom_text(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), alpha=1/1.5) +
+  geom_abline(color="darkslateblue") +
+  scale_x_continuous(limits=limits, labels=comma, expand=c(0.05, 5)) +
+  scale_y_continuous(limits=limits, labels=comma) +
+  xlab("Observed Homozygous Variants") +
+  ylab("Expected Homozygous Variants") +
+  ggtitle("Homozygosity")
+```
+
+Let's accumulate our sample-specific results for later use.
+```{r}
+allResults <- full_join(allResults, result)
 ```
 
 ## Sex Inference
@@ -152,11 +214,15 @@ result <- DisplayAndDispatchQuery("./sql/gender-check.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
-Number of rows returned by this query: `r nrow(result)`.
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
 
 Let's join this with the sample information:
@@ -165,16 +231,33 @@ joinedResult <- inner_join(result, sampleInfo)
 ```
 
 And visualize the results:
-```{r gender, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r genderSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(joinedResult) +
+  geom_boxplot(aes(x=gender, y=perct_het_alt_in_snvs, fill=gender)) +
+  scale_y_continuous(labels = percent_format()) +
+  xlab("Gender") +
+  ylab("Heterozygosity Rate ") +
+  ggtitle("Box Plot: Heterozygosity Rate on the X Chromosome")
+```
+
+```{r gender, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+p <- ggplot(joinedResult) +
   geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=gender)) +
-  theme(axis.text.x=if(nrow(result) <= 20)
-    {element_text(angle=50, hjust=1)} else {element_blank()}) +
+  scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(labels = percent_format()) +
   xlab("Sample") +
   ylab("Heterozygosity Rate ") +
-  ggtitle("Heterozygosity Rate on the X Chromosome")
+  ggtitle("Scatter Plot: Heterozygosity Rate on the X Chromosome")
+if(nrow(result) <= 20) {
+  p + theme(axis.text.x=element_text(angle=50, hjust=1))
+} else {
+  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank(), panel.grid.major.x=element_blank())
+}
+```
 
+Let's accumulate our sample-specific results for later use.
+```{r}
+allResults <- full_join(allResults, result)
 ```
 
 ## Ethnicity Inference
@@ -249,6 +332,15 @@ To entirely remove a genome from a variant set in the Genomics API:
 * See the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
 * To delete a callset using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
 * *Note:* deletion cannot be undone.
+
+# Summary
+
+Let's wrap up with a quick comparison using all the variables we've collected for each sample:
+```{r summary, fig.align="center", fig.width=12, fig.height=12, message=FALSE, comment=NA}
+plot(select(allResults, -call_call_set_name))
+```
+
+If we see any relationships that we do not expect, it may be worth a closer look.
 
 --------------------------------------------------------
 _Next_: [Part 4: Variant-Level QC](./Variant-Level-QC.md)

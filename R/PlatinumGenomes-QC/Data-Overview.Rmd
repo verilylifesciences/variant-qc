@@ -57,11 +57,15 @@ result <- DisplayAndDispatchQuery("https://raw.githubusercontent.com/googlegenom
                                   project=project,
                                   replacements=queryReplacements)
 ```
-Number of rows returned by this query: `r nrow(result)`.
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
 
 These are the variant-level fields common to all variant sets exported to BigQuery from Google Genomics.  There are often dataset-specific variant-level fields as well.  For more information about additional fields, see the schema for the table being queried.  
@@ -76,12 +80,12 @@ result <- DisplayAndDispatchQuery("./sql/non-variant-segments.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
-Number of rows returned by this query: `r nrow(result)`.
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
 if(is.null(result)) { 
-  print('None') 
+  cat("**None**") 
 } else {
   print(xtable(head(result)), type="html", include.rownames=F)
 }
@@ -103,9 +107,15 @@ result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
+Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(result), type="html", include.rownames=F)
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
 
 > In the case of Platinum Genomes we see from the query results that there are no special charaters in alternate_bases and the maximum length is ~50 base pairs, so just SNPs and small INDELs.
@@ -120,10 +130,17 @@ result <- DisplayAndDispatchQuery("./sql/genotypes-brca1.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
+Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(result), type="html", include.rownames=F)
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
+
 
 > In the case of Platinum Genomes we see from the query results the variety of genotypes just within BRCA1:
 * no-calls (the -1 values)

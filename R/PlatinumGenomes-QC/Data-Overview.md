@@ -72,11 +72,11 @@ ORDER BY
   start,
   alternate_bases
 ```
-Number of rows returned by this query: 335.
+Number of rows returned by this query: **335**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 17:10:45 2015 -->
+<!-- Tue Mar  3 11:35:14 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
@@ -121,15 +121,13 @@ OMIT RECORD IF SOME(alternate_bases IS NOT NULL)
 ORDER BY
   start,
   call.call_set_name
-
-Retrieving data:  6.4s
-Retrieving data: 17.9s
+Retrieving data:  7.4sRetrieving data: 21.6s
 ```
-Number of rows returned by this query: 22777.
+Number of rows returned by this query: **22777**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 17:11:08 2015 -->
+<!-- Tue Mar  3 11:35:38 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> NA12886 </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> </tr>
@@ -172,9 +170,11 @@ OMIT RECORD IF EVERY(alternate_bases IS NULL)
 GROUP BY
   alt_contains_no_special_characters
 ```
+Number of rows returned by this query: **1**.
 
+Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 17:11:10 2015 -->
+<!-- Tue Mar  3 11:35:39 2015 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
@@ -215,9 +215,11 @@ GROUP BY
 ORDER BY
   genotype_count DESC
 ```
+Number of rows returned by this query: **7**.
 
+Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 17:11:12 2015 -->
+<!-- Tue Mar  3 11:35:41 2015 -->
 <table border=1>
 <tr> <th> genotype </th> <th> genotype_count </th>  </tr>
   <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>
@@ -226,8 +228,8 @@ ORDER BY
   <tr> <td> 1,1 </td> <td align="right">  73 </td> </tr>
   <tr> <td> -1 </td> <td align="right">  50 </td> </tr>
   <tr> <td> -1,-1 </td> <td align="right">   5 </td> </tr>
-  <tr> <td> 1,2 </td> <td align="right">   4 </td> </tr>
    </table>
+
 
 > In the case of Platinum Genomes we see from the query results the variety of genotypes just within BRCA1:
 * no-calls (the -1 values)

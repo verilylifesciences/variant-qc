@@ -61,11 +61,15 @@ result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
                                                  "_WINDOW_SIZE_"="100000",
                                                  queryReplacements))
 ```
-Number of rows returned by this query: `r nrow(result)`.
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
 
 Visualizing the results:
@@ -88,11 +92,15 @@ result <- DisplayAndDispatchQuery("./sql/ti-tv-by-alternate-allele-count.sql",
                                   project=project,
                                   replacements=c(queryReplacements))
 ```
-Number of rows returned by this query: `r nrow(result)`.
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
 
 Visualizing the results:
@@ -117,11 +125,15 @@ result <- DisplayAndDispatchQuery("./sql/variant-level-missingness.sql",
                                   replacements=c("#_ORDER_BY_"=sortAndLimit,
                                                  queryReplacements))
 ```
-Number of rows returned by this query: `r nrow(result)`.
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
 
 ## Hardy-Weinberg Equilibrium
@@ -135,11 +147,15 @@ result <- DisplayAndDispatchQuery("./sql/hardy-weinberg.sql",
                                   replacements=c("#_ORDER_BY_"=sortAndLimit,
                                                  queryReplacements))
 ```
-Number of rows returned by this query: `r nrow(result)`.
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
 
 ## Heterozygous Haplotype
@@ -158,11 +174,15 @@ result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.
                                                  "#_ORDER_BY_"=sortAndLimit,
                                                  queryReplacements))
 ```
-Number of rows returned by this query: `r nrow(result)`.
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
-Displaying the first few results:
+Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
 ```
 
 # Removing variants from the Cohort
