@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A mapper for expansion of gVCF data.
+"""A mapper for expansion of gVCF and CGI data.
 
 To test locally, set both BIG_QUERY_SOURCE and BIG_QUERY_SINK to False and run:
   cat ./data/platinum-genomes-brca1.json | ./gvcf-expand-mapper.py | sort \

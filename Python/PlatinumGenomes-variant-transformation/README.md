@@ -1,10 +1,39 @@
 # Using Hadoop Streaming to reshape data with Non-Variant Segments
 
-In this codelab we convert data with non-variant segments (such as data that was in source format Genome VCF (gVCF) or Complete Genomics) to variant-only data with calls from non-variant-segments merged into the variants with which they overlap. The resultant data is emitted to a BigQuery table.
- 
-This is currently done only for SNP variants. Indels and structural variants are left as-is.
+In this codelab we use a Hadoop Streaming job to convert data with non-variant segments (such as data that was in source format Genome VCF (gVCF) or Complete Genomics) to variant-only data with calls from non-variant-segments merged into the variants with which they overlap. 
 
-SCALING: For a large cohort with many, many more rare variants we may wish to instead modify the logic here to summarize the number of calls that match the reference for each variant instead of adding those individual calls to the record.
+* [Motivation](#motivation)
+* [Running the Cluster Compute Job](#running-the-cluster-compute-job)
+* [Results](#results)
+* [Optional: modify the Cluster Compute Job](#optional-modify-the-cluster-compute-job)
+* [Appendix](#appendix)
+
+## Motivation
+
+Data from source files in [genome VCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions) (gVCF) format or in Complete Genomics format can be challenging to work with due to the presence of non-variant segment records.
+
+For example to use BigQuery lookup [rs9536314](http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?rs=rs9536314) in the Klotho gene, the `WHERE` clause
+```
+    WHERE
+      reference_name = 'chr13'
+      AND start = 33628137
+```
+becomes
+```
+    WHERE
+      reference_name = 'chr13'
+      AND start <= 33628137
+      AND end >= 33628138
+```
+to capture not only that variant, but any other records that overlap that genomic position.
+
+Suppose we want to calculate an aggregate for a particular variant, such as the number of samples with the variant on one or both alleles and of samples that match the reference?  The WHERE clause above will do the trick.  But then suppose we want to do this for all SNPs in our dataset?  There are [a few ways to do this](https://github.com/googlegenomics/bigquery-examples/tree/master/pgp/data-stories/schema-comparisons#motivation). In this codelab we will use a cluster computing job to transform data with non-variant segments to variant-only data with calls from non-variant-segments merged into the variants with which they overlap. 
+* This is currently done only for SNP variants. Indels and structural variants are left as-is.  
+* The resultant data is emitted to a BigQuery table.
+
+> The result of this cluster compute job is used specifically in codelab [Quality Control using Google Genomics](../../R/PlatinumGenomes-QC).
+
+## Running the Cluster Compute Job
 
 The following example makes use of [Illumina Platinum Genomes](http://www.illumina.com/platinumgenomes/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/platinum-genomes).
 
@@ -27,15 +56,18 @@ gcutil push hadoop-m gvcf* platinum_genomes.variants.schema .
 (3) ssh to the master and kick off the job:
 
 ```
-export OUTPUT_PROJECT=YOUR-PROJECT
-export OUTPUT_DATASET=YOUR-DATASET
-export OUTPUT_TABLE=YOUR-TABLE
-
+export INPUT_PROJECT=genomics-public-data
+export INPUT_DATASET=platinum_genomes
+export INPUT_TABLE=variants
+export OUTPUT_PROJECT=YOUR_GOOGLE_CLOUD_PLATFORM_PROJECT_ID
+export OUTPUT_DATASET=YOUR_BIGQUERY_DATASET
+export OUTPUT_TABLE=YOUR_BIGQUERY_TABLE
 export SCHEMA=`cat platinum_genomes.variants.schema`
+
 hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.jar \
-      -D mapred.bq.input.project.id=genomics-public-data \
-      -D mapred.bq.input.dataset.id=platinum_genomes \
-      -D mapred.bq.input.table.id=variants \
+      -D mapred.bq.input.project.id=$INPUT_PROJECT\
+      -D mapred.bq.input.dataset.id=$INPUT_DATASET \
+      -D mapred.bq.input.table.id=$INPUT_TABLE \
       -D mapred.bq.output.project.id=$OUTPUT_PROJECT \
       -D mapred.bq.output.dataset.id=$OUTPUT_DATASET \
       -D mapred.bq.output.table.id=$OUTPUT_TABLE \
@@ -55,37 +87,51 @@ hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.
 (4) Lastly, note that the BigQuery connector when used with Hadoop Streaming does not clean up its temporary files automatically.
 
 ```
-export CONFIGBUCKET=YOUR-HADOOP-BUCKET
+export CONFIGBUCKET=YOUR_HADOOP_BUCKET
 gsutil rm -r gs://$CONFIGBUCKET/hadoop/tmp/bigquery/job_*
 ```
 
-Caveat
-------
-Note: using BigQuery as the sink appears to be problematic.  For now, send the output to Google Cloud Storage instead.
+## Results
 
-* Edit [gvcf-expand-reducer.py](./gvcf-expand-reducer.py) to set `BIG_QUERY_SINK=False`
-* Run the job like so:
+We have now created table [google.com:biggene:platinum_genomes.expanded_variants](https://bigquery.cloud.google.com/table/google.com:biggene:platinum_genomes.expanded_variants?pli=1)
+
+# Appendix
+
+### How to Run this Job Against Your Own Data
+
+(1) Get the schema for your data:
 ```
-hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.jar \
-      -D mapred.bq.input.project.id=genomics-public-data \
-      -D mapred.bq.input.dataset.id=platinum_genomes \
-      -D mapred.bq.input.table.id=variants \
-      -inputformat com.google.cloud.hadoop.io.bigquery.mapred.BigQueryMapredInputFormat \
-      -D mapred.map.tasks=500 \
-      -D mapred.task.timeout=0 \
-      -input requiredButUnused  \
-      -file gvcf_expander.py \
-      -mapper gvcf-expand-mapper.py -file gvcf-expand-mapper.py \
-      -reducer gvcf-expand-reducer.py -file gvcf-expand-reducer.py \
-      -output gs://YOUR-BUCKET/YOUR_OUTPUT_PREFIX
+bq --project YOUR_GOOGLE_CLOUD_PLATFORM_PROJECT_ID show --format json YOUR_BIGQUERY_INPUT_DATASET.YOUR_BIGQUERY_INPUT_TABLE} | python -c \
+"import json,sys ; print \"%s\" % (json.dumps(json.loads(sys.stdin.readline())['schema']['fields']).replace(\"'\", \"_\"))" \
+> YOUR_BIGQUERY_INPUT_DATASET.YOUR_BIGQUERY_INPUT_TABLE.schema
 ```
-* Finally, load the json from the Google Cloud Storage destination to BigQuery using schema [platinum_genomes.variants.schema](./platinum_genomes.variants.schema) 
 
-Appendix
-========
+(2) Update the variables for the new input:
+```
+export INPUT_PROJECT=YOUR_GOOGLE_CLOUD_PLATFORM_PROJECT_ID
+export INPUT_DATASET=YOUR_BIGQUERY_INPUT_DATASET
+export INPUT_TABLE=YOUR_BIGQUERY_INPUT_TABLE
+export SCHEMA=`cat YOUR_BIGQUERY_INPUT_DATASET.YOUR_BIGQUERY_INPUT_TABLE.schema`
+```
+(3) Then follow the remainder of the steps to run the job.
 
-Getting the Schema for a Table
-------------------------------
+## Optional: modify the Cluster Compute Job
+
+More coming soon!  
+
+Some ideas:
+* Note that for a large cohort with many, many more rare variants we may wish to instead modify the logic here to summarize the number of calls that match the reference for each variant instead of adding those individual calls to the record.
+* merge calls in records with 1/2 genotypes with the same variant found in records with 0/1 genotypes
+
+Reference Name | Start     | End       | Reference Bases | Alternate Bases
+---------------|-----------|-----------|-----------------|-----------------
+chr6           | 120458771 | 120458773 |TA               |TAA
+chr6           | 120458771 | 120458773 |TA               |TAA,T
+ 
+--------------------------------------------------------
+
+## Getting the Schema for a Table
+
 Here's how we grabbed the schema from the source table.  Do something similar when running this job against a different table.
 
 ```
@@ -94,8 +140,7 @@ bq --project genomics-public-data show --format json platinum_genomes.variants |
 > platinum_genomes.variants.schema
 ```
 
-Using Google Cloud Storage as a source and/or sink
---------------------------------------------------
+## Using Google Cloud Storage as a source and/or sink
 
 Note that under the covers the BigQuery connector is:
  * exporting data from BigQuery to Google Cloud Storage; this can also [be done manually](https://cloud.google.com/bigquery/bigquery-web-ui#exportdata)
@@ -110,7 +155,7 @@ hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.
 -file gvcf_expander.py \
 -mapper gvcf-expand-mapper.py -file gvcf-expand-mapper.py \
 -reducer gvcf-expand-reducer.py -file gvcf-expand-reducer.py \
--input gs://YOUR-BUCKET/YOUR_INPUT_PREFIX  \
--output gs://YOUR-BUCKET/YOUR_OUTPUT_PREFIX
+-input gs://YOUR_BUCKET/YOUR_INPUT_PREFIX  \
+-output gs://YOUR_BUCKET/YOUR_OUTPUT_PREFIX
 ```
-* Finally, load the json from the Google Cloud Storage destination to BigQuery using schema [platinum_genomes.variants.schema](./platinum_genomes.variants.schema) 
+* Finally, load the json from the Google Cloud Storage destination to BigQuery using schema [platinum_genomes.variants.schema](./platinum_genomes.variants.schema)

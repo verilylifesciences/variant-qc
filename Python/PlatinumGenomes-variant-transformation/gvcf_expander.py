@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A library for expansion of gVCF data.
+"""A library for expansion of gVCF or CGI data.
 
-Given gVCF data as input, this library will find the reference
-matching blocks which overlap a variant and add the reference-matching
-sample genotypes to the variant record.
+Given gVCF or CGI data as input, this library will find the non-variant segments
+which overlap a variant and add the reference-matching sample genotypes to the
+variant record.
 
 At this current time, only SNPs are expanded.  Other variant types are
 left as-is.

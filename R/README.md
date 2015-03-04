@@ -1,5 +1,8 @@
 # R Codelabs
 
+* [Data Analysis using Google Genomics](./1000Genomes-BRCA1-analysis)
+* [Quality Control using Google Genomics](./PlatinumGenomes-QC)
+
 ## Prerequisites
 
 ### Required
