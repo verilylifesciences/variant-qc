@@ -1,16 +1,16 @@
-# Using Hadoop Streaming to reshape data with Non-Variant Segments
+# Use Hadoop Streaming to transform data with Non-Variant Segments
 
-In this codelab we use a Hadoop Streaming job to convert data with non-variant segments (such as data that was in source format Genome VCF (gVCF) or Complete Genomics) to variant-only data with calls from non-variant-segments merged into the variants with which they overlap. 
+In this codelab we use a Hadoop Streaming job to transform data with non-variant segments (such as data that was in source format Genome VCF ([gVCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions)) or Complete Genomics) to variant-only data with calls from non-variant-segments merged into the variants with which they overlap. 
 
 * [Motivation](#motivation)
-* [Running the Cluster Compute Job](#running-the-cluster-compute-job)
+* [Run the Cluster Compute Job](#running-the-cluster-compute-job)
 * [Results](#results)
 * [Optional: modify the Cluster Compute Job](#optional-modify-the-cluster-compute-job)
 * [Appendix](#appendix)
 
 ## Motivation
 
-Data from source files in [genome VCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions) (gVCF) format or in Complete Genomics format can be challenging to work with due to the presence of non-variant segment records.
+Data from source files in [gVCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions) format or in Complete Genomics format can be challenging to work with due to the presence of non-variant segment records.
 
 For example to use BigQuery lookup [rs9536314](http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?rs=rs9536314) in the Klotho gene, the `WHERE` clause
 ```
@@ -33,27 +33,33 @@ Suppose we want to calculate an aggregate for a particular variant, such as the 
 
 > The result of this cluster compute job is used specifically in codelab [Quality Control using Google Genomics](../../R/PlatinumGenomes-QC).
 
-## Running the Cluster Compute Job
+## Run the Cluster Compute Job
+
+_Note: This codelab assumes you have already worked with Google Genomics, Google Cloud Storage, and BigQuery and set up those necessary prerequsites._
 
 The following example makes use of [Illumina Platinum Genomes](http://www.illumina.com/platinumgenomes/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/platinum-genomes).
 
-This job creates a new BigQuery table containing data that is reshaped, but the schema is exactly the same.  It adds the reference-matching calls to the relevant SNP variant records --> essentially adding redundant data in an effort to enable easier querying. See [gvcf_expander.py](./gvcf_expander.py) for more detail including unit tests.
+This job creates a new BigQuery table containing data that is reshaped, but the schema is exactly the same.  It adds the reference-matching calls to the relevant SNP variant records --> essentially adding redundant data in an effort to enable easier querying. See [gvcf_expander.py](./gvcf_expander.py) for more detail including unit tests.  [Hadoop on Google Cloud Platform](https://cloud.google.com/hadoop/) supports using BigQuery as a source and/or a sink for jobs.
 
-[Hadoop on Google Cloud Platform](https://cloud.google.com/solutions/hadoop/click-to-deploy) supports using BigQuery as a source and/or a sink for jobs.  
+<img src="HadoopOnGCE.png" title="Use Hadoop Streaming to transform data with Non-Variant Segments" alt="Use Hadoop Streaming to transform data with Non-Variant Segments" style="display: block; margin: auto;" />
 
-(1) Use `bdutil` version `1.1.0` or higher to deploy the Hadoop cluster and ensure that bigquery support is enabled.  For more detail, see the [BigQuery Connector](https://cloud.google.com/hadoop/bigquery-connector) and specific details for [Hadoop Streaming](https://groups.google.com/forum/#!topic/gcp-hadoop-announce/bzji9yjj304).
+### Instructions
+
+(1) Install [bdutil](https://cloud.google.com/hadoop/). Or if you already have it, ensure that it is version 1.2.0 or higher.
+
+(2) Use bdutil to deploy a cluster with the [BigQuery Connector](https://cloud.google.com/hadoop/bigquery-connector) enabled.  For more details about using the [BigQuery Connector](https://cloud.google.com/hadoop/bigquery-connector) with Hadoop Streaming, see the [announcement](https://groups.google.com/forum/#!topic/gcp-hadoop-announce/bzji9yjj304).
 
 ```
 ./bdutil -e bigquery_env.sh deploy
 ```
 
-(2) Copy over the code and schema to the Hadoop master:
+(3) Copy over the code and schema to the Hadoop master:
 
 ```
 gcutil push hadoop-m gvcf* platinum_genomes.variants.schema .
 ```
 
-(3) ssh to the master and kick off the job:
+(4) ssh to the master and kick off the job:
 
 ```
 export INPUT_PROJECT=genomics-public-data
@@ -84,7 +90,7 @@ hadoop jar /home/hadoop/hadoop-install/contrib/streaming/hadoop-streaming-1.2.1.
       -reducer gvcf-expand-reducer.py -file gvcf-expand-reducer.py
 ```
 
-(4) Lastly, note that the BigQuery connector when used with Hadoop Streaming does not clean up its temporary files automatically.
+(5) Lastly, note that the BigQuery connector when used with Hadoop Streaming does not clean up its temporary files automatically.
 
 ```
 export CONFIGBUCKET=YOUR_HADOOP_BUCKET
@@ -93,7 +99,7 @@ gsutil rm -r gs://$CONFIGBUCKET/hadoop/tmp/bigquery/job_*
 
 ## Results
 
-We have now created table [google.com:biggene:platinum_genomes.expanded_variants](https://bigquery.cloud.google.com/table/google.com:biggene:platinum_genomes.expanded_variants?pli=1)
+You have now created a table like [google.com:biggene:platinum_genomes.expanded_variants](https://bigquery.cloud.google.com/table/google.com:biggene:platinum_genomes.expanded_variants?pli=1)
 
 # Appendix
 

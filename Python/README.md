@@ -1,3 +1,3 @@
 # Python Codelabs
 
-* [Using Hadoop Streaming to reshape data with Non-Variant Segments](./PlatinumGenomes-variant-transformation)
+* [Use Hadoop Streaming to transform data with Non-Variant Segments](./PlatinumGenomes-variant-transformation)

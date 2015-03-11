@@ -121,7 +121,9 @@ OMIT RECORD IF SOME(alternate_bases IS NOT NULL)
 ORDER BY
   start,
   call.call_set_name
-Retrieving data:  2.7sRetrieving data:  4.8s
+
+Retrieving data:  2.7s
+Retrieving data:  4.8s
 ```
 Number of rows returned by this query: **22777**.
 
@@ -248,4 +250,4 @@ Remove the WHERE clause to run this query over the entire dataset.
 > * It contains some single-allele and 1/2 genotypes.
 
 --------------------------------------------------------
-_Next_: [Part 2: Data Conversion](./Data-Conversion.md)
+_Next_: [Part 2: Data Transformation](./Data-Transformation.md)

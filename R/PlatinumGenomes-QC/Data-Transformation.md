@@ -1,6 +1,6 @@
-# Part 2: Data Conversion
+# Part 2: Data Transformation
 
-In Part 2 of the codelab, we perform a data conversion to transform our data to make it more amenable to our QC analyses in Parts 3 and 4 of this codelab.
+In Part 2 of the codelab, we perform a data transformation to make it more amenable to our QC analyses in Parts 3 and 4 of this codelab.
 
 * [Motivation](#motivation)
 * [Running the Cluster Compute Job](#running-the-cluster-compute-job)
@@ -36,9 +36,8 @@ If you are running this codelab against data that does not contain non-variant s
 
 We will use either data from variant set [3049512673186936334](https://cloud.google.com/genomics/data/platinum-genomes) or BigQuery table genomics-public-data:platinum_genomes.variants as the data source for this job.
 
-More coming soon!  Its a combination of:
-* **Java** https://github.com/googlegenomics/dataflow-java/blob/master/src/main/java/com/google/cloud/genomics/dataflow/pipelines/ConvertNonVariantSegmentsToVariants.java which will be moved into codelabs/Java
-* **Python** https://github.com/deflaux/codelabs/tree/qc-codelab/Python/PlatinumGenomes-variant-transformation with an update for PySpark in addition to the current support for Hadoop Streaming
+* **Java** [Use Cloud Dataflow to transform data with Non-Variant Segments](../../Java/PlatinumGenomes-variant-transformation)
+* **Python** [Use Hadoop Streaming to transform data with Non-Variant Segments](../../Python/PlatinumGenomes-variant-transformation)
 
 ## Results
 
@@ -47,8 +46,6 @@ We have now created table [google.com:biggene:platinum_genomes.expanded_variants
 In the analyses that follow in this codelab, sometimes we work with the original data and sometimes we work with the expanded variant-only data.
 
 ## Optional: modify the Cluster Compute Job
-
-More coming soon!  
 
 Some ideas:
 * Note that for a large cohort with many, many more rare variants we may wish to instead modify the logic here to summarize the number of calls that match the reference for each variant instead of adding those individual calls to the record.

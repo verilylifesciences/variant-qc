@@ -17,7 +17,7 @@ In this codelab you will use [Google Genomics](https://cloud.google.com/genomics
 1. Make sure you have completed the necessary [prerequisites](../README.md).
 2. Read the rendered version of the RMarkdown for a particular analysis.
  + [Part 1: Data Overview](./Data-Overview.md)
- + [Part 2: Data Conversion](./Data-Conversion.md)
+ + [Part 2: Data Transformation](./Data-Transformation.md)
  + [Part 3: Sample-Level QC](./Sample-Level-QC.md)
  + [Part 4: Variant-Level QC](./Variant-Level-QC.md)
 3. Execute the code *chunk by chunk* in RStudio or *line by line* in R.
