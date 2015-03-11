@@ -3,9 +3,9 @@
 In this codelab we use a Hadoop Streaming job to transform data with non-variant segments (such as data that was in source format Genome VCF ([gVCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions)) or Complete Genomics) to variant-only data with calls from non-variant-segments merged into the variants with which they overlap. 
 
 * [Motivation](#motivation)
-* [Run the Cluster Compute Job](#running-the-cluster-compute-job)
+* [Run the Cluster Compute Job](#run-the-cluster-compute-job)
 * [Results](#results)
-* [Optional: modify the Cluster Compute Job](#optional-modify-the-cluster-compute-job)
+* [Optional: Modify the Cluster Compute Job](#optional-modify-the-cluster-compute-job)
 * [Appendix](#appendix)
 
 ## Motivation
@@ -103,7 +103,7 @@ You have now created a table like [google.com:biggene:platinum_genomes.expanded_
 
 # Appendix
 
-### How to Run this Job Against Your Own Data
+## How to Run this Job Against Your Own Data
 
 (1) Get the schema for your data:
 ```
@@ -121,9 +121,7 @@ export SCHEMA=`cat YOUR_BIGQUERY_INPUT_DATASET.YOUR_BIGQUERY_INPUT_TABLE.schema`
 ```
 (3) Then follow the remainder of the steps to run the job.
 
-## Optional: modify the Cluster Compute Job
-
-More coming soon!  
+## Optional: Modify the Cluster Compute Job
 
 Some ideas:
 * Note that for a large cohort with many, many more rare variants we may wish to instead modify the logic here to summarize the number of calls that match the reference for each variant instead of adding those individual calls to the record.
@@ -136,7 +134,7 @@ chr6           | 120458771 | 120458773 |TA               |TAA,T
  
 --------------------------------------------------------
 
-## Getting the Schema for a Table
+## How to get the Schema for a Table
 
 Here's how we grabbed the schema from the source table.  Do something similar when running this job against a different table.
 
@@ -146,7 +144,7 @@ bq --project genomics-public-data show --format json platinum_genomes.variants |
 > platinum_genomes.variants.schema
 ```
 
-## Using Google Cloud Storage as a source and/or sink
+## How to use Google Cloud Storage as a source and/or sink
 
 Note that under the covers the BigQuery connector is:
  * exporting data from BigQuery to Google Cloud Storage; this can also [be done manually](https://cloud.google.com/bigquery/bigquery-web-ui#exportdata)

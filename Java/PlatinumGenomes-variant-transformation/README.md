@@ -3,9 +3,9 @@
 In this codelab we use Cloud Dataflow to transform data with non-variant segments (such as data that was in source format Genome VCF ([gVCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions)) or Complete Genomics) to variant-only data with calls from non-variant-segments merged into the variants with which they overlap. 
 
 * [Motivation](#motivation)
-* [Run the Cluster Compute Job](#running-the-cluster-compute-job)
+* [Run the Cluster Compute Job](#run-the-cluster-compute-job)
 * [Results](#results)
-* [Optional: modify the Cluster Compute Job](#optional-modify-the-cluster-compute-job)
+* [Optional: Modify the Cluster Compute Job](#optional-modify-the-cluster-compute-job)
 * [Appendix](#appendix)
 
 ## Motivation
@@ -39,7 +39,9 @@ _Note: This codelab assumes you have already worked with Google Genomics, Google
 
 The following example makes use of [Illumina Platinum Genomes](http://www.illumina.com/platinumgenomes/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/platinum-genomes).
 
-This job retrieves variants from the Genomics API, transforms them and writes the result to a new BigQuery table.  The schema contains the common fields found in all variants exported from Google Genomics, but we did not run a Google Genomics variants export --> instead this is a custom export.  It adds the reference-matching calls to the relevant SNP variant records --> essentially adding redundant data in an effort to enable easier querying.
+This job retrieves variants from the Genomics API, transforms them and writes the result to a new BigQuery table.
+* The schema contains the common fields found in all variants exported from Google Genomics, but we did not run a Google Genomics variants export --> instead this is a custom export.
+* It adds the reference-matching calls to the relevant SNP variant records --> essentially adding redundant data in an effort to enable easier querying.
 
 <img src="Dataflow.png" title="Use Cloud Dataflow to transform data with Non-Variant Segments" alt="Use Cloud Dataflow to transform data with Non-Variant Segments" style="display: block; margin: auto;" />
 
@@ -47,7 +49,7 @@ This job retrieves variants from the Genomics API, transforms them and writes th
 
 (1) Follow the Google Cloud Dataflow [getting started instructions](https://cloud.google.com/dataflow/getting-started) to set up your environment for Dataflow.
 
-(2) To use this code, build the client using [Apache Maven](http://maven.apache.org/download.cgi)
+(2) Use [Apache Maven](http://maven.apache.org/download.cgi) to build the code.
 ```
 cd codelabs/Java/PlatinumGenomes-variant-transformation
 mvn compile
@@ -72,21 +74,20 @@ java -cp target/non-variant-segment-transformer-v1beta2-0.1-SNAPSHOT.jar \
 ```
 
 To run this job on the entire dataset:
-* add `--runner=BlockingDataflowPipelineRunner` to run the job on Google Cloud instead of locally
-* use `--allReferences` instead of `--references=chr17:41196311:41277499`
+* Add `--runner=BlockingDataflowPipelineRunner` to run the job on Google Cloud instead of locally.
+* Use `--allReferences` instead of `--references=chr17:41196311:41277499` to run over the entire genome.
 
 ## Results
 
-You have now created a table like [google.com:biggene:platinum_genomes.expanded_variants](https://bigquery.cloud.google.com/table/google.com:biggene:platinum_genomes.expanded_variants?pli=1)
+You have now created a table like [google.com:biggene:platinum_genomes.transformed_variants](https://bigquery.cloud.google.com/table/google.com:biggene:platinum_genomes.transformed_variants?pli=1)
 
 # Appendix
 
 ### How to Run this Job Against Your Own Data
 
-Pass `--datasetId=YOUR_GOOGLE_GENOMICS_DATASETID` instead of `--datasetId=3049512673186936334`.
+Pass `--datasetId=YOUR_GOOGLE_GENOMICS_DATASET_ID` instead of `--datasetId=3049512673186936334`.
 
-## Optional: modify the Cluster Compute Job
-
+## Optional: Modify the Cluster Compute Job
 
 Some ideas:
 * Add additional fields from the variant to the BigQuery schema.
