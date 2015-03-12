@@ -530,25 +530,24 @@ ggplot(ibs) +
 
 If you wish to run the Dataflow job, see the [dataflow-java README](https://github.com/googlegenomics/dataflow-java) for instructions to compile and run the job.
 ```
-java -cp target/google-genomics-dataflow-v1beta2-0.2-SNAPSHOT.jar \
-com.google.cloud.genomics.dataflow.pipelines.IdentityByState \
---project=YOUR-PROJECT \
---stagingLocation=gs://YOUR-BUCKET/staging \
---output=gs://YOUR-BUCKET/output/platinum-genomes-ibs.tsv \
---genomicsSecretsFile=/PATH/TO/YOUR/client_secrets.json \
---runner=DataflowPipelineRunner \
---numWorkers=40 \
---basesPerShard=1000000 \
---datasetId=3049512673186936334 \
---nonVariantSegments \
---allReferences
+java -cp target/google-genomics-dataflow-v1beta2-0.5-SNAPSHOT.jar \
+  com.google.cloud.genomics.dataflow.pipelines.IdentityByState \
+  --project=YOUR_GOOGLE_CLOUD_PLATFORM_PROJECT_ID \
+  --stagingLocation=gs://YOUR_BUCKET/dataflow-staging \
+  --genomicsSecretsFile=/PATH/TO/YOUR/client_secrets.json \
+  --datasetId=3049512673186936334 \
+  --basesPerShard=1000000 \
+  --references=chr17:41196311:41277499 \
+  --hasNonVariantSegments \
+  --output=gs://YOUR_BUCKET/output/platinum-genomes-ibs.tsv
 ```
 
-Note that there are several IBS calculators from which to choose.  Use the `--callSimilarityCalculatorFactory` to switch between them.
-
-To run the job on a different dataset, change the variant set id for the `--datasetId` id parameter.  (Also, remove the `--nonVariantSegments` parameter if the data does not contain them.)
-
-To gather the results into a single file:
+* Note that there are several IBS calculators from which to choose.  Use the `--callSimilarityCalculatorFactory` to switch between them.
+* To run this job on the entire dataset:
+  * Add `--runner=BlockingDataflowPipelineRunner` to run the job on Google Cloud instead of locally.
+  * Use `--allReferences` instead of `--references=chr17:41196311:41277499` to run over the entire genome.
+* To run the job on a different dataset, change the variant set id for the `--datasetId` id parameter.  (Also, remove the `--nonVariantSegments` parameter if the data does not contain them.)
+* To gather the results into a single file:
 ```
 gsutil cat gs://YOUR-BUCKET/output/platinum-genomes-ibs.tsv* | sort > platinum-genomes-ibs.tsv
 ```

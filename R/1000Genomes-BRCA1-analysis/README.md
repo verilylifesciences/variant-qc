@@ -9,7 +9,7 @@ In this codelab, you will use [Google Genomics](https://cloud.google.com/genomic
 * visualize and annotate results using various R packages, including [BioConductor](http://www.bioconductor.org)
 
 ### Instructions
-1. Make sure you have completed the necessary [prerequisites](../README.md).
+1. Make sure you have completed the necessary [prerequisites](../README.md#prerequisites).
 
 2. Read or watch the analysis:
  3. Read the rendered version of the RMarkdown [AllModalitiesDemo.md](./AllModalitiesDemo.md)

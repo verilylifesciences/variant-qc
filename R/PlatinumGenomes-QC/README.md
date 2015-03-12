@@ -14,7 +14,7 @@ In this codelab you will use [Google Genomics](https://cloud.google.com/genomics
  + Hardy-Weinberg Equilibrium via BigQuery
 
 ## Instructions
-1. Make sure you have completed the necessary [prerequisites](../README.md).
+1. Make sure you have completed the necessary [prerequisites](../README.md#prerequisites).
 2. Read the rendered version of the RMarkdown for a particular analysis.
  + [Part 1: Data Overview](./Data-Overview.md)
  + [Part 2: Data Transformation](./Data-Transformation.md)

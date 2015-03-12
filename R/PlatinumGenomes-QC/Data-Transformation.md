@@ -43,7 +43,7 @@ We will use either data from variant set [3049512673186936334](https://cloud.goo
 
 We have now created table [google.com:biggene:platinum_genomes.expanded_variants](https://bigquery.cloud.google.com/table/google.com:biggene:platinum_genomes.expanded_variants?pli=1)
 
-In the analyses that follow in this codelab, sometimes we work with the original data and sometimes we work with the expanded variant-only data.
+In the analyses that follow in this codelab, sometimes we work with the original data and sometimes we work with the transformed variant-only data.
 
 ## Optional: modify the Cluster Compute Job
 
