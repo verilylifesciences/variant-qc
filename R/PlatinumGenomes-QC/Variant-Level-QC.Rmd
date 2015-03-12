@@ -1,0 +1,200 @@
+<!-- R Markdown Documentation, DO NOT EDIT THE PLAIN MARKDOWN VERSION OF THIS FILE -->
+
+<!-- Copyright 2015 Google Inc. All rights reserved. -->
+
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
+<!-- you may not use this file except in compliance with the License. -->
+<!-- You may obtain a copy of the License at -->
+
+<!--     http://www.apache.org/licenses/LICENSE-2.0 -->
+
+<!-- Unless required by applicable law or agreed to in writing, software -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS, -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
+<!-- See the License for the specific language governing permissions and -->
+<!-- limitations under the License. -->
+
+# Part 4: Variant-Level QC
+
+```{r echo=FALSE, eval=FALSE}
+######################[ CHANGE ME ]##################################
+# This codelab assumes that the current working directory is where the Rmd file resides.
+setwd("/YOUR/PATH/TO/codelabs/R/PlatinumGenomes-QC")
+
+# Set the Google Cloud Platform project id under which these queries will run.
+project <- "YOUR-PROJECT-ID"
+#####################################################################
+```
+
+```{r echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+# Set up for BigQuery access.
+source("./rHelpers/setup.R")
+```
+
+In Part 4 of the codelab, we perform some quality control analyses that could help to identify any problematic variants which should be excluded from further analysis.  The appropriate cut off thresholds will depend upon the input dataset and/or other factors.
+
+* [Ti/Tv by Genomic Window](#titv-by-genomic-window)
+* [Ti/Tv by Alternate Allele Counts](#titv-by-alternate-allele-counts)
+* [Missingness Rate](#missingness-rate)
+* [Hardy-Weinberg Equilibrium](#hardy-weinberg-equilibrium)
+* [Heterozygous Haplotype](#heterozygous-haplotype)
+
+By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
+```{r}
+queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
+sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
+
+# To run this against other public data, source in one of the dataset helpers.  For example:
+# source("./rHelpers/pgpCGIOnlyDataset.R")
+```
+
+## Ti/Tv by Genomic Window
+
+Check whether the ratio of transitions vs. transversions in SNPs appears to be reasonable in each window of genomic positions.  This query may help identify problematic regions.
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
+                                  project=project,
+                                  replacements=c("#_WHERE_"="WHERE reference_name = 'chr1'",
+                                                 "_WINDOW_SIZE_"="100000",
+                                                 queryReplacements))
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
+```
+
+Visualizing the results:
+```{r titvByWindow, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(result, aes(x=window_start, y=titv)) +
+  geom_point() +
+  stat_smooth() +
+  scale_x_continuous(labels=comma) +
+  xlab("Genomic Position") +
+  ylab("Ti/Tv") +
+  ggtitle("Ti/Tv by 100,000 base pair windows on Chromosome 1")
+```
+
+## Ti/Tv by Alternate Allele Counts
+
+Check whether the ratio of transitions vs. transversions in SNPs appears to be resonable across the range of rare variants to common variants.  This query may help to identify problems with rare or common variants.
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/ti-tv-by-alternate-allele-count.sql",
+                                  project=project,
+                                  replacements=c(queryReplacements))
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
+```
+
+Visualizing the results:
+```{r titvByAlt, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(result, aes(x=alternate_allele_count, y=titv)) +
+  geom_point() +
+  stat_smooth() +
+  scale_x_continuous(labels=comma) +
+  xlab("Total Number of Sample Alleles with the Variant") +
+  ylab("Ti/Tv") +
+  ggtitle("Ti/Tv by Alternate Allele Count")
+```
+
+## Missingness Rate
+
+For each variant, compute the missingness rate.  This query can be used to identify variants with a poor call rate.
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+sortAndLimit <- "ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alternate_bases LIMIT 1000"
+result <- DisplayAndDispatchQuery("./sql/variant-level-missingness.sql",
+                                  project=project,
+                                  replacements=c("#_ORDER_BY_"=sortAndLimit,
+                                                 queryReplacements))
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
+```
+
+## Hardy-Weinberg Equilibrium
+
+For each variant, compute the expected versus observed relationship between allele frequencies and genotype frequencies per the Hardy-Weinberg Equilibrium.
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+sortAndLimit <- "ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000"
+result <- DisplayAndDispatchQuery("./sql/hardy-weinberg.sql",
+                                  project=project,
+                                  replacements=c("#_ORDER_BY_"=sortAndLimit,
+                                                 queryReplacements))
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
+```
+
+## Heterozygous Haplotype
+For each variant within the X and Y chromosome, identify heterozygous variants in male genomes.
+
+First we use our sample information to determine which genomes are male.  
+```{r message=FALSE, warning=FALSE, comment=NA}
+maleSampleIds <- paste("'", filter(sampleInfo, gender == "Male")$call_call_set_name, "'", sep="", collapse=",")
+```
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+sortAndLimit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000"
+result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.sql",
+                                  project=project,
+                                  replacements=c("_MALE_SAMPLE_IDS_"=maleSampleIds,
+                                                 "#_ORDER_BY_"=sortAndLimit,
+                                                 queryReplacements))
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
+```
+
+# Removing variants from the Cohort
+
+To mark a variant as problematic so that downstream analyses can filter it out:
+* See the [variant update](https://cloud.google.com/genomics/v1beta2/reference/variants/update) method.
+
+To remove variants from BigQuery only:
+* Materialize the results of queries that include the non-problematic variants to a new table.
+* Alternatively, write a custom filtering job similar to what we explored in [Part 2: Data Conversion](./Data-Conversion.md) of this codelab.
+
+To entirely remove a variant from a variant set in the Genomics API:
+* See the [variant delete](https://cloud.google.com/genomics/v1beta2/reference/variants/delete) method.
+* *Note:* deletion cannot be undone.
+* If you wish to copy a variant to a different variantSet prior to deleting it, see the [variantSet mergeVariants](https://cloud.google.com/genomics/v1beta2/reference/variantsets/mergeVariants) method.

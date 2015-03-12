@@ -1,5 +1,8 @@
 # R Codelabs
 
+* [Data Analysis using Google Genomics](./1000Genomes-BRCA1-analysis)
+* [Quality Control using Google Genomics](./PlatinumGenomes-QC)
+
 ## Prerequisites
 
 ### Required
@@ -30,11 +33,21 @@
 
 
 ### Optional
-1. The codelabs load results of previously run Spark jobs.  If you would like to run the Spark jobs yourself, please see [Getting Started with Spark](https://github.com/googlegenomics/spark-examples).
-  * To grab the results from Google Cloud Storage and turn them into a TSV file: `gsutil cat gs://<bucket-name>/<output-path>-pca.tsv/part* > pca-results.tsv`
-  * To then load the TSV into R: `pcaResults <- read.delim('pca-results.tsv', col.names=c("Sample", "PC1", "PC2"))`
+1. The codelabs load results of previously run Google Cloud Dataflow and Apache Spark jobs.
+  * If you would like to run the jobs yourself, please see [Getting Started with Dataflow](https://github.com/googlegenomics/dataflow-examples) and/or [Getting Started with Spark](https://github.com/googlegenomics/spark-examples).
+
+  * To grab job results from Google Cloud Storage and turn them into a TSV file.  For example:
+    ```
+    gsutil cat gs://<bucket-name>/<output-path>-pca.tsv/part* > pca-results.tsv
+    ```
+
+  * To then load the TSV into R.  For example:
+    ```
+    pcaResults <- read.delim('pca-results.tsv', col.names=c("Sample", "PC1", "PC2"))
+    ```
 
 1. pre-install additional R packages referenced by the codelabs:
+
   ```
   install.packages("dplyr")
   install.packages("ggplot2")
