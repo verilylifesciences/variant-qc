@@ -17,7 +17,7 @@
 1. Install the GoogleGenomics R package. 
   ```
   source("http://bioconductor.org/biocLite.R") 
-  biocLite() 
+  biocLite(suppressUpdates=TRUE) 
   options(repos=biocinstallRepos())
   devtools::install_github("googlegenomics/api-client-r")
   library(GoogleGenomics)
