@@ -62,20 +62,19 @@ mvn bundle:bundle
 
 (4) Run the pipeline locally over BRCA1 in Platinum Genomes with the command line:
 ```
-java -cp target/non-variant-segment-transformer-v1beta2-0.1-SNAPSHOT.jar \
+java -cp target/non-variant-segment-transformer-*.jar \
   com.google.cloud.genomics.examples.TransformNonVariantSegmentData \
   --project=YOUR_GOOGLE_CLOUD_PLATFORM_PROJECT_ID \
   --stagingLocation=gs://YOUR_BUCKET/dataflow-staging \
   --genomicsSecretsFile=/PATH/TO/YOUR/client_secrets.json \
   --datasetId=3049512673186936334 \
-  --basesPerShard=1000000 \
   --references=chr17:41196311:41277499 \
   --hasNonVariantSegments \
   --output=YOUR_BIGQUERY_DATASET.YOUR_BIGQUERY_DESTINATION_TABLE
 ```
 
 To run this job on the entire dataset:
-* Add `--runner=BlockingDataflowPipelineRunner` to run the job on Google Cloud instead of locally.
+* Add `--runner=DataflowPipelineRunner` to run the job on Google Cloud instead of locally.
 * Use `--allReferences` instead of `--references=chr17:41196311:41277499` to run over the entire genome.
 
 ## Results
