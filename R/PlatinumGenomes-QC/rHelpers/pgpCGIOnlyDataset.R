@@ -22,6 +22,9 @@ queryReplacements <- list("_THE_TABLE_"="google.com:biggene:pgp_20150205.variant
 sampleData <- read.csv(textConnection(getURL("https://my.pgp-hms.org/google_surveys/1/download")))
 sampleInfo <- select(sampleData, call_call_set_name=Participant, gender=Sex.Gender)
 
+# Google Genomics variant set id for dataset 'pgp_20150205'
+variantSetId <- 9170389916365079788
+
 # Show only a subset of PGP ids in the Identity By State results to keep the
 # heatmap to a reasonable size.
 sampleIds <- c("hu03E3D2",
