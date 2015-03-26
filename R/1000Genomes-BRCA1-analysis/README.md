@@ -9,20 +9,18 @@ In this codelab, you will use [Google Genomics](https://cloud.google.com/genomic
 * visualize and annotate results using various R packages, including [BioConductor](http://www.bioconductor.org)
 
 ### Instructions
-1. Make sure you have completed the necessary [prerequisites](../README.md#prerequisites).
+You can watch, read or execute the analysis:
 
-2. Read or watch the analysis:
- 3. Read the rendered version of the RMarkdown [AllModalitiesDemo.md](./AllModalitiesDemo.md)
- 4. Watch the brief video [Google Genomics: Data Analysis Overview](https://www.youtube.com/watch?v=vINpqxhcTt0) or watch the extended video [Google Genomics Codelab: Data Analysis in R](https://www.youtube.com/watch?v=tPH5PwjzhBM)
-
-3. Execute the code *chunk by chunk* in RStudio [AllModalitiesDemo.Rmd](./AllModalitiesDemo.Rmd) or *line by line* in R.
-
-### Notes
-
-If you prefer, `AllModalitiesDemo.R` can be created from [AllModalitiesDemo.Rmd](./AllModalitiesDemo.Rmd) via
+* **Watch** the brief video [Google Genomics: Data Analysis Overview](https://www.youtube.com/watch?v=vINpqxhcTt0) or watch the extended video [Google Genomics Codelab: Data Analysis in R](https://www.youtube.com/watch?v=tPH5PwjzhBM)
+* **Read** the rendered version of the RMarkdown [AllModalitiesDemo.md](./AllModalitiesDemo.md)
+* **Execute** the code *chunk by chunk* in RStudio or *line by line* in R.
+ 1. Clone this github repository.
+ 2. Make sure you have completed the necessary [prerequisites](../README.md#prerequisites).
+ 3. Run the RMarkdown [AllModalitiesDemo.Rmd](./AllModalitiesDemo.Rmd) file.
+ 4. If you prefer, `AllModalitiesDemo.R` can be created from [AllModalitiesDemo.Rmd](./AllModalitiesDemo.Rmd) via
 ```
 require(knitr)
-purl("./AllModalitiesDemo.Rmd", documentation=1)
+purl("./AllModalitiesDemo.Rmd", documentation=2)
 ```
 ### Troubleshooting
 
