@@ -21,6 +21,16 @@ The following example makes use of the [Phase 1 variants](http://ftp.1000genomes
 
 The VCFs comprising this dataset are **1.12 TB** when uncompressed and provide information about **39,706,715** variants for **1,092** individuals.
 
+* [Working at Scale](#working-at-scale)
+  * [Cluster Computing](#cluster-computing)
+  * [Querying](#querying)
+* [Zooming-In](#zooming-in)
+  * [Simplistic GWAS](#simplistic-gwas)
+  * [Annotate Variants with BioConductor](#annotate-variants-with-bioconductor)
+* [Zooming-In Even Further](#zooming-in-even-further)
+  * [Visualize Reads with BioConductor](#visualize-reads-with-bioconductor)
+* [Provenance](#provenance)
+
 Working at Scale
 -------------------
 
@@ -209,6 +219,8 @@ ggplot(pca_1kg_brca1) +
 
 <img src="figure/brca1-pca-case-control-1.png" title="plot of chunk brca1-pca-case-control" alt="plot of chunk brca1-pca-case-control" style="display: block; margin: auto;" />
 
+### Simplistic GWAS
+
 Next we perform a [simplistic GWAS](http://homes.cs.washington.edu/~suinlee/genome560/lecture7.pdf) on the BRCA1 variants to retrieve a ranked list of the variants that appear to differentiate these groups.
 
 ```r
@@ -335,10 +347,18 @@ head(result)
 6            712              1025                 1           932.333
 ```
 
+### Annotate Variants with BioConductor
+
 Now let's use the [GoogleGenomics R client](https://github.com/googlegenomics/api-client-r) to retrieve the full records for the variants in which we are interested.
 
 ```r
 require(GoogleGenomics)
+```
+
+
+
+
+```r
 top_results_sorted_by_start <- arrange(head(result, 20), start)
 variants <- Reduce(c, apply(top_results_sorted_by_start,
                            1,
@@ -599,8 +619,11 @@ GRanges object with 22 ranges and 16 metadata columns:
 
 So a question for our users who have much experience in this domain: what should we examine next to determine potential explanations for the clustering we see?  Perhaps the relevant [ancestral haplotypes](http://hapmap.ncbi.nlm.nih.gov/originhaplotype.html)?
 
-Zooming in Even Further
+Zooming-in Even Further
 ------------------------
+
+### Visualize Reads with BioConductor
+
 We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta2/reference/readgroupsets) for a given sample and examine coverage:
 
 ```r

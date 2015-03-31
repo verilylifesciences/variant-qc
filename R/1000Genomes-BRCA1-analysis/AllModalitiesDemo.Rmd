@@ -21,6 +21,16 @@ The following example makes use of the [Phase 1 variants](http://ftp.1000genomes
 
 The VCFs comprising this dataset are **1.12 TB** when uncompressed and provide information about **39,706,715** variants for **1,092** individuals.
 
+* [Working at Scale](#working-at-scale)
+  * [Cluster Computing](#cluster-computing)
+  * [Querying](#querying)
+* [Zooming-In](#zooming-in)
+  * [Simplistic GWAS](#simplistic-gwas)
+  * [Annotate Variants with BioConductor](#annotate-variants-with-bioconductor)
+* [Zooming-In Even Further](#zooming-in-even-further)
+  * [Visualize Reads with BioConductor](#visualize-reads-with-bioconductor)
+* [Provenance](#provenance)
+
 Working at Scale
 -------------------
 
@@ -164,6 +174,8 @@ ggplot(pca_1kg_brca1) +
   ggtitle("Principal Coordinate Analysis upon BRCA1 within 1,000 Genomes")
 ```
 
+### Simplistic GWAS
+
 Next we perform a [simplistic GWAS](http://homes.cs.washington.edu/~suinlee/genome560/lecture7.pdf) on the BRCA1 variants to retrieve a ranked list of the variants that appear to differentiate these groups.
 ```{r message=FALSE, comment=NA}
 case_sample_ids <- paste("'", filter(pca_1kg_brca1, case==TRUE)$Sample, "'", sep="", collapse=",")
@@ -176,6 +188,8 @@ Note that even though this query ran over a small region of the genome, with a m
 ```{r message=FALSE, comment=NA}
 head(result)
 ```
+
+### Annotate Variants with BioConductor
 
 Now let's use the [GoogleGenomics R client](https://github.com/googlegenomics/api-client-r) to retrieve the full records for the variants in which we are interested.
 ```{r message=FALSE, comment=NA}
@@ -228,8 +242,11 @@ coding
 
 So a question for our users who have much experience in this domain: what should we examine next to determine potential explanations for the clustering we see?  Perhaps the relevant [ancestral haplotypes](http://hapmap.ncbi.nlm.nih.gov/originhaplotype.html)?
 
-Zooming in Even Further
+Zooming-in Even Further
 ------------------------
+
+### Visualize Reads with BioConductor
+
 We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta2/reference/readgroupsets) for a given sample and examine coverage:
 ```{r message=FALSE, comment=NA}
 galignments <- getReads(readGroupSetId="CMvnhpKTFhDnk4_9zcKO3_YB", chromosome="17",
