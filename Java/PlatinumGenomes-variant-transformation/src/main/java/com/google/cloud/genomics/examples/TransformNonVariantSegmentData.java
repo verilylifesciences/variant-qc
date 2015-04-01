@@ -146,7 +146,12 @@ public class TransformNonVariantSegmentData {
   }
 
   public static void main(String[] args) throws IOException, GeneralSecurityException {
-    Options options = PipelineOptionsFactory.fromArgs(args).withValidation().as(Options.class);
+    // Register the options so that they show up via --help
+    PipelineOptionsFactory.register(TransformNonVariantSegmentData.Options.class);
+    TransformNonVariantSegmentData.Options options =
+        PipelineOptionsFactory.fromArgs(args).withValidation()
+            .as(TransformNonVariantSegmentData.Options.class);
+    // Option validation is not yet automatic, we make an explicit call here.
     GenomicsDatasetOptions.Methods.validateOptions(options);
 
     Preconditions.checkState(options.getHasNonVariantSegments(),
