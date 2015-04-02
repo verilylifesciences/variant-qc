@@ -26,7 +26,7 @@
   library(GoogleGenomics)
   ```
   
-1. If you have not already done so, follow the Google Genomics [sign up instructions](https://cloud-dot-devsite.googleplex.com/genomics/install-genomics-tools#authenticate) to generate and download a valid ``client_secrets.json`` file.
+1. If you have not already done so, follow the Google Genomics [sign up instructions](https://cloud.google.com/genomics/install-genomics-tools#authenticate) to generate and download a valid ``client_secrets.json`` file.
 
 1. Now use that file to authenticate the GoogleGenomics library:
   ```
