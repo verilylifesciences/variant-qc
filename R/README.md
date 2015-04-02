@@ -6,14 +6,17 @@
 ## Prerequisites
 
 ### Required
+1. Ensure that [BigQuery is enabled](https://console.developers.google.com/flows/enableapi?apiid=bigquery)
+   for your Google Cloud Platform project in the Google Developers Console.
+
+1. Ensure that [GoogleGenomics is enabled](https://console.developers.google.com/flows/enableapi?apiid=genomics)
+   for your Google Cloud Platform project in the Google Developers Console.
+
 1. Install the `bigrquery` package
   ```
   install.packages("bigrquery")
   ```
   
-1. Create a [BigQuery enabled project](https://console.developers.google.com/flows/enableapi?apiid=bigquery)
-   in the Google Developers Console and save the resulting Project ID for later use.
-
 1. Install the GoogleGenomics R package. 
   ```
   source("http://bioconductor.org/biocLite.R") 
@@ -23,8 +26,7 @@
   library(GoogleGenomics)
   ```
   
-1. Follow the first step on https://cloud.google.com/genomics to set up
-   credentials for a "Client ID for native application" and download a `client_secrets.json` file.
+1. If you have not already done so, follow the Google Genomics [sign up instructions](https://cloud-dot-devsite.googleplex.com/genomics/install-genomics-tools#authenticate) to generate and download a valid ``client_secrets.json`` file.
 
 1. Now use that file to authenticate the GoogleGenomics library:
   ```
