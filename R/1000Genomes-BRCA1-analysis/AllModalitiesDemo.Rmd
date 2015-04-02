@@ -48,7 +48,7 @@ setwd("/YOUR/PATH/TO/codelabs/R/1000Genomes-BRCA1-analysis")
 ```{r message=FALSE, comment=NA}
 pca_1kg <- read.table("./data/1kg-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 ```
-This analysis performed an `O(N^2)` computation upon the relevant fields within the *terabyte* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/v1beta/reference/variants) for its input.  Please see [the instructions](https://github.com/googlegenomics/spark-examples) for how to run this job and the relevant [source code](https://github.com/googlegenomics/spark-examples/blob/master/src/main/scala/com/google/cloud/genomics/spark/examples/VariantsPca.scala#L37) for implementation details.  When running upon X cores, this job typically takes Y minutes.
+This analysis performed an `O(N^2)` computation upon the relevant fields within the *terabyte* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/v1beta2/reference/variants) for its input.  Please see [the instructions](https://github.com/googlegenomics/spark-examples) for how to run this job and the relevant [source code](https://github.com/googlegenomics/spark-examples/blob/master/src/main/scala/com/google/cloud/genomics/spark/examples/VariantsPca.scala#L37) for implementation details.  When running upon X cores, this job typically takes Y minutes.
 
 Visualizing the results, we see quite distinct clusters:
 ```{r pca, fig.align="center", fig.width=10, message=FALSE, comment=NA}
