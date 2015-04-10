@@ -36,7 +36,7 @@
 
 ### Optional
 1. The codelabs load results of previously run Google Cloud Dataflow and Apache Spark jobs.
-  * If you would like to run the jobs yourself, please see [Getting Started with Dataflow](https://github.com/googlegenomics/dataflow-examples) and/or [Getting Started with Spark](https://github.com/googlegenomics/spark-examples).
+  * If you would like to run the jobs yourself, please see [Getting Started with Dataflow](https://github.com/googlegenomics/dataflow-java) and/or [Getting Started with Spark](https://github.com/googlegenomics/spark-examples).
 
   * To grab job results from Google Cloud Storage and turn them into a TSV file.  For example:
     ```
