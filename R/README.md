@@ -53,9 +53,9 @@
   ```
   install.packages("dplyr")
   install.packages("ggplot2")
-  biocLite("TxDb.Hsapiens.UCSC.hg19.knownGene")
-  biocLite("BSgenome.Hsapiens.UCSC.hg19")
-  biocLite("ggbio")
+  biocLite("TxDb.Hsapiens.UCSC.hg19.knownGene", suppressUpdates=TRUE)
+  biocLite("BSgenome.Hsapiens.UCSC.hg19", suppressUpdates=TRUE)
+  biocLite("ggbio", suppressUpdates=TRUE)
   ```
 
 
