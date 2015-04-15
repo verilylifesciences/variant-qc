@@ -11,7 +11,7 @@
     <dependency>
       <groupId>com.google.cloud.genomics</groupId>
       <artifactId>google-genomics-dataflow</artifactId>
-      <version>v1beta2-0.5</version>
+      <version>v1beta2-0.6</version>
     </dependency>
   </dependencies>
 

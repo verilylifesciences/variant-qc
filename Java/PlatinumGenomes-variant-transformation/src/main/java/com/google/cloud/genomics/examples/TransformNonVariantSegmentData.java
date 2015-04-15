@@ -30,6 +30,7 @@ import com.google.cloud.dataflow.sdk.io.BigQueryIO;
 import com.google.cloud.dataflow.sdk.options.Description;
 import com.google.cloud.dataflow.sdk.options.PipelineOptionsFactory;
 import com.google.cloud.dataflow.sdk.options.Validation;
+import com.google.cloud.dataflow.sdk.transforms.Create;
 import com.google.cloud.dataflow.sdk.transforms.DoFn;
 import com.google.cloud.dataflow.sdk.transforms.ParDo;
 import com.google.cloud.dataflow.sdk.values.PCollection;
@@ -146,7 +147,12 @@ public class TransformNonVariantSegmentData {
   }
 
   public static void main(String[] args) throws IOException, GeneralSecurityException {
-    Options options = PipelineOptionsFactory.fromArgs(args).withValidation().as(Options.class);
+    // Register the options so that they show up via --help
+    PipelineOptionsFactory.register(TransformNonVariantSegmentData.Options.class);
+    TransformNonVariantSegmentData.Options options =
+        PipelineOptionsFactory.fromArgs(args).withValidation()
+            .as(TransformNonVariantSegmentData.Options.class);
+    // Option validation is not yet automatic, we make an explicit call here.
     GenomicsDatasetOptions.Methods.validateOptions(options);
 
     Preconditions.checkState(options.getHasNonVariantSegments(),
@@ -161,8 +167,8 @@ public class TransformNonVariantSegmentData {
     Pipeline p = Pipeline.create(options);
     DataflowWorkarounds.registerGenomicsCoders(p);
 
-    PCollection<SearchVariantsRequest> input =
-        DataflowWorkarounds.getPCollection(requests, p);
+    PCollection<SearchVariantsRequest> input = p.begin()
+        .apply(Create.of(requests));
 
     PCollection<Variant> variants =
         JoinNonVariantSegmentsWithVariants.joinVariantsTransform(input, auth);

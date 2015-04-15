@@ -33,30 +33,28 @@
   GoogleGenomics::authenticate("/path/to/client_secrets.json")
   ```
 
+1. If you do not already have them, install additional R packages referenced by the codelabs.
+  ```
+  install.packages("ggplot2")
+  install.packages("dplyr")
+  install.packages("scales")
+  ```
+
+1. If you do not already have them, install additional Bioconductor R packages referenced by the codelabs _(Note that these are only used in the [Data Analysis using Google Genomics](./1000Genomes-BRCA1-analysis) codelab.)_
+```
+  biocLite("ggbio", suppressUpdates=TRUE)
+  biocLite("TxDb.Hsapiens.UCSC.hg19.knownGene", suppressUpdates=TRUE)
+  # This is a large download and takes a little while to install.
+  biocLite("BSgenome.Hsapiens.UCSC.hg19", suppressUpdates=TRUE)
+```
 
 ### Optional
-1. The codelabs load results of previously run Google Cloud Dataflow and Apache Spark jobs.
-  * If you would like to run the jobs yourself, please see [Getting Started with Dataflow](https://github.com/googlegenomics/dataflow-examples) and/or [Getting Started with Spark](https://github.com/googlegenomics/spark-examples).
 
-  * To grab job results from Google Cloud Storage and turn them into a TSV file.  For example:
-    ```
-    gsutil cat gs://<bucket-name>/<output-path>-pca.tsv/part* > pca-results.tsv
-    ```
+The codelabs load previously computed Principal Coordinate Analysis and Identity-By-State results.  You can run these jobs yourself, giving an opportunity to use Google Cloud Dataflow or Apache Spark.
 
-  * To then load the TSV into R.  For example:
-    ```
-    pcaResults <- read.delim('pca-results.tsv', col.names=c("Sample", "PC1", "PC2"))
-    ```
-
-1. pre-install additional R packages referenced by the codelabs:
-
-  ```
-  install.packages("dplyr")
-  install.packages("ggplot2")
-  biocLite("TxDb.Hsapiens.UCSC.hg19.knownGene", suppressUpdates=TRUE)
-  biocLite("BSgenome.Hsapiens.UCSC.hg19", suppressUpdates=TRUE)
-  biocLite("ggbio", suppressUpdates=TRUE)
-  ```
+Instructions are provided to run them over a small portion of the genome, only taking a few minutes, and also how to run them over the whole genome, which can take a few hours depending upon how many machines are running concurrently. For more detail, please see:
+   * [Principal Coordinate Analysis](http://googlegenomics.readthedocs.org/en/latest/use_cases/compute_principal_coordinate_analysis/index.html)
+   * [Identity-By-State](http://googlegenomics.readthedocs.org/en/latest/use_cases/compute_identity_by_state/index.html)
 
 
 ## Tips
