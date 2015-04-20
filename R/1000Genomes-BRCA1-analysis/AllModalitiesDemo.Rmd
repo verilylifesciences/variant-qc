@@ -61,7 +61,7 @@ ggplot(pca_1kg) +
 ```
 
 Let's pull in the [supplementary information](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/README_20130606_sample_info) we do have on these samples from [Google Cloud Storage](https://cloud.google.com/storage/):
-```{r message=FALSE, comment=NA}
+```{r message=FALSE, warning=FALSE, comment=NA}
 sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
 require(dplyr)
 pca_1kg <- inner_join(pca_1kg, sample_info)
@@ -104,7 +104,7 @@ Number of rows returned by this query: `r nrow(sample_alt_counts)`.
 This analysis performed an `O(N)` computation via [Google BigQuery](https://cloud.google.com/bigquery/).  Since BigQuery is a columnar data store, it scans only the columns referenced by the query.  In this case, 1 TB of data was scanned, typically within 10 seconds.
 
 Visualizing the results, we again see quite distinct clusters:
-```{r alt-counts, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r alt-counts, fig.align="center", fig.width=10, message=FALSE, warning=FALSE, comment=NA}
 sample_alt_counts <- inner_join(sample_alt_counts, sample_info)
 require(scales) # for scientific_format()
 ggplot(sample_alt_counts) +
@@ -138,7 +138,7 @@ ggplot(pca_1kg_brca1) +
 we see distinct clusters with a structure much different than our former result upon the entire dataset.
 
 Let's apply the sample information we do have (just gender and ethnicity) to this visualization to see if any of it appears to explain the clustering.  First, we'll try gender:
-```{r brca1-pca-with-gender, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r brca1-pca-with-gender, fig.align="center", fig.width=10, message=FALSE, warning=FALSE, comment=NA}
 pca_1kg_brca1 <- inner_join(pca_1kg_brca1, sample_info)
 ggplot(pca_1kg_brca1) +
   geom_point(aes(x=PC1, y=PC2, color=Gender)) +

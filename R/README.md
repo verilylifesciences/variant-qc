@@ -17,20 +17,18 @@
   install.packages("bigrquery")
   ```
   
-1. Install the GoogleGenomics R package. 
+1. Install the GoogleGenomics R package.
   ```
   source("http://bioconductor.org/biocLite.R") 
-  biocLite(suppressUpdates=TRUE) 
-  options(repos=biocinstallRepos())
-  devtools::install_github("googlegenomics/api-client-r")
-  library(GoogleGenomics)
+  biocLite("GoogleGenomics")
   ```
   
 1. If you have not already done so, follow the Google Genomics [sign up instructions](https://cloud.google.com/genomics/install-genomics-tools#authenticate) to generate and download a valid ``client_secrets.json`` file.
 
 1. Now use that file to authenticate the GoogleGenomics library:
   ```
-  GoogleGenomics::authenticate("/path/to/client_secrets.json")
+  require(GoogleGenomics)
+  GoogleGenomics::authenticate("/PATH/TO/YOUR/client_secrets.json")
   ```
 
 1. If you do not already have them, install additional R packages referenced by the codelabs.
