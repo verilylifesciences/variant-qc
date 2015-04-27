@@ -35,6 +35,7 @@ In Part 4 of the codelab, we perform some quality control analyses that could he
 
 * [Ti/Tv by Genomic Window](#titv-by-genomic-window)
 * [Ti/Tv by Alternate Allele Counts](#titv-by-alternate-allele-counts)
+* [Ti/Tv by Depth](#titv-by-depth)
 * [Missingness Rate](#missingness-rate)
 * [Hardy-Weinberg Equilibrium](#hardy-weinberg-equilibrium)
 * [Heterozygous Haplotype](#heterozygous-haplotype)
@@ -112,6 +113,29 @@ ggplot(result, aes(x=alternate_allele_count, y=titv)) +
   xlab("Total Number of Sample Alleles with the Variant") +
   ylab("Ti/Tv") +
   ggtitle("Ti/Tv by Alternate Allele Count")
+```
+
+## Ti/Tv by Depth
+
+Visualize the ratio of transitions vs. transversions by depth of coverage.
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+query <- "./sql/ti-tv-by-depth.sql"
+result <- DisplayAndDispatchQuery(query,
+                                  project=project,
+                                  replacements=c(queryReplacements))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(head(result)), type="html", include.rownames=F)
+```
+
+```{r titv-by-depth, fig.align="center", fig.width=10, message=FALSE, comment=NA, warning=FALSE}
+ggplot(result, aes(x=average_depth, y=titv_ratio, color=call_call_set_name)) + 
+  geom_point() +
+  ggtitle("Ti/Tv Ratio By Depth") +
+  xlab("Coverage Depth") + 
+  ylab("Ti/Tv")
 ```
 
 ## Missingness Rate
