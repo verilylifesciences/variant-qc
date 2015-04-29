@@ -17,7 +17,7 @@
   install.packages("bigrquery")
   ```
   
-1. Install the GoogleGenomics R package.
+1. Install the [GoogleGenomics Bioconductor package](http://www.bioconductor.org/packages/release/bioc/html/GoogleGenomics.html).  _If you are unable to upgrade to the [Bioconductor 3.1/R 3.2 release](http://www.bioconductor.org/news/bioc_3_1_release/) see [the instructions](https://github.com/googlegenomics/api-client-r) to install it via devtools._
   ```
   source("http://bioconductor.org/biocLite.R") 
   biocLite("GoogleGenomics")
@@ -38,7 +38,7 @@
   install.packages("scales")
   ```
 
-1. If you do not already have them, install additional Bioconductor R packages referenced by the codelabs _(Note that these are only used in the [Data Analysis using Google Genomics](./1000Genomes-BRCA1-analysis) codelab.)_
+1. If you do not already have them, install additional Bioconductor R packages referenced by the codelabs. _Note that these are only used in the [Data Analysis using Google Genomics](./1000Genomes-BRCA1-analysis) codelab._
 ```
   biocLite("ggbio", suppressUpdates=TRUE)
   biocLite("TxDb.Hsapiens.UCSC.hg19.knownGene", suppressUpdates=TRUE)
