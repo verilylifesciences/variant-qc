@@ -495,45 +495,45 @@ codingVariants
 
 ```
 GRanges object with 22 ranges and 9 metadata columns:
-       seqnames               ranges strand   | LOCATION  LOCSTART
-          <Rle>            <IRanges>  <Rle>   | <factor> <integer>
-   [1]    chr17 [41244000, 41244000]      -   |   coding      3335
-   [2]    chr17 [41244000, 41244000]      -   |   coding      3407
-   [3]    chr17 [41244000, 41244000]      -   |   coding      3548
-   [4]    chr17 [41244000, 41244000]      -   |   coding      3548
-   [5]    chr17 [41244000, 41244000]      -   |   coding      3548
-   ...      ...                  ...    ... ...      ...       ...
-  [18]    chr17 [41245466, 41245466]      -   |   coding      2082
-  [19]    chr17 [41245466, 41245466]      -   |   coding      2082
-  [20]    chr17 [41245466, 41245466]      -   |   coding      1941
-  [21]    chr17 [41245466, 41245466]      -   |   coding      2004
-  [22]    chr17 [41245466, 41245466]      -   |   coding      1194
-          LOCEND   QUERYID      TXID     CDSID      GENEID       PRECEDEID
-       <integer> <integer> <integer> <integer> <character> <CharacterList>
-   [1]      3335         8     63595    186231         672                
-   [2]      3407         8     63598    186231         672                
-   [3]      3548         8     63599    186231         672                
-   [4]      3548         8     63600    186231         672                
-   [5]      3548         8     63607    186230         672                
-   ...       ...       ...       ...       ...         ...             ...
-  [18]      2082         9     63609    186233         672                
-  [19]      2082         9     63610    186233         672                
-  [20]      1941         9     63611    186233         672                
-  [21]      2004         9     63612    186233         672                
-  [22]      1194         9     63613    186232         672                
-              FOLLOWID
-       <CharacterList>
-   [1]                
-   [2]                
-   [3]                
-   [4]                
-   [5]                
-   ...             ...
-  [18]                
-  [19]                
-  [20]                
-  [21]                
-  [22]                
+      seqnames               ranges strand   | LOCATION  LOCSTART
+         <Rle>            <IRanges>  <Rle>   | <factor> <integer>
+    1    chr17 [41244000, 41244000]      *   |   coding      3335
+    2    chr17 [41244000, 41244000]      *   |   coding      3407
+    3    chr17 [41244000, 41244000]      *   |   coding      3548
+    4    chr17 [41244000, 41244000]      *   |   coding      3548
+    5    chr17 [41244000, 41244000]      *   |   coding      3548
+  ...      ...                  ...    ... ...      ...       ...
+   18    chr17 [41245466, 41245466]      *   |   coding      2082
+   19    chr17 [41245466, 41245466]      *   |   coding      2082
+   20    chr17 [41245466, 41245466]      *   |   coding      1941
+   21    chr17 [41245466, 41245466]      *   |   coding      2004
+   22    chr17 [41245466, 41245466]      *   |   coding      1194
+         LOCEND   QUERYID        TXID                    CDSID      GENEID
+      <integer> <integer> <character>            <IntegerList> <character>
+    1      3335         8       63595 186231,186230,186233,...         672
+    2      3407         8       63598 186231,186230,186233,...         672
+    3      3548         8       63599 186231,186230,186233,...         672
+    4      3548         8       63600 186231,186230,186233,...         672
+    5      3548         8       63607 186231,186230,186233,...         672
+  ...       ...       ...         ...                      ...         ...
+   18      2082         9       63609 186231,186230,186233,...         672
+   19      2082         9       63610 186231,186230,186233,...         672
+   20      1941         9       63611 186231,186230,186233,...         672
+   21      2004         9       63612 186231,186230,186233,...         672
+   22      1194         9       63613 186231,186230,186233,...         672
+            PRECEDEID        FOLLOWID
+      <CharacterList> <CharacterList>
+    1                                
+    2                                
+    3                                
+    4                                
+    5                                
+  ...             ...             ...
+   18                                
+   19                                
+   20                                
+   21                                
+   22                                
   -------
   seqinfo: 1 sequence from an unspecified genome; no seqlengths
 ```
@@ -574,45 +574,45 @@ GRanges object with 22 ranges and 16 metadata columns:
   rs1799949                  A       100        PASS              T
   rs1799949                  A       100        PASS              T
   rs1799949                  A       100        PASS              T
-                  CDSLOC    PROTEINLOC   QUERYID        TXID     CDSID
-               <IRanges> <IntegerList> <integer> <character> <integer>
-    rs16942 [3335, 3335]          1112         8       63595    186231
-    rs16942 [3407, 3407]          1136         8       63598    186231
-    rs16942 [3548, 3548]          1183         8       63599    186231
-    rs16942 [3548, 3548]          1183         8       63600    186231
-    rs16942 [3548, 3548]          1183         8       63607    186230
-        ...          ...           ...       ...         ...       ...
-  rs1799949 [2082, 2082]           694         9       63609    186233
-  rs1799949 [2082, 2082]           694         9       63610    186233
-  rs1799949 [1941, 1941]           647         9       63611    186233
-  rs1799949 [2004, 2004]           668         9       63612    186233
-  rs1799949 [1194, 1194]           398         9       63613    186232
-                 GENEID   CONSEQUENCE       REFCODON       VARCODON
-            <character>      <factor> <DNAStringSet> <DNAStringSet>
-    rs16942         672 nonsynonymous            AAA            AGA
-    rs16942         672 nonsynonymous            AAA            AGA
-    rs16942         672 nonsynonymous            AAA            AGA
-    rs16942         672 nonsynonymous            AAA            AGA
-    rs16942         672 nonsynonymous            AAA            AGA
-        ...         ...           ...            ...            ...
-  rs1799949         672    synonymous            AGC            AGT
-  rs1799949         672    synonymous            AGC            AGT
-  rs1799949         672    synonymous            AGC            AGT
-  rs1799949         672    synonymous            AGC            AGT
-  rs1799949         672    synonymous            AGC            AGT
-                    REFAA         VARAA
-            <AAStringSet> <AAStringSet>
-    rs16942             K             R
-    rs16942             K             R
-    rs16942             K             R
-    rs16942             K             R
-    rs16942             K             R
-        ...           ...           ...
-  rs1799949             S             S
-  rs1799949             S             S
-  rs1799949             S             S
-  rs1799949             S             S
-  rs1799949             S             S
+                  CDSLOC    PROTEINLOC   QUERYID        TXID
+               <IRanges> <IntegerList> <integer> <character>
+    rs16942 [3335, 3335]          1112         8       63595
+    rs16942 [3407, 3407]          1136         8       63598
+    rs16942 [3548, 3548]          1183         8       63599
+    rs16942 [3548, 3548]          1183         8       63600
+    rs16942 [3548, 3548]          1183         8       63607
+        ...          ...           ...       ...         ...
+  rs1799949 [2082, 2082]           694         9       63609
+  rs1799949 [2082, 2082]           694         9       63610
+  rs1799949 [1941, 1941]           647         9       63611
+  rs1799949 [2004, 2004]           668         9       63612
+  rs1799949 [1194, 1194]           398         9       63613
+                               CDSID      GENEID   CONSEQUENCE
+                       <IntegerList> <character>      <factor>
+    rs16942 186231,186230,186233,...         672 nonsynonymous
+    rs16942 186231,186230,186233,...         672 nonsynonymous
+    rs16942 186231,186230,186233,...         672 nonsynonymous
+    rs16942 186231,186230,186233,...         672 nonsynonymous
+    rs16942 186231,186230,186233,...         672 nonsynonymous
+        ...                      ...         ...           ...
+  rs1799949 186231,186230,186233,...         672    synonymous
+  rs1799949 186231,186230,186233,...         672    synonymous
+  rs1799949 186231,186230,186233,...         672    synonymous
+  rs1799949 186231,186230,186233,...         672    synonymous
+  rs1799949 186231,186230,186233,...         672    synonymous
+                  REFCODON       VARCODON         REFAA         VARAA
+            <DNAStringSet> <DNAStringSet> <AAStringSet> <AAStringSet>
+    rs16942            AAA            AGA             K             R
+    rs16942            AAA            AGA             K             R
+    rs16942            AAA            AGA             K             R
+    rs16942            AAA            AGA             K             R
+    rs16942            AAA            AGA             K             R
+        ...            ...            ...           ...           ...
+  rs1799949            AGC            AGT             S             S
+  rs1799949            AGC            AGT             S             S
+  rs1799949            AGC            AGT             S             S
+  rs1799949            AGC            AGT             S             S
+  rs1799949            AGC            AGT             S             S
   -------
   seqinfo: 1 sequence from an unspecified genome; no seqlengths
 ```
@@ -649,16 +649,16 @@ GAlignments object with 38 alignments and 1 metadata column:
    ERR016213.5228009    chr17      -         68M        68  41218496
                            end     width     njunc   |      flag
                      <integer> <integer> <integer>   | <numeric>
-  ERR251040.39294893  41218204       100         0   |        83
+  ERR251040.39294893  41218204       100         0   |        19
   ERR251040.23636053  41218217       100         0   |       147
-  ERR016214.20846952  41218204        77         0   |        83
-   ERR251039.9112219  41218208        69         0   |        97
+  ERR016214.20846952  41218204        77         0   |        19
+   ERR251039.9112219  41218208        69         0   |        33
    ERR251040.9517733  41218257       100         0   |       163
                  ...       ...       ...       ... ...       ...
-  ERR251039.29590756  41218528       100         0   |        83
+  ERR251039.29590756  41218528       100         0   |        19
     ERR251039.668959  41218564       100         0   |       163
    ERR016214.4338110  41218508        35         0   |       147
-  ERR251039.41699004  41218583       100         0   |        99
+  ERR251039.41699004  41218583       100         0   |        35
    ERR016213.5228009  41218563        68         0   |       147
   -------
   seqinfo: 1 sequence from an unspecified genome; no seqlengths
@@ -688,8 +688,9 @@ sessionInfo()
 ```
 
 ```
-R version 3.1.2 (2014-10-31)
+R version 3.2.0 (2015-04-16)
 Platform: x86_64-apple-darwin13.4.0 (64-bit)
+Running under: OS X 10.9.5 (Mavericks)
 
 locale:
 [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -699,52 +700,50 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] scales_0.2.4                           
- [2] bigrquery_0.1                          
- [3] dplyr_0.3.0.2                          
- [4] testthat_0.9.1                         
- [5] BSgenome.Hsapiens.UCSC.hg19_1.3.99     
- [6] BSgenome_1.34.0                        
- [7] rtracklayer_1.26.1                     
- [8] TxDb.Hsapiens.UCSC.hg19.knownGene_3.0.0
- [9] GenomicFeatures_1.18.2                 
-[10] AnnotationDbi_1.28.1                   
-[11] Biobase_2.26.0                         
-[12] ggbio_1.14.0                           
-[13] ggplot2_1.0.0                          
-[14] knitr_1.7                              
-[15] GoogleGenomics_0.1.2                   
-[16] VariantAnnotation_1.12.3               
-[17] GenomicAlignments_1.2.1                
-[18] Rsamtools_1.18.1                       
-[19] Biostrings_2.34.0                      
-[20] XVector_0.6.0                          
-[21] GenomicRanges_1.18.1                   
-[22] GenomeInfoDb_1.2.2                     
-[23] IRanges_2.0.0                          
-[24] S4Vectors_0.4.0                        
-[25] BiocGenerics_0.12.0                    
-[26] BiocInstaller_1.16.1                   
+ [1] ggbio_1.16.0                           
+ [2] TxDb.Hsapiens.UCSC.hg19.knownGene_3.1.2
+ [3] GenomicFeatures_1.20.0                 
+ [4] AnnotationDbi_1.30.0                   
+ [5] Biobase_2.28.0                         
+ [6] BSgenome.Hsapiens.UCSC.hg19_1.4.0      
+ [7] BSgenome_1.36.0                        
+ [8] rtracklayer_1.28.0                     
+ [9] ggplot2_1.0.1                          
+[10] knitr_1.9                              
+[11] scales_0.2.4                           
+[12] bigrquery_0.1.0                        
+[13] dplyr_0.4.1                            
+[14] GoogleGenomics_1.0.0                   
+[15] VariantAnnotation_1.14.0               
+[16] GenomicAlignments_1.4.0                
+[17] Rsamtools_1.20.0                       
+[18] Biostrings_2.36.0                      
+[19] XVector_0.8.0                          
+[20] GenomicRanges_1.20.1                   
+[21] GenomeInfoDb_1.4.0                     
+[22] IRanges_2.2.0                          
+[23] S4Vectors_0.6.0                        
+[24] BiocGenerics_0.14.0                    
+[25] BiocInstaller_1.18.1                   
 
 loaded via a namespace (and not attached):
- [1] acepack_1.3-3.3     assertthat_0.1      base64enc_0.1-2    
- [4] BatchJobs_1.5       BBmisc_1.8          BiocParallel_1.0.0 
- [7] biomaRt_2.22.0      biovizBase_1.14.0   bitops_1.0-6       
-[10] brew_1.0-6          checkmate_1.5.0     cluster_1.15.3     
-[13] codetools_0.2-9     colorspace_1.2-4    DBI_0.3.1          
-[16] dichromat_2.0-0     digest_0.6.4        evaluate_0.5.5     
-[19] fail_1.2            foreach_1.4.2       foreign_0.8-61     
-[22] formatR_1.0         Formula_1.1-2       GGally_0.4.8       
-[25] graph_1.44.0        grid_3.1.2          gridExtra_0.9.1    
-[28] gtable_0.1.2        Hmisc_3.14-5        httr_0.5           
-[31] iterators_1.0.7     jsonlite_0.9.13     labeling_0.3       
-[34] lattice_0.20-29     latticeExtra_0.6-26 lazyeval_0.1.9     
-[37] magrittr_1.0.1      MASS_7.3-35         munsell_0.4.2      
-[40] nnet_7.3-8          OrganismDbi_1.8.0   plyr_1.8.1         
-[43] proto_0.3-10        RBGL_1.42.0         RColorBrewer_1.0-5 
-[46] Rcpp_0.11.3         RCurl_1.95-4.3      reshape_0.8.5      
-[49] reshape2_1.4        rjson_0.2.15        rpart_4.1-8        
-[52] RSQLite_1.0.0       sendmailR_1.2-1     splines_3.1.2      
-[55] stringr_0.6.2       survival_2.37-7     tools_3.1.2        
-[58] XML_3.98-1.1        zlibbioc_1.12.0    
+ [1] Rcpp_0.11.5          biovizBase_1.16.0    lattice_0.20-31     
+ [4] assertthat_0.1       digest_0.6.8         R6_2.0.1            
+ [7] plyr_1.8.1           futile.options_1.0.0 acepack_1.3-3.3     
+[10] RSQLite_1.0.0        evaluate_0.6         httr_0.6.1          
+[13] zlibbioc_1.14.0      lazyeval_0.1.10      rpart_4.1-9         
+[16] rmarkdown_0.5.1      proto_0.3-10         labeling_0.3        
+[19] splines_3.2.0        BiocParallel_1.2.0   stringr_0.6.2       
+[22] foreign_0.8-63       RCurl_1.95-4.5       biomaRt_2.24.0      
+[25] munsell_0.4.2        htmltools_0.2.6      nnet_7.3-9          
+[28] gridExtra_0.9.1      Hmisc_3.15-0         XML_3.98-1.1        
+[31] reshape_0.8.5        MASS_7.3-40          bitops_1.0-6        
+[34] RBGL_1.44.0          grid_3.2.0           jsonlite_0.9.16     
+[37] GGally_0.5.0         gtable_0.1.2         DBI_0.3.1           
+[40] magrittr_1.5         formatR_1.1          graph_1.46.0        
+[43] reshape2_1.4.1       latticeExtra_0.6-26  futile.logger_1.4.1 
+[46] Formula_1.2-1        rjson_0.2.15         lambda.r_1.1.7      
+[49] RColorBrewer_1.1-2   tools_3.2.0          dichromat_2.0-0     
+[52] OrganismDbi_1.10.0   survival_2.38-1      colorspace_1.2-6    
+[55] cluster_2.0.1       
 ```
