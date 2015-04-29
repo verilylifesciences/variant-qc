@@ -107,7 +107,8 @@ You have now created a table like [google.com:biggene:platinum_genomes.expanded_
 
 (1) Get the schema for your data:
 ```
-bq --project YOUR_GOOGLE_CLOUD_PLATFORM_PROJECT_ID show --format json YOUR_BIGQUERY_INPUT_DATASET.YOUR_BIGQUERY_INPUT_TABLE} | python -c \
+bq --project YOUR_GOOGLE_CLOUD_PLATFORM_PROJECT_ID show --format json \
+YOUR_BIGQUERY_INPUT_DATASET.YOUR_BIGQUERY_INPUT_TABLE | python -c \
 "import json,sys ; print \"%s\" % (json.dumps(json.loads(sys.stdin.readline())['schema']['fields']).replace(\"'\", \"_\"))" \
 > YOUR_BIGQUERY_INPUT_DATASET.YOUR_BIGQUERY_INPUT_TABLE.schema
 ```
