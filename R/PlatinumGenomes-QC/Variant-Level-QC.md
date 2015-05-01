@@ -24,6 +24,7 @@ In Part 4 of the codelab, we perform some quality control analyses that could he
 
 * [Ti/Tv by Genomic Window](#titv-by-genomic-window)
 * [Ti/Tv by Alternate Allele Counts](#titv-by-alternate-allele-counts)
+* [Ti/Tv by Depth](#titv-by-depth)
 * [Missingness Rate](#missingness-rate)
 * [Hardy-Weinberg Equilibrium](#hardy-weinberg-equilibrium)
 * [Heterozygous Haplotype](#heterozygous-haplotype)
@@ -96,7 +97,7 @@ Number of rows returned by this query: **2279**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Tue Mar  3 11:35:59 2015 -->
+<!-- Mon Apr 27 13:43:14 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr1 </td> <td align="right">   0 </td> <td align="right"> 293 </td> <td align="right"> 198 </td> <td align="right"> 1.48 </td> <td align="right"> 491 </td> </tr>
@@ -169,7 +170,7 @@ Number of rows returned by this query: **35**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Tue Mar  3 11:36:07 2015 -->
+<!-- Mon Apr 27 13:43:18 2015 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> alternate_allele_count </th>  </tr>
   <tr> <td align="right"> 350843 </td> <td align="right"> 172896 </td> <td align="right"> 2.03 </td> <td align="right">  34 </td> </tr>
@@ -193,6 +194,92 @@ ggplot(result, aes(x=alternate_allele_count, y=titv)) +
 ```
 
 <img src="figure/titvByAlt-1.png" title="plot of chunk titvByAlt" alt="plot of chunk titvByAlt" style="display: block; margin: auto;" />
+
+## Ti/Tv by Depth
+
+Visualize the ratio of transitions vs. transversions by depth of coverage.
+
+
+```r
+query <- "./sql/ti-tv-by-depth.sql"
+result <- DisplayAndDispatchQuery(query,
+                                  project=project,
+                                  replacements=c(queryReplacements))
+```
+
+```
+# Transition/Transversion Ratio by Depth of Coverage
+SELECT
+  call.call_set_name,
+  (transitions/transversions) AS titv_ratio,
+  average_depth,
+FROM (
+  SELECT
+    call.call_set_name,
+    SUM(mutation IN ('A->G', 'G->A', 'C->T', 'T->C')) AS transitions,
+    SUM(mutation IN ('A->C', 'C->A', 'G->T', 'T->G',
+                     'A->T', 'T->A', 'C->G', 'G->C')) AS transversions,
+    ROUND(AVG(call.DP)) AS average_depth,
+  FROM (
+
+    SELECT
+      call.call_set_name,
+      CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
+      COUNT(alternate_bases) WITHIN RECORD AS num_alts,
+      call.DP
+    FROM (
+      SELECT
+        call.call_set_name,
+        reference_bases,
+        GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+        call.genotype,
+        call.DP,
+      FROM
+        [google.com:biggene:platinum_genomes.expanded_variants]
+      # Optionally add clause here to limit the query to a particular
+      # region of the genome.
+      #_WHERE_  
+      )
+    WHERE
+      call.DP is not null
+    HAVING
+      # Skip 1/2 genotypes _and non-SNP variants
+      num_alts = 1
+      AND reference_bases IN ('A','C','G','T')
+      AND alternate_bases IN ('A','C','G','T'))
+    GROUP BY 
+      call.call_set_name,
+      call.DP,)
+WHERE
+  transversions > 0
+GROUP BY
+  call.call_set_name,
+  titv_ratio,
+  average_depth,
+```
+
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Mon Apr 27 13:43:24 2015 -->
+<table border=1>
+<tr> <th> call_call_set_name </th> <th> titv_ratio </th> <th> average_depth </th>  </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 1.57 </td> <td align="right"> 50.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 1.35 </td> <td align="right"> 42.00 </td> </tr>
+  <tr> <td> NA12889 </td> <td align="right"> 1.68 </td> <td align="right"> 62.00 </td> </tr>
+  <tr> <td> NA12885 </td> <td align="right"> 1.57 </td> <td align="right"> 45.00 </td> </tr>
+  <tr> <td> NA12883 </td> <td align="right"> 1.53 </td> <td align="right"> 45.00 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 1.69 </td> <td align="right"> 61.00 </td> </tr>
+   </table>
+
+
+```r
+ggplot(result, aes(x=average_depth, y=titv_ratio, color=call_call_set_name)) + 
+  geom_point() +
+  ggtitle("Ti/Tv Ratio By Depth") +
+  xlab("Coverage Depth") + 
+  ylab("Ti/Tv")
+```
+
+<img src="figure/titv-by-depth-1.png" title="plot of chunk titv-by-depth" alt="plot of chunk titv-by-depth" style="display: block; margin: auto;" />
 
 ## Missingness Rate
 
@@ -240,7 +327,7 @@ Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Tue Mar  3 11:36:10 2015 -->
+<!-- Mon Apr 27 13:43:28 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
@@ -360,13 +447,12 @@ FROM (
         )))
 # Optionally add a clause here to sort and limit the results.
 ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000
-Running query:   RUNNING  2.6sRunning query:   RUNNING  3.2s
 ```
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Tue Mar  3 11:36:18 2015 -->
+<!-- Mon Apr 27 13:43:33 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -417,13 +503,12 @@ OMIT
 HAVING call.call_set_name IN ('NA12877','NA12882','NA12883','NA12884','NA12886','NA12888','NA12889','NA12891','NA12893')
 # Optionally add a clause here to sort and limit the results.
 ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000
-Running query:   RUNNING  2.5s
 ```
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Tue Mar  3 11:36:22 2015 -->
+<!-- Mon Apr 27 13:43:36 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> NA12884 </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> </tr>
