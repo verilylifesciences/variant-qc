@@ -505,7 +505,7 @@ This is a work-in-progress.  See https://github.com/elmer-garduno/spark-examples
 
 ## Genome Similarity
 
-Perform a simplistic similarity check on each pair of genomes to identify any mislabled or cross-contaminated samples.
+Perform a simplistic similarity check on each pair of genomes to identify any mislabled or cross-contaminated samples.  See the Google Genomics [Identity-By-State cookbook entry](http://googlegenomics.readthedocs.org/en/latest/use_cases/compute_identity_by_state/index.html) for the details as to how to run this pipeline.
 
 Note that this `n^2` analysis is a cluster compute job instead of a BigQuery query.
 
@@ -525,31 +525,6 @@ ggplot(ibs) +
 ```
 
 <img src="figure/ibs-1.png" title="plot of chunk ibs" alt="plot of chunk ibs" style="display: block; margin: auto;" />
-
-### To Run the Cluster Compute Job
-
-If you wish to run the Dataflow job, see the [dataflow-java README](https://github.com/googlegenomics/dataflow-java) for instructions to compile and run the job.
-```
-java -cp target/google-genomics-dataflow-*.jar \
-  com.google.cloud.genomics.dataflow.pipelines.IdentityByState \
-  --project=YOUR_GOOGLE_CLOUD_PLATFORM_PROJECT_ID \
-  --stagingLocation=gs://YOUR_BUCKET/dataflow-staging \
-  --genomicsSecretsFile=/PATH/TO/YOUR/client_secrets.json \
-  --datasetId=3049512673186936334 \
-  --references=chr17:41196311:41277499 \
-  --hasNonVariantSegments \
-  --output=gs://YOUR_BUCKET/output/platinum-genomes-brca1-ibs.tsv
-```
-
-* Note that there are several IBS calculators from which to choose.  Use the `--callSimilarityCalculatorFactory` to switch between them.
-* To run this job on the entire dataset:
-  * Add `--runner=DataflowPipelineRunner` to run the job on Google Cloud instead of locally.
-  * Use `--allReferences` instead of `--references=chr17:41196311:41277499` to run over the entire genome.
-* To run the job on a different dataset, change the variant set id for the `--datasetId` id parameter.  (Also, remove the `--nonVariantSegments` parameter if the data does not contain them.)
-* To gather the results into a single file:
-```
-gsutil cat gs://YOUR-BUCKET/output/platinum-genomes-ibs.tsv* | sort > platinum-genomes-ibs.tsv
-```
 
 # Removing Genomes from the Cohort
 
