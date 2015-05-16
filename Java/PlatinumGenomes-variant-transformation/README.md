@@ -77,6 +77,13 @@ To run this job on the entire dataset:
 * Add `--runner=DataflowPipelineRunner` to run the job on Google Cloud instead of locally.
 * Use `--allReferences` instead of `--references=chr17:41196311:41277499` to run over the entire genome.
 
+To see the help text for all pipeline options:
+```
+java -cp target/non-variant-segment-transformer-*.jar \
+  com.google.cloud.genomics.examples.TransformNonVariantSegmentData \
+  --help=com.google.cloud.genomics.examples.TransformNonVariantSegmentData\$Options
+```
+
 ## Results
 
 You have now created a table like [google.com:biggene:platinum_genomes.transformed_variants](https://bigquery.cloud.google.com/table/google.com:biggene:platinum_genomes.transformed_variants?pli=1)
