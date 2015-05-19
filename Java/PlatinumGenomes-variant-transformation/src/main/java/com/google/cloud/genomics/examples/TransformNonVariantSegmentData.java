@@ -68,7 +68,7 @@ import com.google.common.io.Files;
  *
  * This is currently done only for SNP variants. Indels and structural variants are left as-is.
  *
- * The data source is the Google Genomics Variants API. The data sink is BigQuery
+ * The data source is the Google Genomics Variants API. The data sink is BigQuery.
  *
  * <p>
  * The sample could be expanded upon to:
@@ -84,8 +84,7 @@ public class TransformNonVariantSegmentData {
       .getLogger(TransformNonVariantSegmentData.class.getName());
 
   public static final String HAS_AMBIGUOUS_CALLS_FIELD = "ambiguousCalls";
-  public static ImmutableSet<String> genomesToSkip = null;
-
+  
   /**
    * Options supported by {@link TransformNonVariantSegmentData}.
    * <p>
@@ -101,9 +100,9 @@ public class TransformNonVariantSegmentData {
 
     @Description("A file path to an optional list of newline-separated callset names to exclude "
         + "from the results of this pipeline.")
-    String getCallSetNamesToSkip();
+    String getCallSetNamesToExclude();
 
-    void setCallSetNamesToSkip(String value);
+    void setCallSetNamesToExclude(String value);
   }
 
   /**
@@ -139,8 +138,10 @@ public class TransformNonVariantSegmentData {
   }
 
   /**
-   * Prepare the data for writing to BigQuery by building a TableRow object containing data from the
-   * variant mapped onto the schema to be used for the destination table.
+   * Pipeline function to prepare the data for writing to BigQuery.
+   * 
+   * It builds a TableRow object containing data from the variant mapped onto the schema to be used
+   * for the destination table.
    */
   static class FormatVariantsFn extends DoFn<Variant, TableRow> {
     @Override
@@ -178,7 +179,53 @@ public class TransformNonVariantSegmentData {
   }
 
   /**
-   * Optionally filter and then flag any variants with more than one call for a particular callSetName.
+   * Pipeline function to filter out calls for specific callSetNames.
+   * 
+   * One may want to do this for a list of callsets that have failed quality control checks.
+   */
+  public static final class FilterCallsFn extends DoFn<Variant, Variant> {
+    
+    private final ImmutableSet<String> callSetNamesToExclude;
+    
+    /**
+     * @param callSetNamesToExclude
+     */
+    public FilterCallsFn(ImmutableSet<String> callSetNamesToExclude) {
+      super();
+      this.callSetNamesToExclude = callSetNamesToExclude;
+    }
+
+    @Override
+    public void processElement(ProcessContext context) {
+      Variant variant = context.element();
+
+      // We may have variants without calls if any callsets were deleted from the variant set.
+      if(!(null == variant.getCalls() || variant.getCalls().isEmpty())) {
+        List<Call> filteredCalls =
+            Lists.newArrayList(Iterables.filter(variant.getCalls(), new Predicate<Call>() {
+              @Override
+              public boolean apply(Call call) {
+                if (callSetNamesToExclude.contains(call.getCallSetName())) {
+                  return false;
+                }
+                return true;
+              }
+            }));
+        variant.setCalls(filteredCalls);
+      }
+
+      context.output(variant);
+    }
+  }
+  
+  /**
+   * Pipeline function to flag any variants with more than one call for a particular callSetName.
+   * 
+   * We don't see this for the tidy test datasets such as Platinum Genomes. But in practice, we have
+   * seen datasets with the same individual sequenced twice, mistakes in data conversions prior to
+   * this step, etc... So this function emits and aggregate counter of the number of variants with
+   * ambiguous calls for the same individual and also flags the particular variants in which they
+   * occur.
    */
   public static final class FlagVariantsWithAmbiguousCallsFn extends DoFn<Variant, Variant> {
 
@@ -194,29 +241,10 @@ public class TransformNonVariantSegmentData {
     public void processElement(ProcessContext context) {
       Variant variant = context.element();
 
-      // We may have variants with no calls if any callsets were deleted from the variant set. Omit
-      // these variants from our output.
+      // We may have variants without calls if any callsets were deleted from the variant set and/or
+      // a filtering step removed all calls. Omit these variants from our output.
       if(null == variant.getCalls() || variant.getCalls().isEmpty()) {
         return;
-      }
-
-      // Optionally filter out some genomes.
-      if(null != genomesToSkip) {
-        List<Call> filteredCalls =
-            Lists.newArrayList(Iterables.filter(variant.getCalls(), new Predicate<Call>() {
-              @Override
-              public boolean apply(Call call) {
-                if (genomesToSkip.contains(call.getCallSetName())) {
-                  return false;
-                }
-                return true;
-              }
-            }));
-        if (filteredCalls.isEmpty()) {
-          // If this variant has no calls after filtering, omit it from our output.
-          return;
-        }
-        variant.setCalls(filteredCalls);
       }
 
       // Gather calls together for the same callSetName.
@@ -236,7 +264,7 @@ public class TransformNonVariantSegmentData {
               + entry.getValue().iterator().next().getCallSetName());
           isAmbiguous = true;
           variantsWithAmbiguousCallsCount.addValue(1l);
-          break;
+          break;  // No need to look for additional ambiguity; one instance is enough to warrant the flag.
         }
       }
 
@@ -264,13 +292,14 @@ public class TransformNonVariantSegmentData {
             + "Set the --hasNonVariantSegments command line option accordingly.");
 
     // Grab and parse our optional list of genomes to skip.
-    String skipFilepath = options.getCallSetNamesToSkip();
+    ImmutableSet<String> callSetNamesToExclude = null;
+    String skipFilepath = options.getCallSetNamesToExclude();
     if (null != skipFilepath) {
       Iterable<String> callSetNames =
           Splitter.on(CharMatcher.BREAKING_WHITESPACE).omitEmptyStrings().trimResults()
               .split(Files.toString(new File(skipFilepath), Charset.defaultCharset()));
-      genomesToSkip = ImmutableSet.<String>builder().addAll(callSetNames).build();
-      LOG.info("The pipeline will skip " + genomesToSkip.size() + " genomes with callSetNames: " + genomesToSkip);
+      callSetNamesToExclude = ImmutableSet.<String>builder().addAll(callSetNames).build();
+      LOG.info("The pipeline will skip " + callSetNamesToExclude.size() + " genomes with callSetNames: " + callSetNamesToExclude);
     }
 
     GenomicsFactory.OfflineAuth auth = GenomicsOptions.Methods.getGenomicsAuth(options);
@@ -287,9 +316,13 @@ public class TransformNonVariantSegmentData {
     // non-variant segments added to SNPs.
     PCollection<Variant> variants = JoinNonVariantSegmentsWithVariants.joinVariantsTransform(input, auth);
 
-    // For each variant flag whether or not it has ambiguous calls for a particular sample.
-    PCollection<Variant> flaggedVariants = variants.apply(ParDo.of(new FlagVariantsWithAmbiguousCallsFn()));
+    // For each variant flag whether or not it has ambiguous calls for a particular sample and
+    // optionally filter calls.
+    PCollection<Variant> flaggedVariants = callSetNamesToExclude == null 
+        ? variants.apply(ParDo.of(new FlagVariantsWithAmbiguousCallsFn()))
+            : variants.apply(ParDo.of(new FilterCallsFn(callSetNamesToExclude))).apply(ParDo.of(new FlagVariantsWithAmbiguousCallsFn()));
 
+    // Emit the variants to BigQuery.
     flaggedVariants.apply(ParDo.of(new FormatVariantsFn())).apply(
         BigQueryIO.Write.to(options.getOutputTable()).withSchema(getTableSchema())
             .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)

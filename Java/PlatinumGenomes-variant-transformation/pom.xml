@@ -13,6 +13,12 @@
       <artifactId>google-genomics-dataflow</artifactId>
       <version>v1beta2-0.8</version>
     </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -36,7 +42,7 @@
           <instructions>
             <!-- Embed all dependencies -->
             <Embed-Transitive>true</Embed-Transitive>
-            <Embed-Dependency>*;scope=compile|system|runtime;inline=true</Embed-Dependency>
+            <Embed-Dependency>*;scope=compile|runtime;inline=true</Embed-Dependency>
           </instructions>
         </configuration>
       </plugin>
