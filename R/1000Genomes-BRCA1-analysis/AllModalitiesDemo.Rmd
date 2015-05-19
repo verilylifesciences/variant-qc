@@ -41,8 +41,13 @@ Suppose we have a new dataset.  One of the first things we might do is a basic v
 In this example we are reading in previously computed results, but its easy to spin up an [Apache Spark](http://spark.apache.org/) cluster on [Google Compute Engine](https://cloud.google.com/hadoop/what-is-hadoop) and run this analysis.
 
 ```{r echo=FALSE, eval=FALSE}
-# This codelab assumes that the current working directory is where the Rmd file resides
+######################[ CHANGE ME ]##################################
+# This codelab assumes that the current working directory is where the Rmd file resides.
 setwd("/YOUR/PATH/TO/codelabs/R/1000Genomes-BRCA1-analysis")
+
+# Set the Google Cloud Platform project id under which these queries will run.
+project <- "YOUR-PROJECT-ID"
+#####################################################################
 ```
 
 ```{r message=FALSE, comment=NA}
@@ -85,7 +90,6 @@ Let's also visualize a different aspect of this data by examining the variant co
 ```{r comment=NA, message=FALSE, warning=FALSE}
 # Setup for BigQuery access
 require(bigrquery)
-project <- "genomics-public-data"                   # put your projectID here
 DisplayAndDispatchQuery <- function(queryUri, replacements=list()) {
   querySql <- readChar(queryUri, nchars=1e6)
   cat(querySql)
