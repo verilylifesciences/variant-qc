@@ -91,7 +91,6 @@ Let's also visualize a different aspect of this data by examining the variant co
 ```r
 # Setup for BigQuery access
 require(bigrquery)
-project <- "genomics-public-data"                   # put your projectID here
 DisplayAndDispatchQuery <- function(queryUri, replacements=list()) {
   querySql <- readChar(queryUri, nchars=1e6)
   cat(querySql)
@@ -708,23 +707,22 @@ other attached packages:
  [6] BSgenome.Hsapiens.UCSC.hg19_1.4.0      
  [7] BSgenome_1.36.0                        
  [8] rtracklayer_1.28.0                     
- [9] ggplot2_1.0.1                          
-[10] knitr_1.9                              
-[11] scales_0.2.4                           
-[12] bigrquery_0.1.0                        
-[13] dplyr_0.4.1                            
-[14] GoogleGenomics_1.0.0                   
-[15] VariantAnnotation_1.14.0               
-[16] GenomicAlignments_1.4.0                
-[17] Rsamtools_1.20.0                       
-[18] Biostrings_2.36.0                      
-[19] XVector_0.8.0                          
-[20] GenomicRanges_1.20.1                   
-[21] GenomeInfoDb_1.4.0                     
-[22] IRanges_2.2.0                          
-[23] S4Vectors_0.6.0                        
-[24] BiocGenerics_0.14.0                    
-[25] BiocInstaller_1.18.1                   
+ [9] GoogleGenomics_1.0.0                   
+[10] VariantAnnotation_1.14.0               
+[11] GenomicAlignments_1.4.0                
+[12] Rsamtools_1.20.0                       
+[13] Biostrings_2.36.0                      
+[14] XVector_0.8.0                          
+[15] GenomicRanges_1.20.1                   
+[16] GenomeInfoDb_1.4.0                     
+[17] IRanges_2.2.0                          
+[18] S4Vectors_0.6.0                        
+[19] BiocGenerics_0.14.0                    
+[20] scales_0.2.4                           
+[21] bigrquery_0.1.0                        
+[22] dplyr_0.4.1                            
+[23] ggplot2_1.0.1                          
+[24] knitr_1.9                              
 
 loaded via a namespace (and not attached):
  [1] Rcpp_0.11.5          biovizBase_1.16.0    lattice_0.20-31     
@@ -733,8 +731,8 @@ loaded via a namespace (and not attached):
 [10] RSQLite_1.0.0        evaluate_0.6         httr_0.6.1          
 [13] zlibbioc_1.14.0      lazyeval_0.1.10      rpart_4.1-9         
 [16] rmarkdown_0.5.1      proto_0.3-10         labeling_0.3        
-[19] splines_3.2.0        BiocParallel_1.2.0   stringr_0.6.2       
-[22] foreign_0.8-63       RCurl_1.95-4.5       biomaRt_2.24.0      
+[19] splines_3.2.0        BiocParallel_1.2.0   foreign_0.8-63      
+[22] stringr_0.6.2        RCurl_1.95-4.5       biomaRt_2.24.0      
 [25] munsell_0.4.2        htmltools_0.2.6      nnet_7.3-9          
 [28] gridExtra_0.9.1      Hmisc_3.15-0         XML_3.98-1.1        
 [31] reshape_0.8.5        MASS_7.3-40          bitops_1.0-6        
