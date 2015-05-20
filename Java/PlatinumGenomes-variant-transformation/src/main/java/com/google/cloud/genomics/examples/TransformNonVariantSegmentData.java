@@ -13,12 +13,19 @@
  */
 package com.google.cloud.genomics.examples;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.logging.Logger;
 
-import com.google.api.client.repackaged.com.google.common.base.Preconditions;
+import com.google.api.client.util.Preconditions;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.TableSchema;
@@ -30,9 +37,11 @@ import com.google.cloud.dataflow.sdk.io.BigQueryIO;
 import com.google.cloud.dataflow.sdk.options.Description;
 import com.google.cloud.dataflow.sdk.options.PipelineOptionsFactory;
 import com.google.cloud.dataflow.sdk.options.Validation;
+import com.google.cloud.dataflow.sdk.transforms.Aggregator;
 import com.google.cloud.dataflow.sdk.transforms.Create;
 import com.google.cloud.dataflow.sdk.transforms.DoFn;
 import com.google.cloud.dataflow.sdk.transforms.ParDo;
+import com.google.cloud.dataflow.sdk.transforms.Sum;
 import com.google.cloud.dataflow.sdk.values.PCollection;
 import com.google.cloud.genomics.dataflow.functions.JoinNonVariantSegmentsWithVariants;
 import com.google.cloud.genomics.dataflow.utils.DataflowWorkarounds;
@@ -40,6 +49,16 @@ import com.google.cloud.genomics.dataflow.utils.GenomicsDatasetOptions;
 import com.google.cloud.genomics.dataflow.utils.GenomicsOptions;
 import com.google.cloud.genomics.utils.Contig.SexChromosomeFilter;
 import com.google.cloud.genomics.utils.GenomicsFactory;
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimaps;
+import com.google.common.io.Files;
 
 /**
  * Sample pipeline that transforms data with non-variant segments (such as data that was in source
@@ -49,7 +68,7 @@ import com.google.cloud.genomics.utils.GenomicsFactory;
  *
  * This is currently done only for SNP variants. Indels and structural variants are left as-is.
  *
- * The data source is the Google Genomics Variants API. The data sink is BigQuery
+ * The data source is the Google Genomics Variants API. The data sink is BigQuery.
  *
  * <p>
  * The sample could be expanded upon to:
@@ -61,20 +80,29 @@ import com.google.cloud.genomics.utils.GenomicsFactory;
  */
 public class TransformNonVariantSegmentData {
 
+  private static final Logger LOG = Logger
+      .getLogger(TransformNonVariantSegmentData.class.getName());
+
+  public static final String HAS_AMBIGUOUS_CALLS_FIELD = "ambiguousCalls";
+  
   /**
    * Options supported by {@link TransformNonVariantSegmentData}.
    * <p>
    * Inherits standard configuration options for Genomics pipelines and datasets.
    */
   private static interface Options extends GenomicsDatasetOptions {
-    @Override
     @Description("BigQuery table to write to, specified as "
         + "<project_id>:<dataset_id>.<table_id>. The dataset must already exist.")
     @Validation.Required
-    String getOutput();
+    String getOutputTable();
 
-    @Override
-    void setOutput(String value);
+    void setOutputTable(String value);
+
+    @Description("A local file path to an optional list of newline-separated callset names "
+        + "to exclude from the results of this pipeline.")
+    String getCallSetNamesToExclude();
+
+    void setCallSetNamesToExclude(String value);
   }
 
   /**
@@ -99,11 +127,10 @@ public class TransformNonVariantSegmentData {
     fields.add(new TableFieldSchema().setName("reference_bases").setType("STRING"));
     fields.add(new TableFieldSchema().setName("alternate_bases").setType("STRING")
         .setMode("REPEATED"));
-    fields.add(new TableFieldSchema().setName("names").setType("STRING")
-        .setMode("REPEATED"));
-    fields.add(new TableFieldSchema().setName("filter").setType("STRING")
-        .setMode("REPEATED"));
+    fields.add(new TableFieldSchema().setName("names").setType("STRING").setMode("REPEATED"));
+    fields.add(new TableFieldSchema().setName("filter").setType("STRING").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName("quality").setType("FLOAT"));
+    fields.add(new TableFieldSchema().setName(HAS_AMBIGUOUS_CALLS_FIELD).setType("BOOLEAN"));
     fields.add(new TableFieldSchema().setName("call").setType("RECORD").setMode("REPEATED")
         .setFields(callFields));
 
@@ -111,8 +138,10 @@ public class TransformNonVariantSegmentData {
   }
 
   /**
-   * Prepare the data for writing to BigQuery by building a TableRow object containing data from
-   * the variant mapped onto the schema to be used for the destination table.
+   * Pipeline function to prepare the data for writing to BigQuery.
+   * 
+   * It builds a TableRow object containing data from the variant mapped onto the schema to be used
+   * for the destination table.
    */
   static class FormatVariantsFn extends DoFn<Variant, TableRow> {
     @Override
@@ -131,33 +160,147 @@ public class TransformNonVariantSegmentData {
                   ));
       }
 
-      TableRow row = new TableRow()
-          .set("variant_id", v.getId())
-          .set("reference_name", v.getReferenceName())
-          .set("start", v.getStart())
-          .set("end", v.getEnd())
-          .set("reference_bases", v.getReferenceBases())
-          .set("alternate_bases", v.getAlternateBases())
-          .set("names", (v.getNames() == null) ? new ArrayList<String>() : v.getNames())
-          .set("filter", (v.getFilter() == null) ? new ArrayList<String>() : v.getFilter())
-          .set("quality", v.getQuality())
-          .set("call", calls);
+      TableRow row =
+          new TableRow()
+              .set("variant_id", v.getId())
+              .set("reference_name", v.getReferenceName())
+              .set("start", v.getStart())
+              .set("end", v.getEnd())
+              .set("reference_bases", v.getReferenceBases())
+              .set("alternate_bases",
+                  (v.getAlternateBases() == null) ? new ArrayList<String>() : v.getAlternateBases())
+              .set("names", (v.getNames() == null) ? new ArrayList<String>() : v.getNames())
+              .set("filter", (v.getFilter() == null) ? new ArrayList<String>() : v.getFilter())
+              .set("quality", v.getQuality())
+              .set("call", calls)
+              .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).get(0));
+
       c.output(row);
     }
   }
 
+  /**
+   * Pipeline function to filter out calls for specific callSetNames.
+   * 
+   * One may want to do this for a list of callsets that have failed quality control checks.
+   */
+  public static final class FilterCallsFn extends DoFn<Variant, Variant> {
+    
+    private final ImmutableSet<String> callSetNamesToExclude;
+    
+    /**
+     * @param callSetNamesToExclude
+     */
+    public FilterCallsFn(ImmutableSet<String> callSetNamesToExclude) {
+      super();
+      this.callSetNamesToExclude = callSetNamesToExclude;
+    }
+
+    @Override
+    public void processElement(ProcessContext context) {
+      Variant variant = context.element();
+
+      // We may have variants without calls if any callsets were deleted from the variant set.
+      if(!(null == variant.getCalls() || variant.getCalls().isEmpty())) {
+        List<Call> filteredCalls =
+            Lists.newArrayList(Iterables.filter(variant.getCalls(), new Predicate<Call>() {
+              @Override
+              public boolean apply(Call call) {
+                if (callSetNamesToExclude.contains(call.getCallSetName())) {
+                  return false;
+                }
+                return true;
+              }
+            }));
+        variant.setCalls(filteredCalls);
+      }
+
+      context.output(variant);
+    }
+  }
+  
+  /**
+   * Pipeline function to flag any variants with more than one call for a particular callSetName.
+   * 
+   * We don't see this for the tidy test datasets such as Platinum Genomes. But in practice, we have
+   * seen datasets with the same individual sequenced twice, mistakes in data conversions prior to
+   * this step, etc... So this function flags the particular variants with ambiguous calls for the
+   * same individual, and also updates the UI with a count of such variants.
+   */
+  public static final class FlagVariantsWithAmbiguousCallsFn extends DoFn<Variant, Variant> {
+
+    Aggregator<Long> variantsWithAmbiguousCallsCount;
+
+    @Override
+    public void startBundle(Context c) {
+      variantsWithAmbiguousCallsCount =
+          c.createAggregator("Number of variants containing ambiguous calls", new Sum.SumLongFn());
+    }
+
+    @Override
+    public void processElement(ProcessContext context) {
+      Variant variant = context.element();
+
+      // We may have variants without calls if any callsets were deleted from the variant set and/or
+      // a filtering step removed all calls. Omit these variants from our output.
+      if(null == variant.getCalls() || variant.getCalls().isEmpty()) {
+        return;
+      }
+
+      // Gather calls together for the same callSetName.
+      ListMultimap<String, Call> indexedCalls =
+          Multimaps.index(variant.getCalls(), new Function<Call, String>() {
+            @Override
+            public String apply(final Call c) {
+              return c.getCallSetName();
+            }
+          });
+
+      // Identify and count variants with multiple calls per callSetName.
+      boolean isAmbiguous = false;
+      for (Entry<String, Collection<Call>> entry : indexedCalls.asMap().entrySet()) {
+        if (1 < entry.getValue().size()) {
+          LOG.warning("Variant " + variant.getId() + " contains ambiguous calls for at least one genome: "
+              + entry.getValue().iterator().next().getCallSetName());
+          isAmbiguous = true;
+          variantsWithAmbiguousCallsCount.addValue(1l);
+          break;  // No need to look for additional ambiguity; one instance is enough to warrant the flag.
+        }
+      }
+
+      // Add the flag to the variant.
+      if(variant.getInfo() == null) {
+        variant.setInfo(new HashMap<String, List<String>>());
+      }
+      variant.getInfo().put(HAS_AMBIGUOUS_CALLS_FIELD, Arrays.asList(Boolean.toString(isAmbiguous)));
+
+      context.output(variant);
+    }
+  }
+
   public static void main(String[] args) throws IOException, GeneralSecurityException {
-    // Register the options so that they show up via --help
+    // Register the options so that they show up via --help.
     PipelineOptionsFactory.register(TransformNonVariantSegmentData.Options.class);
     TransformNonVariantSegmentData.Options options =
         PipelineOptionsFactory.fromArgs(args).withValidation()
             .as(TransformNonVariantSegmentData.Options.class);
+
     // Option validation is not yet automatic, we make an explicit call here.
     GenomicsDatasetOptions.Methods.validateOptions(options);
-
     Preconditions.checkState(options.getHasNonVariantSegments(),
         "This job is only valid for data containing non-variant segments. "
             + "Set the --hasNonVariantSegments command line option accordingly.");
+
+    // Grab and parse our optional list of genomes to skip.
+    ImmutableSet<String> callSetNamesToExclude = null;
+    String skipFilepath = options.getCallSetNamesToExclude();
+    if (null != skipFilepath) {
+      Iterable<String> callSetNames =
+          Splitter.on(CharMatcher.BREAKING_WHITESPACE).omitEmptyStrings().trimResults()
+              .split(Files.toString(new File(skipFilepath), Charset.defaultCharset()));
+      callSetNamesToExclude = ImmutableSet.<String>builder().addAll(callSetNames).build();
+      LOG.info("The pipeline will skip " + callSetNamesToExclude.size() + " genomes with callSetNames: " + callSetNamesToExclude);
+    }
 
     GenomicsFactory.OfflineAuth auth = GenomicsOptions.Methods.getGenomicsAuth(options);
     List<SearchVariantsRequest> requests =
@@ -167,14 +310,21 @@ public class TransformNonVariantSegmentData {
     Pipeline p = Pipeline.create(options);
     DataflowWorkarounds.registerGenomicsCoders(p);
 
-    PCollection<SearchVariantsRequest> input = p.begin()
-        .apply(Create.of(requests));
+    PCollection<SearchVariantsRequest> input = p.begin().apply(Create.of(requests));
 
-    PCollection<Variant> variants =
-        JoinNonVariantSegmentsWithVariants.joinVariantsTransform(input, auth);
+    // Create a collection of data with non-variant segments omitted but calls from overlapping
+    // non-variant segments added to SNPs.
+    PCollection<Variant> variants = JoinNonVariantSegmentsWithVariants.joinVariantsTransform(input, auth);
 
-    variants.apply(ParDo.of(new FormatVariantsFn())).apply(
-        BigQueryIO.Write.to(options.getOutput()).withSchema(getTableSchema())
+    // For each variant flag whether or not it has ambiguous calls for a particular sample and
+    // optionally filter calls.
+    PCollection<Variant> flaggedVariants = callSetNamesToExclude == null 
+        ? variants.apply(ParDo.of(new FlagVariantsWithAmbiguousCallsFn()))
+            : variants.apply(ParDo.of(new FilterCallsFn(callSetNamesToExclude))).apply(ParDo.of(new FlagVariantsWithAmbiguousCallsFn()));
+
+    // Emit the variants to BigQuery.
+    flaggedVariants.apply(ParDo.of(new FormatVariantsFn())).apply(
+        BigQueryIO.Write.to(options.getOutputTable()).withSchema(getTableSchema())
             .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
             .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_TRUNCATE));
 
