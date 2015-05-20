@@ -33,7 +33,7 @@ public class TransformNonVariantSegmentDataTest {
     Variant expectedVariant = new Variant().setCalls(Arrays.asList(call2));
     
     Assert.assertThat(filterCallsFn.processBatch(inputVariant),
-        CoreMatchers.hasItems(expectedVariant));
+        CoreMatchers.allOf(CoreMatchers.hasItems(expectedVariant)));
   }
 
   @Test
@@ -59,7 +59,7 @@ public class TransformNonVariantSegmentDataTest {
             Arrays.asList(Boolean.TRUE.toString()));
 
     Assert.assertThat(flagVariantsFn.processBatch(inputVariant, ambiguousInputVariant),
-        CoreMatchers.hasItems(expectedVariant, ambiguousExpectedVariant));
+        CoreMatchers.allOf(CoreMatchers.hasItems(expectedVariant, ambiguousExpectedVariant)));
   }
 
 }

@@ -98,8 +98,8 @@ public class TransformNonVariantSegmentData {
 
     void setOutputTable(String value);
 
-    @Description("A file path to an optional list of newline-separated callset names to exclude "
-        + "from the results of this pipeline.")
+    @Description("A local file path to an optional list of newline-separated callset names "
+        + "to exclude from the results of this pipeline.")
     String getCallSetNamesToExclude();
 
     void setCallSetNamesToExclude(String value);
@@ -171,7 +171,8 @@ public class TransformNonVariantSegmentData {
                   (v.getAlternateBases() == null) ? new ArrayList<String>() : v.getAlternateBases())
               .set("names", (v.getNames() == null) ? new ArrayList<String>() : v.getNames())
               .set("filter", (v.getFilter() == null) ? new ArrayList<String>() : v.getFilter())
-              .set("quality", v.getQuality()).set("call", calls)
+              .set("quality", v.getQuality())
+              .set("call", calls)
               .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).get(0));
 
       c.output(row);
@@ -223,9 +224,8 @@ public class TransformNonVariantSegmentData {
    * 
    * We don't see this for the tidy test datasets such as Platinum Genomes. But in practice, we have
    * seen datasets with the same individual sequenced twice, mistakes in data conversions prior to
-   * this step, etc... So this function emits and aggregate counter of the number of variants with
-   * ambiguous calls for the same individual and also flags the particular variants in which they
-   * occur.
+   * this step, etc... So this function flags the particular variants with ambiguous calls for the
+   * same individual, and also updates the UI with a count of such variants.
    */
   public static final class FlagVariantsWithAmbiguousCallsFn extends DoFn<Variant, Variant> {
 
