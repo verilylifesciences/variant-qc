@@ -1,4 +1,4 @@
-codelabs
+codelabs [![Build Status](https://img.shields.io/travis/googlegenomics/codelabs.svg?style=flat)](https://travis-ci.org/googlegenomics/codelabs) [![Coverage Status](https://img.shields.io/coveralls/googlegenomics/codelabs.svg?style=flat)](https://coveralls.io/r/googlegenomics/codelabs)
 ========
 
 Codelabs in various languages demonstrating usage of several tools &amp; systems upon genomics data.
