@@ -463,6 +463,8 @@ Displaying the first few rows of the dataframe of results:
   <tr> <td> chr1 </td> <td align="right"> 110191193 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
    </table>
 
+See also [a version of this query](./sql/hardy-weinberg-udf.sql) that uses the new BigQuery feature of user-defined javascript functions which is currently in limited preview.  For more info, see https://www.youtube.com/watch?v=GrD7ymUPt3M#t=1377.
+
 ## Heterozygous Haplotype
 For each variant within the X and Y chromosome, identify heterozygous variants in male genomes.
 

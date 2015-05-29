@@ -1,3 +1,8 @@
+# The following query computes the Hardy-Weinberg equilibrium for variants.
+#
+# Note that the new BigQuery feature of user-defined javascript
+# functions is in limited preview.  For more info, see
+# https://www.youtube.com/watch?v=GrD7ymUPt3M#t=1377
 SELECT
   reference_name,
   start,
@@ -54,7 +59,7 @@ FROM js(
   {name: 'obs_hom2', type: 'integer'},
   {name: 'e_hom1', type: 'integer'},
   {name: 'e_het', type: 'integer'},
-  {name: 'e_hom2', type: 'integer'},        
+  {name: 'e_hom2', type: 'integer'},
   {name: 'chisq', type: 'float'}]",
   // Function
   "function(r, emit) {
