@@ -88,8 +88,8 @@ ORDER BY
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Tue Mar  3 11:35:43 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Fri May 29 15:27:30 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -213,8 +213,8 @@ ORDER BY
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Tue Mar  3 11:35:47 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Fri May 29 15:27:33 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -327,8 +327,8 @@ ORDER BY
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Tue Mar  3 11:35:50 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Fri May 29 15:27:37 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
@@ -431,8 +431,8 @@ ORDER BY
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Tue Mar  3 11:35:53 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Fri May 29 15:27:40 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
@@ -486,10 +486,6 @@ Let's accumulate our sample-specific results for later use.
 allResults <- full_join(allResults, result)
 ```
 
-```
-## Joining by: "call_call_set_name"
-```
-
 ## Ethnicity Inference
 
 For each genome, compare the ethncity from the sample information to the clustering in this analysis.
@@ -499,9 +495,44 @@ For this check, we:
 * compute PCA on those variants in common between the two data
 * examine whether the individuals in Platinum Genomes cluster with other samples of the same ethnicity
 
+See the Google Genomics [2-way PCA cookbook entry](http://googlegenomics.readthedocs.org/en/latest/use_cases/compute_principal_coordinate_analysis/2-way-pca.html) for the details as to how to run this pipeline.
+
 Note that this `n^2` analysis is a cluster compute job instead of a BigQuery query.
 
-This is a work-in-progress.  See https://github.com/elmer-garduno/spark-examples/tree/multiple_dataset_pca for the current state.
+### Results
+
+
+```r
+# Read in the results of the 2-way PCA over BRCA1.
+pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv", col.names=c("call_call_set_name", "PC1", "PC2", "count"))
+
+# Read in the demographic information for 1,000 Genomes.
+sampleData1kg <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
+sampleInfo1kg <- select(sampleData1kg, call_call_set_name=Sample, gender=Gender, ethnicity=Super_Population)
+
+# Update our sample information for Platinum Genomes as "Unknown" since this is what we are trying to check.
+sampleInfoToCheck <- mutate(sampleInfo, ethnicity="Unknown")
+
+# Note that 5 samples are in both datasets, so those will be plotted twice with different symbols.
+pcaPlatinumX1kg <- inner_join(pca, rbind(sampleInfoToCheck, sampleInfo1kg))
+pcaPlatinumX1kg <- mutate(pcaPlatinumX1kg, unknown=(ethnicity == "Unknown"))
+```
+
+
+```r
+ggplot(pcaPlatinumX1kg) +
+  geom_point(aes(x=PC1, y=PC2,
+                 color=ethnicity,
+                 shape=ethnicity,
+                 size=unknown)) +
+  xlab("principal component 1") +
+  ylab("principal component 2") +
+  scale_shape_manual(values=c(3, 3, 3, 3, 19)) +
+  scale_size_manual(values=c(2,4)) +
+  ggtitle("2-way Principal Coordinate Analysis upon Platinum Genomes and 1,000 Genomes")
+```
+
+<img src="figure/pca-with-ethnicity-1.png" title="plot of chunk pca-with-ethnicity" alt="plot of chunk pca-with-ethnicity" style="display: block; margin: auto;" />
 
 ## Genome Similarity
 
