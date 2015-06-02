@@ -256,7 +256,7 @@ if(nrow(result) <= 20) {
 ```
 
 Let's accumulate our sample-specific results for later use.
-```{r}
+```{r message=FALSE, warning=FALSE}
 allResults <- full_join(allResults, result)
 ```
 
@@ -269,9 +269,40 @@ For this check, we:
 * compute PCA on those variants in common between the two data
 * examine whether the individuals in Platinum Genomes cluster with other samples of the same ethnicity
 
+See the Google Genomics [2-way PCA cookbook entry](http://googlegenomics.readthedocs.org/en/latest/use_cases/compute_principal_coordinate_analysis/2-way-pca.html) for the details as to how to run this pipeline.
+
 Note that this `n^2` analysis is a cluster compute job instead of a BigQuery query.
 
-This is a work-in-progress.  See https://github.com/elmer-garduno/spark-examples/tree/multiple_dataset_pca for the current state.
+### Results
+
+```{r message=FALSE, warning=FALSE}
+# Read in the results of the 2-way PCA over BRCA1.
+pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv", col.names=c("call_call_set_name", "PC1", "PC2", "count"))
+
+# Read in the demographic information for 1,000 Genomes.
+sampleData1kg <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
+sampleInfo1kg <- select(sampleData1kg, call_call_set_name=Sample, gender=Gender, ethnicity=Super_Population)
+
+# Update our sample information for Platinum Genomes as "Unknown" since this is what we are trying to check.
+sampleInfoToCheck <- mutate(sampleInfo, ethnicity="Unknown")
+
+# Note that 5 samples are in both datasets, so those will be plotted twice with different symbols.
+pcaPlatinumX1kg <- inner_join(pca, rbind(sampleInfoToCheck, sampleInfo1kg))
+pcaPlatinumX1kg <- mutate(pcaPlatinumX1kg, unknown=(ethnicity == "Unknown"))
+```
+
+```{r pca-with-ethnicity, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(pcaPlatinumX1kg) +
+  geom_point(aes(x=PC1, y=PC2,
+                 color=ethnicity,
+                 shape=ethnicity,
+                 size=unknown)) +
+  xlab("principal component 1") +
+  ylab("principal component 2") +
+  scale_shape_manual(values=c(3, 3, 3, 3, 19)) +
+  scale_size_manual(values=c(2,4)) +
+  ggtitle("2-way Principal Coordinate Analysis upon Platinum Genomes and 1,000 Genomes")
+```
 
 ## Genome Similarity
 
