@@ -33,9 +33,7 @@
 
 1. If you do not already have them, install additional R packages referenced by the codelabs.
   ```
-  install.packages("ggplot2")
-  install.packages("dplyr")
-  install.packages("scales")
+  install.packages(c("ggplot2", "scales", "xtable"))
   ```
 
 1. If you do not already have them, install additional Bioconductor R packages referenced by the codelabs. _Note that these are only used in the [Data Analysis using Google Genomics](./1000Genomes-BRCA1-analysis) codelab._

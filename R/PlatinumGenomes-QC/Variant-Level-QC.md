@@ -96,8 +96,8 @@ ORDER BY
 Number of rows returned by this query: **2279**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Apr 27 13:43:14 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Tue Jun  2 18:39:36 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr1 </td> <td align="right">   0 </td> <td align="right"> 293 </td> <td align="right"> 198 </td> <td align="right"> 1.48 </td> <td align="right"> 491 </td> </tr>
@@ -169,8 +169,8 @@ ORDER BY
 Number of rows returned by this query: **35**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Apr 27 13:43:18 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Tue Jun  2 18:39:39 2015 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> alternate_allele_count </th>  </tr>
   <tr> <td align="right"> 350843 </td> <td align="right"> 172896 </td> <td align="right"> 2.03 </td> <td align="right">  34 </td> </tr>
@@ -208,7 +208,7 @@ result <- DisplayAndDispatchQuery(query,
 ```
 
 ```
-# Transition/Transversion Ratio by Depth of Coverage
+# Transition/Transversion Ratio by Depth of Coverage.
 SELECT
   call.call_set_name,
   (transitions/transversions) AS titv_ratio,
@@ -238,7 +238,7 @@ FROM (
         [google.com:biggene:platinum_genomes.expanded_variants]
       # Optionally add clause here to limit the query to a particular
       # region of the genome.
-      #_WHERE_  
+      #_WHERE_
       )
     WHERE
       call.DP is not null
@@ -247,7 +247,7 @@ FROM (
       num_alts = 1
       AND reference_bases IN ('A','C','G','T')
       AND alternate_bases IN ('A','C','G','T'))
-    GROUP BY 
+    GROUP BY
       call.call_set_name,
       call.DP,)
 WHERE
@@ -255,19 +255,21 @@ WHERE
 GROUP BY
   call.call_set_name,
   titv_ratio,
-  average_depth,
+  average_depth
+ORDER BY
+  call.call_set_name
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Apr 27 13:43:24 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Tue Jun  2 18:39:47 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> titv_ratio </th> <th> average_depth </th>  </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 1.57 </td> <td align="right"> 50.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 1.35 </td> <td align="right"> 42.00 </td> </tr>
-  <tr> <td> NA12889 </td> <td align="right"> 1.68 </td> <td align="right"> 62.00 </td> </tr>
-  <tr> <td> NA12885 </td> <td align="right"> 1.57 </td> <td align="right"> 45.00 </td> </tr>
-  <tr> <td> NA12883 </td> <td align="right"> 1.53 </td> <td align="right"> 45.00 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 1.69 </td> <td align="right"> 61.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 1.29 </td> <td align="right"> 169.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 1.52 </td> <td align="right"> 88.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 1.47 </td> <td align="right"> 92.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 1.45 </td> <td align="right"> 96.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 1.46 </td> <td align="right"> 119.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 1.56 </td> <td align="right"> 102.00 </td> </tr>
    </table>
 
 
@@ -326,8 +328,8 @@ ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alternat
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Apr 27 13:43:28 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Tue Jun  2 18:39:52 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
@@ -451,8 +453,8 @@ ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Apr 27 13:43:33 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Tue Jun  2 18:39:57 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -509,8 +511,8 @@ ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Mon Apr 27 13:43:36 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Tue Jun  2 18:39:59 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> NA12884 </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> </tr>
