@@ -46,7 +46,7 @@ queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.v
                           "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
+sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
 
 ibs <- read.table("./data/platinum-genomes-ibs.tsv",
                   col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
@@ -281,7 +281,7 @@ pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv", col.names=c("ca
 
 # Read in the demographic information for 1,000 Genomes.
 sampleData1kg <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
-sampleInfo1kg <- select(sampleData1kg, call_call_set_name=Sample, gender=Gender, ethnicity=Super_Population)
+sampleInfo1kg <- dplyr::select(sampleData1kg, call_call_set_name=Sample, gender=Gender, ethnicity=Super_Population)
 
 # Update our sample information for Platinum Genomes as "Unknown" since this is what we are trying to check.
 sampleInfoToCheck <- mutate(sampleInfo, ethnicity="Unknown")
@@ -341,7 +341,7 @@ To entirely remove a genome from a variant set in the Genomics API:
 
 Let's wrap up with a quick comparison using all the variables we've collected for each sample:
 ```{r summary, fig.align="center", fig.width=12, fig.height=12, message=FALSE, comment=NA}
-plot(select(allResults, -call_call_set_name))
+plot(dplyr::select(allResults, -call_call_set_name))
 ```
 
 If we see any relationships that we do not expect, it may be worth a closer look.

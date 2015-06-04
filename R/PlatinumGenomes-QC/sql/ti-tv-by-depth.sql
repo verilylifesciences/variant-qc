@@ -1,4 +1,4 @@
-# Transition/Transversion Ratio by Depth of Coverage
+# Transition/Transversion Ratio by Depth of Coverage.
 SELECT
   call.call_set_name,
   (transitions/transversions) AS titv_ratio,
@@ -28,7 +28,7 @@ FROM (
         [_THE_EXPANDED_TABLE_]
       # Optionally add clause here to limit the query to a particular
       # region of the genome.
-      #_WHERE_  
+      #_WHERE_
       )
     WHERE
       call.DP is not null
@@ -37,7 +37,7 @@ FROM (
       num_alts = 1
       AND reference_bases IN ('A','C','G','T')
       AND alternate_bases IN ('A','C','G','T'))
-    GROUP BY 
+    GROUP BY
       call.call_set_name,
       call.DP,)
 WHERE
@@ -45,4 +45,6 @@ WHERE
 GROUP BY
   call.call_set_name,
   titv_ratio,
-  average_depth,
+  average_depth
+ORDER BY
+  call.call_set_name
