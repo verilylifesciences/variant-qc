@@ -70,7 +70,7 @@ java -cp target/non-variant-segment-transformer-*.jar \
   --datasetId=3049512673186936334 \
   --references=chr17:41196311:41277499 \
   --hasNonVariantSegments \
-  --output=YOUR_BIGQUERY_DATASET.YOUR_BIGQUERY_DESTINATION_TABLE
+  --outputTable=YOUR_BIGQUERY_DATASET.YOUR_BIGQUERY_DESTINATION_TABLE
 ```
 
 To run this job on the entire dataset:
