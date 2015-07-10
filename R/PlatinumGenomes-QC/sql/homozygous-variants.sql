@@ -38,6 +38,8 @@ FROM (
       AND reference_bases IN ('A','C','G','T')
       AND alternate_bases IN ('A','C','G','T')
       )
+  WHERE
+    freq > 0
   GROUP BY
     call.call_set_name
     )
