@@ -52,6 +52,10 @@ sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, gender=Ge
 ibs <- read.table("./data/platinum-genomes-ibs.tsv",
                   col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
 
+# Read in the results of the 2-way PCA over BRCA1.
+pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv",
+                  col.names=c("call_call_set_name", "PC1", "PC2", "count"))
+
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpCGIOnlyDataset.R")
 ```
@@ -327,9 +331,6 @@ Note that this `n^2` analysis is a cluster compute job instead of a BigQuery que
 ### Results
 
 ```{r message=FALSE, warning=FALSE}
-# Read in the results of the 2-way PCA over BRCA1.
-pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv", col.names=c("call_call_set_name", "PC1", "PC2", "count"))
-
 # Read in the demographic information for 1,000 Genomes.
 sampleData1kg <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
 sampleInfo1kg <- dplyr::select(sampleData1kg, call_call_set_name=Sample, gender=Gender, ethnicity=Super_Population)

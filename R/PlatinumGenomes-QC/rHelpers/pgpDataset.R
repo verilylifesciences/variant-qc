@@ -52,3 +52,7 @@ sampleIds <- c("hu03E3D2",
 ibs <- read.table("http://storage.googleapis.com/genomics-public-data/personal-genome-project/other/personal-genome-project-ibs.tsv",
                   col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
 ibs <- filter(ibs, sample1 %in% sampleIds & sample2 %in% sampleIds)
+
+# TODO: 2-way PCA against 1,000 Genomes
+pca <- data.frame(col.names=c("call_call_set_name", "PC1", "PC2", "count"))
+

@@ -27,3 +27,6 @@ sampleInfo <- select(sampleData, call_call_set_name=Sample, gender=Gender)
 
 # TODO: Identity By State results for 1,000 Genomes.
 ibs <- data.frame(col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
+
+# TODO: 2-way PCA, perhaps ExAc and 1,000 Genomes
+pca <- data.frame(col.names=c("call_call_set_name", "PC1", "PC2", "count"))
