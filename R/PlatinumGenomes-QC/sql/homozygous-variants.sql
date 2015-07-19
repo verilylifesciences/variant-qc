@@ -31,7 +31,7 @@ FROM (
     # region of the genome.
     #_WHERE_
     # Skip no calls and haploid sites
-    OMIT call IF SOME(call.genotype < 0) OR (2 > COUNT(call.genotype))
+    OMIT call IF SOME(call.genotype < 0) OR (2 != COUNT(call.genotype))
     HAVING
       # Skip 1/2 genotypes _and non-SNP variants
       num_alts = 1
