@@ -24,7 +24,8 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 
 * [Missingness Rate](#missingness-rate)
 * [Singleton Rate](#singleton-rate)
-* [Heterozygosity Rate and Inbreeding Coefficient](#homozygosity-rate-and-inbreeding-coefficient)
+* [Heterozygosity Rate](#heterozygosity-rate)
+* [Inbreeding Coefficient](#inbreeding-coefficient)
 * [Sex Inference](#sex-inference)
 * [Ethnicity Inference](#ethnicity-inference)
 * [Genome Similarity](#genome-similarity)
@@ -89,7 +90,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Jun  2 18:39:05 2015 -->
+<!-- Sun Jul 19 13:30:12 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -214,7 +215,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Jun  2 18:39:08 2015 -->
+<!-- Sun Jul 19 13:30:15 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -232,7 +233,7 @@ ggplot(result, aes(x=private_variant_count)) +
   geom_histogram(color="black", fill="#FF6666") +
   scale_x_continuous(labels=comma) +
   xlab("Number of Singletons") +
-  xlab("Sample Count") +
+  ylab("Sample Count") +
   ggtitle("Histogram: Count of Singletons Per Genome")
 ```
 
@@ -266,7 +267,101 @@ allResults <- full_join(allResults, result)
 ## Joining by: "call_call_set_name"
 ```
 
-## Homozygosity Rate and Inbreeding Coefficient
+## Heterozygosity Rate
+
+For each genome, determine the number of heterozygous variants.
+
+
+```r
+result <- DisplayAndDispatchQuery("./sql/heterozygous-calls-count.sql",
+                                  project=project,
+                                  replacements=queryReplacements)
+```
+
+```
+# Count the number of heterozygous variants per sample.
+SELECT
+  call.call_set_name,
+  SUM(first_allele != second_allele) AS heterozygous_variant_count
+FROM (
+  SELECT
+    reference_name,
+    start,
+    reference_bases,
+    GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+    call.call_set_name,
+    NTH(1, call.genotype) WITHIN call AS first_allele,
+    NTH(2, call.genotype) WITHIN call AS second_allele,
+    COUNT(alternate_bases) WITHIN RECORD AS num_alts
+  FROM
+    [genomics-public-data:platinum_genomes.variants]
+  # Skip no-calls and single-allele genotypes
+  OMIT call IF SOME(call.genotype < 0) OR (2 > COUNT(call.genotype))
+  HAVING
+    num_alts = 1
+    AND reference_bases IN ('A','C','G','T')
+    AND alternate_bases IN ('A','C','G','T')
+  )
+GROUP BY
+  call.call_set_name
+```
+Number of rows returned by this query: **17**.
+
+Displaying the first few rows of the dataframe of results:
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Sun Jul 19 13:30:18 2015 -->
+<table border=1>
+<tr> <th> call_call_set_name </th> <th> heterozygous_variant_count </th>  </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 3396755 </td> </tr>
+  <tr> <td> NA12889 </td> <td align="right"> 3474286 </td> </tr>
+  <tr> <td> NA12883 </td> <td align="right"> 3485426 </td> </tr>
+  <tr> <td> NA12888 </td> <td align="right"> 3479085 </td> </tr>
+  <tr> <td> NA12886 </td> <td align="right"> 3486678 </td> </tr>
+  <tr> <td> NA12884 </td> <td align="right"> 3469426 </td> </tr>
+   </table>
+
+And visualizing the results:
+
+```r
+ggplot(result, aes(x=heterozygous_variant_count)) +
+  geom_histogram(color="black", fill="#FF6666") +
+  scale_x_continuous(labels=comma) +
+  xlab("Number of Heterozyous Variants") +
+  ylab("Sample Count") +
+  ggtitle("Histogram: Count of Heterozygous Variants Per Genome")
+```
+
+<img src="figure/heterozygousSummary-1.png" title="plot of chunk heterozygousSummary" alt="plot of chunk heterozygousSummary" style="display: block; margin: auto;" />
+
+
+```r
+p <- ggplot(result) +
+  geom_point(aes(x=call_call_set_name, y=heterozygous_variant_count)) +
+  scale_x_discrete(expand=c(0.05, 1)) +
+  scale_y_continuous(labels=comma) +
+  xlab("Sample") +
+  ylab("Number of Heterozygous Variants") +
+  ggtitle("Scatter Plot: Count of Heterozygous Variants Per Genome")
+if(nrow(result) <= 20) {
+  p + theme(axis.text.x=element_text(angle=50, hjust=1))
+} else {
+  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank(), panel.grid.major.x=element_blank())
+}
+```
+
+<img src="figure/heterozygous-1.png" title="plot of chunk heterozygous" alt="plot of chunk heterozygous" style="display: block; margin: auto;" />
+
+Let's accumulate our sample-specific results for later use.
+
+```r
+allResults <- full_join(allResults, result)
+```
+
+```
+## Joining by: "call_call_set_name"
+```
+
+## Inbreeding Coefficient
 
 For each genome, compare the expected and observed rates of homozygosity.
 
@@ -311,13 +406,15 @@ FROM (
     # region of the genome.
     #_WHERE_
     # Skip no calls and haploid sites
-    OMIT call IF SOME(call.genotype < 0) OR (2 > COUNT(call.genotype))
+    OMIT call IF SOME(call.genotype < 0) OR (2 != COUNT(call.genotype))
     HAVING
       # Skip 1/2 genotypes _and non-SNP variants
       num_alts = 1
       AND reference_bases IN ('A','C','G','T')
       AND alternate_bases IN ('A','C','G','T')
       )
+  WHERE
+    freq > 0
   GROUP BY
     call.call_set_name
     )
@@ -328,15 +425,15 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Jun  2 18:39:11 2015 -->
+<!-- Sun Jul 19 13:30:21 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 6794394 </td> <td align="right"> 7988474.22 </td> <td align="right"> 10204968 </td> <td align="right"> -0.54 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 6700705 </td> <td align="right"> 7955077.42 </td> <td align="right"> 10171953 </td> <td align="right"> -0.57 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 6620470 </td> <td align="right"> 7933125.29 </td> <td align="right"> 10147411 </td> <td align="right"> -0.59 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 6590387 </td> <td align="right"> 7929608.34 </td> <td align="right"> 10150696 </td> <td align="right"> -0.60 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 6567127 </td> <td align="right"> 7935804.42 </td> <td align="right"> 10153820 </td> <td align="right"> -0.62 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 6805829 </td> <td align="right"> 7965142.57 </td> <td align="right"> 10202639 </td> <td align="right"> -0.52 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 6668832 </td> <td align="right"> 7303728.20 </td> <td align="right"> 10079406 </td> <td align="right"> -0.23 </td> </tr>
+  <tr> <td> NA12878 </td> <td align="right"> 6576822 </td> <td align="right"> 7280751.58 </td> <td align="right"> 10048070 </td> <td align="right"> -0.25 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 6494137 </td> <td align="right"> 7261892.98 </td> <td align="right"> 10021078 </td> <td align="right"> -0.28 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 6465344 </td> <td align="right"> 7265177.08 </td> <td align="right"> 10025653 </td> <td align="right"> -0.29 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 6441322 </td> <td align="right"> 7266762.42 </td> <td align="right"> 10028015 </td> <td align="right"> -0.30 </td> </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 6680853 </td> <td align="right"> 7302746.25 </td> <td align="right"> 10077663 </td> <td align="right"> -0.22 </td> </tr>
    </table>
 
 And visualizing the results:
@@ -432,7 +529,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Jun  2 18:39:14 2015 -->
+<!-- Sun Jul 19 13:30:24 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
