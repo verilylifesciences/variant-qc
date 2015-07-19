@@ -35,7 +35,8 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 
 * [Missingness Rate](#missingness-rate)
 * [Singleton Rate](#singleton-rate)
-* [Heterozygosity Rate and Inbreeding Coefficient](#homozygosity-rate-and-inbreeding-coefficient)
+* [Heterozygosity Rate](#heterozygosity-rate)
+* [Inbreeding Coefficient](#inbreeding-coefficient)
 * [Sex Inference](#sex-inference)
 * [Ethnicity Inference](#ethnicity-inference)
 * [Genome Similarity](#genome-similarity)
@@ -131,7 +132,7 @@ ggplot(result, aes(x=private_variant_count)) +
   geom_histogram(color="black", fill="#FF6666") +
   scale_x_continuous(labels=comma) +
   xlab("Number of Singletons") +
-  xlab("Sample Count") +
+  ylab("Sample Count") +
   ggtitle("Histogram: Count of Singletons Per Genome")
 ```
 
@@ -155,7 +156,57 @@ Let's accumulate our sample-specific results for later use.
 allResults <- full_join(allResults, result)
 ```
 
-## Homozygosity Rate and Inbreeding Coefficient
+## Heterozygosity Rate
+
+For each genome, determine the number of heterozygous variants.
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/heterozygous-calls-count.sql",
+                                  project=project,
+                                  replacements=queryReplacements)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+if(is.null(result)) { 
+  cat("**None**") 
+} else {
+  print(xtable(head(result)), type="html", include.rownames=F)
+}
+```
+
+And visualizing the results:
+```{r heterozygousSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(result, aes(x=heterozygous_variant_count)) +
+  geom_histogram(color="black", fill="#FF6666") +
+  scale_x_continuous(labels=comma) +
+  xlab("Number of Heterozyous Variants") +
+  ylab("Sample Count") +
+  ggtitle("Histogram: Count of Heterozygous Variants Per Genome")
+```
+
+```{r heterozygous, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+p <- ggplot(result) +
+  geom_point(aes(x=call_call_set_name, y=heterozygous_variant_count)) +
+  scale_x_discrete(expand=c(0.05, 1)) +
+  scale_y_continuous(labels=comma) +
+  xlab("Sample") +
+  ylab("Number of Heterozygous Variants") +
+  ggtitle("Scatter Plot: Count of Heterozygous Variants Per Genome")
+if(nrow(result) <= 20) {
+  p + theme(axis.text.x=element_text(angle=50, hjust=1))
+} else {
+  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank(), panel.grid.major.x=element_blank())
+}
+```
+
+Let's accumulate our sample-specific results for later use.
+```{r}
+allResults <- full_join(allResults, result)
+```
+
+## Inbreeding Coefficient
 
 For each genome, compare the expected and observed rates of homozygosity.
 
