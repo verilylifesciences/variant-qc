@@ -33,13 +33,11 @@ FROM (
     # Skip no calls and haploid sites
     OMIT call IF SOME(call.genotype < 0) OR (2 != COUNT(call.genotype))
     HAVING
-      # Skip 1/2 genotypes _and non-SNP variants
+      # Skip 1/2 genotypes.
       num_alts = 1
-      AND reference_bases IN ('A','C','G','T')
-      AND alternate_bases IN ('A','C','G','T')
+      # Skip records where all samples have the same allele.
+      AND freq > 0 AND freq < 1 
       )
-  WHERE
-    freq > 0
   GROUP BY
     call.call_set_name
     )
