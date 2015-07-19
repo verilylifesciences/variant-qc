@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require(bigrquery)
 require(xtable)
 require(RCurl)
 require(dplyr)
-require(ggplot2)
 require(scales)
+require(bigrquery)
+require(ggplot2)
 
 DisplayAndDispatchQuery <- function(queryUri, project, replacements=list()) {
   if (missing(queryUri)) {
