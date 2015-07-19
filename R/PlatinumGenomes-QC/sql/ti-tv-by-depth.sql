@@ -47,4 +47,5 @@ GROUP BY
   titv_ratio,
   average_depth
 ORDER BY
-  call.call_set_name
+  call.call_set_name,
+  average_depth
