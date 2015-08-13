@@ -13,6 +13,8 @@ FROM (
   FROM (
 
     SELECT
+      reference_bases,
+      alternate_bases,
       call.call_set_name,
       CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
       COUNT(alternate_bases) WITHIN RECORD AS num_alts,

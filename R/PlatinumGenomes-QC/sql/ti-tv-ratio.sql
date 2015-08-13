@@ -17,6 +17,8 @@ FROM (
   FROM (
     SELECT
       reference_name,
+      reference_bases,
+      alternate_bases,
       INTEGER(FLOOR(start / _WINDOW_SIZE_)) AS window,
       CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
       COUNT(alternate_bases) WITHIN RECORD AS num_alts,
