@@ -42,6 +42,10 @@ sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, gender=Ge
 ibs <- read.table("./data/platinum-genomes-ibs.tsv",
                   col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
 
+# Read in the results of the 2-way PCA over BRCA1.
+pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv",
+                  col.names=c("call_call_set_name", "PC1", "PC2", "count"))
+
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpCGIOnlyDataset.R")
 ```
@@ -90,7 +94,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Sun Jul 19 13:30:12 2015 -->
+<!-- Thu Aug 13 16:20:15 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -215,7 +219,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Sun Jul 19 13:30:15 2015 -->
+<!-- Thu Aug 13 16:20:18 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -304,20 +308,22 @@ FROM (
   )
 GROUP BY
   call.call_set_name
+ORDER BY
+  call.call_set_name
 ```
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Sun Jul 19 13:30:18 2015 -->
+<!-- Thu Aug 13 16:20:21 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> heterozygous_variant_count </th>  </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 3410507 </td> </tr>
+  <tr> <td> NA12878 </td> <td align="right"> 3471185 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 3526898 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 3560275 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 3586659 </td> </tr>
   <tr> <td> NA12882 </td> <td align="right"> 3396755 </td> </tr>
-  <tr> <td> NA12889 </td> <td align="right"> 3474286 </td> </tr>
-  <tr> <td> NA12883 </td> <td align="right"> 3485426 </td> </tr>
-  <tr> <td> NA12888 </td> <td align="right"> 3479085 </td> </tr>
-  <tr> <td> NA12886 </td> <td align="right"> 3486678 </td> </tr>
-  <tr> <td> NA12884 </td> <td align="right"> 3469426 </td> </tr>
    </table>
 
 And visualizing the results:
@@ -408,13 +414,14 @@ FROM (
     # Skip no calls and haploid sites
     OMIT call IF SOME(call.genotype < 0) OR (2 != COUNT(call.genotype))
     HAVING
-      # Skip 1/2 genotypes _and non-SNP variants
+      # Skip 1/2 genotypes.
       num_alts = 1
+      # Only use SNPs since non-variant segments are only included for SNPs.
       AND reference_bases IN ('A','C','G','T')
       AND alternate_bases IN ('A','C','G','T')
+      # Skip records where all samples have the same allele.
+      AND freq > 0 AND freq < 1 
       )
-  WHERE
-    freq > 0
   GROUP BY
     call.call_set_name
     )
@@ -425,15 +432,15 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Sun Jul 19 13:30:21 2015 -->
+<!-- Thu Aug 13 16:20:24 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 6668832 </td> <td align="right"> 7303728.20 </td> <td align="right"> 10079406 </td> <td align="right"> -0.23 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 6576822 </td> <td align="right"> 7280751.58 </td> <td align="right"> 10048070 </td> <td align="right"> -0.25 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 6494137 </td> <td align="right"> 7261892.98 </td> <td align="right"> 10021078 </td> <td align="right"> -0.28 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 6465344 </td> <td align="right"> 7265177.08 </td> <td align="right"> 10025653 </td> <td align="right"> -0.29 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 6441322 </td> <td align="right"> 7266762.42 </td> <td align="right"> 10028015 </td> <td align="right"> -0.30 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 6680853 </td> <td align="right"> 7302746.25 </td> <td align="right"> 10077663 </td> <td align="right"> -0.22 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 6135459 </td> <td align="right"> 6770355.20 </td> <td align="right"> 9546033 </td> <td align="right"> -0.23 </td> </tr>
+  <tr> <td> NA12878 </td> <td align="right"> 6044715 </td> <td align="right"> 6748644.58 </td> <td align="right"> 9515963 </td> <td align="right"> -0.25 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 5962198 </td> <td align="right"> 6729953.98 </td> <td align="right"> 9489139 </td> <td align="right"> -0.28 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 5932991 </td> <td align="right"> 6732824.08 </td> <td align="right"> 9493300 </td> <td align="right"> -0.29 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 5909067 </td> <td align="right"> 6734507.42 </td> <td align="right"> 9495760 </td> <td align="right"> -0.30 </td> </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 6147961 </td> <td align="right"> 6769854.25 </td> <td align="right"> 9544771 </td> <td align="right"> -0.22 </td> </tr>
    </table>
 
 And visualizing the results:
@@ -529,7 +536,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Sun Jul 19 13:30:24 2015 -->
+<!-- Thu Aug 13 16:20:27 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
@@ -600,9 +607,6 @@ Note that this `n^2` analysis is a cluster compute job instead of a BigQuery que
 
 
 ```r
-# Read in the results of the 2-way PCA over BRCA1.
-pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv", col.names=c("call_call_set_name", "PC1", "PC2", "count"))
-
 # Read in the demographic information for 1,000 Genomes.
 sampleData1kg <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
 sampleInfo1kg <- dplyr::select(sampleData1kg, call_call_set_name=Sample, gender=Gender, ethnicity=Super_Population)

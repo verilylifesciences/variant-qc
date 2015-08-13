@@ -74,6 +74,8 @@ FROM (
   FROM (
     SELECT
       reference_name,
+      reference_bases,
+      alternate_bases,
       INTEGER(FLOOR(start / 100000)) AS window,
       CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
       COUNT(alternate_bases) WITHIN RECORD AS num_alts,
@@ -97,7 +99,7 @@ Number of rows returned by this query: **2279**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Sun Jul 19 12:52:04 2015 -->
+<!-- Thu Aug 13 16:22:19 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr1 </td> <td align="right">   0 </td> <td align="right"> 293 </td> <td align="right"> 198 </td> <td align="right"> 1.48 </td> <td align="right"> 491 </td> </tr>
@@ -148,6 +150,8 @@ FROM (
     alternate_allele_count
   FROM (
     SELECT
+      reference_bases,
+      alternate_bases,
       CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
       COUNT(alternate_bases) WITHIN RECORD AS num_alts,
       SUM(call.genotype = 1) WITHIN RECORD AS alternate_allele_count,
@@ -170,7 +174,7 @@ Number of rows returned by this query: **35**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Sun Jul 19 12:52:09 2015 -->
+<!-- Thu Aug 13 16:22:23 2015 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> alternate_allele_count </th>  </tr>
   <tr> <td align="right"> 350843 </td> <td align="right"> 172896 </td> <td align="right"> 2.03 </td> <td align="right">  34 </td> </tr>
@@ -223,6 +227,8 @@ FROM (
   FROM (
 
     SELECT
+      reference_bases,
+      alternate_bases,
       call.call_set_name,
       CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
       COUNT(alternate_bases) WITHIN RECORD AS num_alts,
@@ -257,19 +263,21 @@ GROUP BY
   titv_ratio,
   average_depth
 ORDER BY
-  call.call_set_name
+  call.call_set_name,
+  average_depth
+Running query:   RUNNING  2.3sRunning query:   RUNNING  2.9sRunning query:   RUNNING  3.5s
 ```
 
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Sun Jul 19 12:52:13 2015 -->
+<!-- Thu Aug 13 16:22:30 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> titv_ratio </th> <th> average_depth </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 1.33 </td> <td align="right"> 140.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 1.43 </td> <td align="right"> 179.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 1.50 </td> <td align="right"> 151.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 1.25 </td> <td align="right"> 201.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 1.42 </td> <td align="right"> 161.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.94 </td> <td align="right"> 17.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.79 </td> <td align="right"> 1.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.81 </td> <td align="right"> 2.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.82 </td> <td align="right"> 3.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.85 </td> <td align="right"> 4.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.87 </td> <td align="right"> 5.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.86 </td> <td align="right"> 6.00 </td> </tr>
    </table>
 
 
@@ -329,7 +337,7 @@ Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Sun Jul 19 12:52:15 2015 -->
+<!-- Thu Aug 13 16:22:33 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
@@ -454,7 +462,7 @@ Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Sun Jul 19 12:52:18 2015 -->
+<!-- Thu Aug 13 16:22:36 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -507,13 +515,12 @@ OMIT
 HAVING call.call_set_name IN ('NA12877','NA12882','NA12883','NA12884','NA12886','NA12888','NA12889','NA12891','NA12893')
 # Optionally add a clause here to sort and limit the results.
 ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000
-Running query:   RUNNING  2.4s
 ```
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Sun Jul 19 12:52:22 2015 -->
+<!-- Thu Aug 13 16:22:38 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> NA12884 </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> </tr>
