@@ -23,3 +23,5 @@ FROM (
   )
 GROUP BY
   call.call_set_name
+ORDER BY
+  call.call_set_name
