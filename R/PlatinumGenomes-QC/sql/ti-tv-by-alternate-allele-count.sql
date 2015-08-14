@@ -12,6 +12,8 @@ FROM (
     alternate_allele_count
   FROM (
     SELECT
+      reference_bases,
+      alternate_bases,
       CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
       COUNT(alternate_bases) WITHIN RECORD AS num_alts,
       SUM(call.genotype = 1) WITHIN RECORD AS alternate_allele_count,
