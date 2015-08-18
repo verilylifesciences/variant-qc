@@ -61,11 +61,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 These are the variant-level fields common to all variant sets exported to BigQuery from Google Genomics.  There are often dataset-specific variant-level fields as well.  For more information about additional fields, see the schema for the table being queried.  
@@ -84,11 +80,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 When the data contains non-variant segments, for any analyses that require us to know for example _"how many samples do and do not have a particular SNP?"_, we'll need to make sure that the non-variant segments are considered in addition to the variants.
@@ -111,11 +103,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 > In the case of Platinum Genomes we see from the query results that there are no special charaters in alternate_bases and the maximum length is ~50 base pairs, so just SNPs and small INDELs.
@@ -134,11 +122,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result, 10)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result, 10)
 ```
 
 

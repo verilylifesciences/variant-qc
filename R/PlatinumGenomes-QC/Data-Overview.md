@@ -76,7 +76,7 @@ Number of rows returned by this query: **335**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Thu Aug 13 16:11:05 2015 -->
+<!-- Tue Aug 18 13:40:00 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
@@ -121,21 +121,21 @@ OMIT RECORD IF SOME(alternate_bases IS NOT NULL)
 ORDER BY
   start,
   call.call_set_name
-Retrieving data:  3.1s
+Retrieving data:  3.3s
 ```
 Number of rows returned by this query: **22777**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Thu Aug 13 16:11:10 2015 -->
+<!-- Tue Aug 18 13:40:05 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
-  <tr> <td> NA12886 </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> </tr>
-  <tr> <td> NA12878 </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196321 </td> <td align="right"> 41196381 </td> <td> T </td> <td>  </td> </tr>
-  <tr> <td> NA12888 </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196322 </td> <td align="right"> 41196356 </td> <td> G </td> <td>  </td> </tr>
-  <tr> <td> NA12881 </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196337 </td> <td align="right"> 41196620 </td> <td> T </td> <td>  </td> </tr>
-  <tr> <td> NA12893 </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196339 </td> <td align="right"> 41196489 </td> <td> C </td> <td>  </td> </tr>
-  <tr> <td> NA12877 </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196349 </td> <td align="right"> 41196417 </td> <td> A </td> <td>  </td> </tr>
+  <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> </tr>
+  <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196321 </td> <td align="right"> 41196381 </td> <td> T </td> <td>  </td> </tr>
+  <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196322 </td> <td align="right"> 41196356 </td> <td> G </td> <td>  </td> </tr>
+  <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196337 </td> <td align="right"> 41196620 </td> <td> T </td> <td>  </td> </tr>
+  <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196339 </td> <td align="right"> 41196489 </td> <td> C </td> <td>  </td> </tr>
+  <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196349 </td> <td align="right"> 41196417 </td> <td> A </td> <td>  </td> </tr>
    </table>
 
 When the data contains non-variant segments, for any analyses that require us to know for example _"how many samples do and do not have a particular SNP?"_, we'll need to make sure that the non-variant segments are considered in addition to the variants.
@@ -174,7 +174,7 @@ Number of rows returned by this query: **1**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Thu Aug 13 16:11:11 2015 -->
+<!-- Tue Aug 18 13:40:06 2015 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
@@ -219,7 +219,7 @@ Number of rows returned by this query: **7**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Thu Aug 13 16:11:12 2015 -->
+<!-- Tue Aug 18 13:40:07 2015 -->
 <table border=1>
 <tr> <th> genotype </th> <th> genotype_count </th>  </tr>
   <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>
