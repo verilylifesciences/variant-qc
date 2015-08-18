@@ -66,11 +66,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 Visualizing the results:
@@ -97,11 +93,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 Visualizing the results:
@@ -127,7 +119,7 @@ result <- DisplayAndDispatchQuery(query,
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-print(xtable(head(result)), type="html", include.rownames=F)
+DisplayQueryResults(result)
 ```
 
 ```{r titv-by-depth, fig.align="center", fig.width=10, message=FALSE, comment=NA, warning=FALSE}
@@ -153,11 +145,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 ## Hardy-Weinberg Equilibrium
@@ -175,11 +163,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 See also [a version of this query](./sql/hardy-weinberg-udf.sql) that uses the new BigQuery feature of user-defined javascript functions which is currently in Alpha.  For more info, see https://www.youtube.com/watch?v=GrD7ymUPt3M#t=1377.
@@ -204,11 +188,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 # Removing variants from the Cohort

@@ -46,3 +46,17 @@ DisplayAndDispatchQuery <- function(queryUri, project, replacements=list()) {
   # Dispatch the query to BigQuery.
   query_exec(querySql, project)
 }
+
+DisplayQueryResults <- function(result, n=6) {
+  if(is.null(result)) {
+    cat("**None**")
+  } else {
+    # Suppress the printing of sample identifiers when the data contains allele
+    # values.  This is brittle since the query could use a different name for the columns
+    # containing the identifier or allele.
+    if(2 == length(intersect(c("call_call_set_name", "alternate_bases"), colnames(result)))) {
+      result <- mutate(result, call_call_set_name = "not displayed")
+    }
+    print(xtable(head(result, n=n)), type="html", include.rownames=F)
+  }
+}

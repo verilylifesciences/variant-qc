@@ -73,11 +73,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 And visualizing the results:
@@ -123,11 +119,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 And visualizing the results:
@@ -173,11 +165,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 And visualizing the results:
@@ -223,11 +211,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 And visualizing the results:
@@ -273,11 +257,7 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
-if(is.null(result)) { 
-  cat("**None**") 
-} else {
-  print(xtable(head(result)), type="html", include.rownames=F)
-}
+DisplayQueryResults(result)
 ```
 
 Let's join this with the sample information:
