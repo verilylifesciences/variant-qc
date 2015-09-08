@@ -128,7 +128,7 @@ joinedResult <- inner_join(expectedResult, result, by=c("INDV"))
 print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include.rownames=F)
 ```
 
-The logic in the query looks similar to vcftools [output_het method](http://sourceforge.net/p/vcftools/code/HEAD/tree/trunk/cpp/variant_file_output.cpp#l165) but there is clearly a difference.  TODO: investigate the difference further.
+The logic of the query is the same as vcftools [output_het method](http://sourceforge.net/p/vcftools/code/HEAD/tree/trunk/cpp/variant_file_output.cpp#l165), but the filtering criteria are slightly differnet, which explains the small difference in the results. The primary difference is due to using only SNPs in the query whereas vcftools uses both SNPs and indels. This is because the "expanded table" used in the query only contains non-variant segments for SNPs (i.e. indels matching the reference are not included), which results in inaccurate statistics for indels. There are a few other minor differences as well. For instance, vcftools discards the entire record if a [single sample is non-diploid](http://sourceforge.net/p/vcftools/code/HEAD/tree/trunk/cpp/entry_getters.cpp#l94) whereas the query only discards non-diploid samples within a record. Overall, the filtering differences are minor and the output of the query is largely consistent with vcftools.
 
 Check Identity By State
 -----------------------
