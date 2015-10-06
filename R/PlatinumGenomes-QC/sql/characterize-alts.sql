@@ -7,6 +7,8 @@ SELECT
   MAX(LENGTH(alternate_bases)) AS max_alt_len
 FROM
   [_THE_TABLE_]
-OMIT RECORD IF EVERY(alternate_bases IS NULL)
+# In some datasets, alternate_bases will be empty (therefore NULL) for non-variant segments.
+# In other datasets, alternate_bases will have the value "<NON_REF>" for non-variant segments.
+OMIT RECORD IF EVERY(alternate_bases IS NULL) OR EVERY(alternate_bases = "<NON_REF>")
 GROUP BY
   alt_contains_no_special_characters

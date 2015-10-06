@@ -9,7 +9,7 @@ FROM (
   FROM
   [_THE_TABLE_]
   WHERE
-    reference_name = 'chr17'
+    reference_name CONTAINS '17' # To match both 'chr17' and '17'
     AND start BETWEEN 41196311
     AND 41277499
     )
