@@ -99,7 +99,7 @@ Number of rows returned by this query: **2279**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Aug 18 13:48:53 2015 -->
+<!-- Wed Oct  7 14:02:02 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr1 </td> <td align="right">   0 </td> <td align="right"> 293 </td> <td align="right"> 198 </td> <td align="right"> 1.48 </td> <td align="right"> 491 </td> </tr>
@@ -174,7 +174,7 @@ Number of rows returned by this query: **35**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Aug 18 13:48:56 2015 -->
+<!-- Wed Oct  7 14:02:05 2015 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> alternate_allele_count </th>  </tr>
   <tr> <td align="right"> 350843 </td> <td align="right"> 172896 </td> <td align="right"> 2.03 </td> <td align="right">  34 </td> </tr>
@@ -268,7 +268,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Aug 18 13:48:59 2015 -->
+<!-- Wed Oct  7 14:02:08 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> titv_ratio </th> <th> average_depth </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.79 </td> <td align="right"> 1.00 </td> </tr>
@@ -336,7 +336,7 @@ Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Aug 18 13:49:02 2015 -->
+<!-- Wed Oct  7 14:02:11 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
@@ -461,7 +461,7 @@ Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Aug 18 13:49:05 2015 -->
+<!-- Wed Oct  7 14:02:13 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -480,7 +480,10 @@ For each variant within the X and Y chromosome, identify heterozygous variants i
 First we use our sample information to determine which genomes are male.  
 
 ```r
-maleSampleIds <- paste("'", filter(sampleInfo, gender == "Male")$call_call_set_name, "'", sep="", collapse=",")
+maleSampleIds <- paste("'",
+                       filter(sampleInfo,
+                              gender %in% c("MALE", "Male", "male", "M", "m"))$call_call_set_name,
+                       "'", sep="", collapse=",")
 ```
 
 
@@ -506,7 +509,7 @@ SELECT
 FROM
   [genomics-public-data:platinum_genomes.variants]
 WHERE
-  reference_name IN ('chrX', 'chrY')
+  reference_name CONTAINS 'X' OR reference_name CONTAINS 'Y'
 OMIT
   call if (2 > COUNT(call.genotype))
   OR EVERY(call.genotype <= 0)
@@ -519,7 +522,7 @@ Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Aug 18 13:49:07 2015 -->
+<!-- Wed Oct  7 14:02:15 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> not displayed </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> </tr>

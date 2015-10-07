@@ -64,10 +64,12 @@ SELECT
 FROM
   [genomics-public-data:platinum_genomes.variants]
 WHERE
-  reference_name = 'chr17'
+  reference_name CONTAINS '17' # To match both 'chr17' and '17'
   AND start BETWEEN 41196311
   AND 41277499
-OMIT RECORD IF EVERY(alternate_bases IS NULL)
+# In some datasets, alternate_bases will be empty (therefore NULL) for non-variant segments.
+# In other datasets, alternate_bases will have the value "<NON_REF>" for non-variant segments.
+OMIT RECORD IF EVERY(alternate_bases IS NULL) OR EVERY(alternate_bases = "<NON_REF>")
 ORDER BY
   start,
   alternate_bases
@@ -76,7 +78,7 @@ Number of rows returned by this query: **335**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Aug 18 13:40:00 2015 -->
+<!-- Wed Oct  7 13:42:40 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
@@ -102,7 +104,7 @@ result <- DisplayAndDispatchQuery("./sql/non-variant-segments.sql",
 ```
 
 ```
-# Retrieve non-variant segments for BRCA1, flattening by sample.
+# Retrieve non-variant segments for BRCA1, implicitly flattening by sample.
 SELECT
   call.call_set_name,
   GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
@@ -114,20 +116,23 @@ SELECT
 FROM
   [genomics-public-data:platinum_genomes.variants]
 WHERE
-  reference_name = 'chr17'
+  reference_name CONTAINS '17' # To match both 'chr17' and '17'
   AND start BETWEEN 41196311
   AND 41277499
-OMIT RECORD IF SOME(alternate_bases IS NOT NULL)
+# In some datasets, alternate_bases will be empty (therefore NULL) for non-variant segments.
+# In other datasets, alternate_bases will have the value "<NON_REF>" for non-variant segments.
+OMIT RECORD IF (SOME(alternate_bases IS NOT NULL) AND SOME(alternate_bases != "<NON_REF>"))
 ORDER BY
   start,
   call.call_set_name
-Retrieving data:  3.3s
+LIMIT
+  10000
 ```
-Number of rows returned by this query: **22777**.
+Number of rows returned by this query: **10000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Aug 18 13:40:05 2015 -->
+<!-- Wed Oct  7 13:42:44 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> </tr>
@@ -166,7 +171,9 @@ SELECT
   MAX(LENGTH(alternate_bases)) AS max_alt_len
 FROM
   [genomics-public-data:platinum_genomes.variants]
-OMIT RECORD IF EVERY(alternate_bases IS NULL)
+# In some datasets, alternate_bases will be empty (therefore NULL) for non-variant segments.
+# In other datasets, alternate_bases will have the value "<NON_REF>" for non-variant segments.
+OMIT RECORD IF EVERY(alternate_bases IS NULL) OR EVERY(alternate_bases = "<NON_REF>")
 GROUP BY
   alt_contains_no_special_characters
 ```
@@ -174,7 +181,7 @@ Number of rows returned by this query: **1**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Aug 18 13:40:06 2015 -->
+<!-- Wed Oct  7 13:42:45 2015 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
@@ -206,7 +213,7 @@ FROM (
   FROM
   [genomics-public-data:platinum_genomes.variants]
   WHERE
-    reference_name = 'chr17'
+    reference_name CONTAINS '17' # To match both 'chr17' and '17'
     AND start BETWEEN 41196311
     AND 41277499
     )
@@ -219,7 +226,7 @@ Number of rows returned by this query: **7**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Aug 18 13:40:07 2015 -->
+<!-- Wed Oct  7 13:42:47 2015 -->
 <table border=1>
 <tr> <th> genotype </th> <th> genotype_count </th>  </tr>
   <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>
