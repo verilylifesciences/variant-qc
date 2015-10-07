@@ -64,7 +64,7 @@ pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv",
 
 For each genome, determine the percentage of sites explicitly called as a no-call.  If this percentage is too high, the genome may be problematic.
 
-```{r message=FALSE, warning=FALSE, comment=NA}
+```{r message=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/sample-level-missingness.sql",
                                   project=project,
                                   replacements=queryReplacements)
@@ -74,6 +74,12 @@ Number of rows returned by this query: **`r if(is.null(result)) { "None" } else 
 Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
 DisplayQueryResults(result)
+```
+
+For some datasets, we see numeric overflow when bigrquery converts 64-bit integer results from BigQuery to 32-bit R integers in the dataframe. For this query, the particular column with the overflow is not used in our downstream analysis in R, so we can omit it.
+```{r}
+.Machine$integer.max
+result <- dplyr::select(result, -all_calls)
 ```
 
 And visualizing the results:

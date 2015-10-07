@@ -173,7 +173,10 @@ For each variant within the X and Y chromosome, identify heterozygous variants i
 
 First we use our sample information to determine which genomes are male.  
 ```{r message=FALSE, warning=FALSE, comment=NA}
-maleSampleIds <- paste("'", filter(sampleInfo, gender == "Male")$call_call_set_name, "'", sep="", collapse=",")
+maleSampleIds <- paste("'",
+                       filter(sampleInfo,
+                              gender %in% c("MALE", "Male", "male", "M", "m"))$call_call_set_name,
+                       "'", sep="", collapse=",")
 ```
 
 ```{r message=FALSE, warning=FALSE, comment=NA}

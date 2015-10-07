@@ -10,7 +10,7 @@ SELECT
 FROM
   [_THE_TABLE_]
 WHERE
-  reference_name IN ('chrX', 'chrY')
+  reference_name CONTAINS 'X' OR reference_name CONTAINS 'Y'
 OMIT
   call if (2 > COUNT(call.genotype))
   OR EVERY(call.genotype <= 0)
