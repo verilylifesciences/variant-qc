@@ -27,7 +27,7 @@ FROM (
         call.genotype,
         call.DP,
       FROM
-        [_THE_TABLE_]
+        [_THE_EXPANDED_TABLE_]
       # Optionally add clause here to limit the query to a particular
       # region of the genome.
       #_WHERE_
