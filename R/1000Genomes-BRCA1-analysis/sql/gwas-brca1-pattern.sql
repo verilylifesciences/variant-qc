@@ -17,17 +17,17 @@ SELECT
   case_alt_count,
   control_ref_count,
   control_alt_count,
+  # https://en.wikipedia.org/wiki/Yates%27s_correction_for_continuity
   ROUND(
-    POW(case_ref_count - (ref_count/allele_count)*case_count,
+    POW(ABS(case_ref_count - (ref_count/allele_count)*case_count) - 0.5,
       2)/((ref_count/allele_count)*case_count) +
-    POW(control_ref_count - (ref_count/allele_count)*control_count,
+    POW(ABS(control_ref_count - (ref_count/allele_count)*control_count) - 0.5,
       2)/((ref_count/allele_count)*control_count) +
-    POW(case_alt_count - (alt_count/allele_count)*case_count,
+    POW(ABS(case_alt_count - (alt_count/allele_count)*case_count) - 0.5,
       2)/((alt_count/allele_count)*case_count) +
-    POW(control_alt_count - (alt_count/allele_count)*control_count,
+    POW(ABS(control_alt_count - (alt_count/allele_count)*control_count) - 0.5,
       2)/((alt_count/allele_count)*control_count),
-    3)
-  AS chi_squared_score
+    3) AS chi_squared_score
 FROM (
   SELECT
     reference_name,

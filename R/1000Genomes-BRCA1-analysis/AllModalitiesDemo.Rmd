@@ -57,6 +57,7 @@ This analysis performed an `O(N^2)` computation upon the relevant fields within 
 
 Visualizing the results, we see quite distinct clusters:
 ```{r pca, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+require(scales) # for scientific_format()
 require(ggplot2)
 ggplot(pca_1kg) +
   geom_point(aes(x=PC1, y=PC2)) +
@@ -110,7 +111,6 @@ This analysis performed an `O(N)` computation via [Google BigQuery](https://clou
 Visualizing the results, we again see quite distinct clusters:
 ```{r alt-counts, fig.align="center", fig.width=10, message=FALSE, warning=FALSE, comment=NA}
 sample_alt_counts <- inner_join(sample_alt_counts, sample_info)
-require(scales) # for scientific_format()
 ggplot(sample_alt_counts) +
   geom_point(aes(x=single, y=double, color=Super_Population)) +
   scale_x_continuous(label=scientific_format()) +

@@ -51,6 +51,7 @@ This analysis performed an `O(N^2)` computation upon the relevant fields within 
 Visualizing the results, we see quite distinct clusters:
 
 ```r
+require(scales) # for scientific_format()
 require(ggplot2)
 ggplot(pca_1kg) +
   geom_point(aes(x=PC1, y=PC2)) +
@@ -134,7 +135,6 @@ Visualizing the results, we again see quite distinct clusters:
 
 ```r
 sample_alt_counts <- inner_join(sample_alt_counts, sample_info)
-require(scales) # for scientific_format()
 ggplot(sample_alt_counts) +
   geom_point(aes(x=single, y=double, color=Super_Population)) +
   scale_x_continuous(label=scientific_format()) +
@@ -248,17 +248,17 @@ SELECT
   case_alt_count,
   control_ref_count,
   control_alt_count,
+  # https://en.wikipedia.org/wiki/Yates%27s_correction_for_continuity
   ROUND(
-    POW(case_ref_count - (ref_count/allele_count)*case_count,
+    POW(ABS(case_ref_count - (ref_count/allele_count)*case_count) - 0.5,
       2)/((ref_count/allele_count)*case_count) +
-    POW(control_ref_count - (ref_count/allele_count)*control_count,
+    POW(ABS(control_ref_count - (ref_count/allele_count)*control_count) - 0.5,
       2)/((ref_count/allele_count)*control_count) +
-    POW(case_alt_count - (alt_count/allele_count)*case_count,
+    POW(ABS(case_alt_count - (alt_count/allele_count)*case_count) - 0.5,
       2)/((alt_count/allele_count)*case_count) +
-    POW(control_alt_count - (alt_count/allele_count)*control_count,
+    POW(ABS(control_alt_count - (alt_count/allele_count)*control_count) - 0.5,
       2)/((alt_count/allele_count)*control_count),
-    3)
-  AS chi_squared_score
+    3) AS chi_squared_score
 FROM (
   SELECT
     reference_name,
@@ -314,7 +314,7 @@ ORDER BY
   chi_squared_score DESC,
   start
 ```
-Number of rows returned by this query: 183.
+Number of rows returned by this query: 180.
 
 Note that even though this query ran over a small region of the genome, with a minor change to the SQL we could have run this same GWAS query over all variants within a much larger region, over an entire chromosome, or even the full dataset; returning the ranked list of variants that differ between the two groups.
 
@@ -338,12 +338,12 @@ head(result)
 5       1158          1026         2184      1473       711            447
 6       1158          1026         2184      1471       713            446
   case_alt_count control_ref_count control_alt_count chi_squared_score
-1            711              1026                 0           934.025
-2            711              1026                 0           934.025
-3            711              1026                 0           934.025
-4            711              1026                 0           934.025
-5            711              1026                 0           934.025
-6            712              1025                 1           932.333
+1            711              1026                 0           931.230
+2            711              1026                 0           931.230
+3            711              1026                 0           931.230
+4            711              1026                 0           931.230
+5            711              1026                 0           931.230
+6            712              1025                 1           929.544
 ```
 
 ### Annotate Variants with BioConductor
@@ -689,7 +689,7 @@ sessionInfo()
 ```
 R version 3.2.0 (2015-04-16)
 Platform: x86_64-apple-darwin13.4.0 (64-bit)
-Running under: OS X 10.10.3 (Yosemite)
+Running under: OS X 10.10.5 (Yosemite)
 
 locale:
 [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -707,7 +707,7 @@ other attached packages:
  [6] BSgenome.Hsapiens.UCSC.hg19_1.4.0      
  [7] BSgenome_1.36.0                        
  [8] rtracklayer_1.28.4                     
- [9] GoogleGenomics_1.0.0                   
+ [9] GoogleGenomics_1.1.3                   
 [10] VariantAnnotation_1.14.1               
 [11] GenomicAlignments_1.4.1                
 [12] Rsamtools_1.20.4                       
@@ -718,35 +718,30 @@ other attached packages:
 [17] IRanges_2.2.2                          
 [18] S4Vectors_0.6.0                        
 [19] BiocGenerics_0.14.0                    
-[20] mgcv_1.8-6                             
-[21] nlme_3.1-120                           
-[22] scales_0.2.4                           
-[23] ggplot2_1.0.1                          
-[24] dplyr_0.4.1                            
-[25] RCurl_1.95-4.6                         
-[26] bitops_1.0-6                           
-[27] xtable_1.7-4                           
-[28] bigrquery_0.1.0                        
-[29] knitr_1.10.5                           
-[30] BiocInstaller_1.18.2                   
+[20] bigrquery_0.1.0                        
+[21] dplyr_0.4.2                            
+[22] ggplot2_1.0.1                          
+[23] scales_0.2.5                           
+[24] knitr_1.10.5                           
 
 loaded via a namespace (and not attached):
- [1] httr_0.6.1           jsonlite_0.9.16      splines_3.2.0       
- [4] Formula_1.2-1        assertthat_0.1       latticeExtra_0.6-26 
- [7] RBGL_1.44.0          RSQLite_1.0.0        lattice_0.20-31     
-[10] biovizBase_1.16.0    digest_0.6.8         RColorBrewer_1.1-2  
-[13] colorspace_1.2-6     Matrix_1.2-0         plyr_1.8.2          
-[16] OrganismDbi_1.10.0   XML_3.98-1.2         biomaRt_2.24.0      
-[19] zlibbioc_1.14.0      BiocParallel_1.2.2   nnet_7.3-9          
-[22] lazyeval_0.1.10      proto_0.3-10         survival_2.38-1     
-[25] magrittr_1.5         evaluate_0.7         GGally_0.5.0        
-[28] MASS_7.3-40          foreign_0.8-63       graph_1.46.0        
-[31] tools_3.2.0          formatR_1.2          stringr_1.0.0       
-[34] munsell_0.4.2        cluster_2.0.1        lambda.r_1.1.7      
-[37] futile.logger_1.4.1  grid_3.2.0           dichromat_2.0-0     
-[40] rjson_0.2.15         labeling_0.3         gtable_0.1.2        
-[43] DBI_0.3.1            reshape_0.8.5        reshape2_1.4.1      
-[46] R6_2.0.1             gridExtra_0.9.1      Hmisc_3.16-0        
-[49] futile.options_1.0.0 stringi_0.4-1        Rcpp_0.11.6         
-[52] rpart_4.1-9          acepack_1.3-3.3     
+ [1] Rcpp_0.12.0          biovizBase_1.16.0    lattice_0.20-31     
+ [4] assertthat_0.1       digest_0.6.8         R6_2.1.1            
+ [7] plyr_1.8.3           futile.options_1.0.0 acepack_1.3-3.3     
+[10] RSQLite_1.0.0        evaluate_0.7.2       httr_1.0.0          
+[13] zlibbioc_1.14.0      lazyeval_0.1.10      curl_0.9.3          
+[16] rstudioapi_0.3.1     rpart_4.1-9          proto_0.3-10        
+[19] labeling_0.3         splines_3.2.0        BiocParallel_1.2.2  
+[22] foreign_0.8-63       stringr_1.0.0        RCurl_1.95-4.6      
+[25] biomaRt_2.24.0       munsell_0.4.2        nnet_7.3-9          
+[28] gridExtra_0.9.1      Hmisc_3.16-0         XML_3.98-1.2        
+[31] reshape_0.8.5        MASS_7.3-40          bitops_1.0-6        
+[34] RBGL_1.44.0          grid_3.2.0           jsonlite_0.9.17     
+[37] GGally_0.5.0         gtable_0.1.2         DBI_0.3.1           
+[40] magrittr_1.5         formatR_1.2          graph_1.46.0        
+[43] stringi_0.5-5        reshape2_1.4.1       latticeExtra_0.6-26 
+[46] futile.logger_1.4.1  Formula_1.2-1        RColorBrewer_1.1-2  
+[49] rjson_0.2.15         lambda.r_1.1.7       tools_3.2.0         
+[52] dichromat_2.0-0      OrganismDbi_1.10.0   survival_2.38-1     
+[55] colorspace_1.2-6     cluster_2.0.1       
 ```
