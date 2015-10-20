@@ -229,13 +229,8 @@ public class TransformNonVariantSegmentData {
    */
   public static final class FlagVariantsWithAmbiguousCallsFn extends DoFn<Variant, Variant> {
 
-    Aggregator<Long> variantsWithAmbiguousCallsCount;
-
-    @Override
-    public void startBundle(Context c) {
-      variantsWithAmbiguousCallsCount =
-          c.createAggregator("Number of variants containing ambiguous calls", new Sum.SumLongFn());
-    }
+    Aggregator<Long, Long> variantsWithAmbiguousCallsCount = 
+        createAggregator("Number of variants containing ambiguous calls", new Sum.SumLongFn());
 
     @Override
     public void processElement(ProcessContext context) {
