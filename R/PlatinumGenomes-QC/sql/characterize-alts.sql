@@ -1,4 +1,4 @@
-# Variants are only SNPs and INDELs, with no special characters.
+# Check whether variants are only SNPs and INDELs, with no special characters.
 SELECT
   COUNT(1) AS number_of_variant_records,
   REGEXP_MATCH(alternate_bases,
