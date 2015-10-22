@@ -25,8 +25,8 @@ For details as to how the comparison data was created, see the [provenance detai
 # Set up for BigQuery access.
 source("../rHelpers/setup.R")
 
-replacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                     "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants",
+replacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                     "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants",
                      "#_WHERE_"="WHERE reference_name = 'chr17' AND start BETWEEN 41196311 AND 41277499")
 ```
 
@@ -102,8 +102,8 @@ ORDER BY
 ```
 Number of rows returned by this query: 63.
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:05 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:42 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> S </td> <td> CT </td> <td> C </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
@@ -193,18 +193,18 @@ nrow(inner_join(result, expectedResult))
 ```
 
 ```
-## Warning: joining character vector and factor, coercing into character
-## vector
+## Warning in inner_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
 ```
 
 ```
-## Warning: joining character vector and factor, coercing into character
-## vector
+## Warning in inner_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
 ```
 
 ```
-## Warning: joining character vector and factor, coercing into character
-## vector
+## Warning in inner_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
 ```
 
 ```
@@ -222,26 +222,26 @@ onlyBQ <- anti_join(result, expectedResult)
 ```
 
 ```
-## Warning: joining character vector and factor, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
 ```
 
 ```
-## Warning: joining character vector and factor, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
 ```
 
 ```
-## Warning: joining character vector and factor, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
 ```
 
 ```r
 print(xtable(onlyBQ), type="html", include.rownames=F)
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:06 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:42 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> S </td> <td> CACA </td> <td> CACAACA </td> <td> NA12878 </td> <td> "1,2" </td> <td align="right">   1 </td> </tr>
@@ -258,34 +258,34 @@ onlyVcftools <- anti_join(expectedResult, result)
 ```
 
 ```
-## Warning: joining factor and character vector, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining factor and character
+## vector, coercing into character vector
 ```
 
 ```
-## Warning: joining factor and character vector, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining factor and character
+## vector, coercing into character vector
 ```
 
 ```
-## Warning: joining factor and character vector, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining factor and character
+## vector, coercing into character vector
 ```
 
 ```r
 print(xtable(onlyVcftools), type="html", include.rownames=F)
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:06 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:42 2015 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> ALLELE </th> <th> INDV </th>  </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41252694.00 </td> <td> S </td> <td> AAT </td> <td> NA12886 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41204841.00 </td> <td> S </td> <td> T </td> <td> NA12888 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196320.00 </td> <td> D </td> <td> T </td> <td> NA12886 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196319.00 </td> <td> D </td> <td> T </td> <td> NA12886 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196318.00 </td> <td> D </td> <td> G </td> <td> NA12886 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196317.00 </td> <td> D </td> <td> T </td> <td> NA12886 </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41252694.00 </td> <td> S </td> <td> AAT </td> <td> NA12886 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196316.00 </td> <td> D </td> <td> G </td> <td> NA12886 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196315.00 </td> <td> D </td> <td> A </td> <td> NA12886 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196314.00 </td> <td> D </td> <td> A </td> <td> NA12886 </td> </tr>
@@ -320,15 +320,15 @@ FROM
 WHERE
   reference_name = 'chr17'
 HAVING
-  start = 41252694 OR start = 41204841 OR start = 41196320 OR start = 41196319 OR start = 41196318 OR start = 41196317 OR start = 41196316 OR start = 41196315 OR start = 41196314 OR start = 41196313
+  start = 41204841 OR start = 41196320 OR start = 41196319 OR start = 41196318 OR start = 41196317 OR start = 41252694 OR start = 41196316 OR start = 41196315 OR start = 41196314 OR start = 41196313
 ORDER BY
   start,
   end,
   call.call_set_name
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:07 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:43 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th>  </tr>
   <tr> <td> NA12886 </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td align="right"> 0.00 </td> <td> PASS </td> </tr>
@@ -410,12 +410,15 @@ FROM (
     # region of the genome.
     WHERE reference_name = 'chr17' AND start BETWEEN 41196311 AND 41277499
     # Skip no calls and haploid sites
-    OMIT call IF SOME(call.genotype < 0) OR (2 > COUNT(call.genotype))
+    OMIT call IF SOME(call.genotype < 0) OR (2 != COUNT(call.genotype))
     HAVING
-      # Skip 1/2 genotypes _and non-SNP variants
+      # Skip 1/2 genotypes.
       num_alts = 1
+      # Only use SNPs since non-variant segments are only included for SNPs.
       AND reference_bases IN ('A','C','G','T')
       AND alternate_bases IN ('A','C','G','T')
+      # Skip records where all samples have the same allele.
+      AND freq > 0 AND freq < 1 
       )
   GROUP BY
     call.call_set_name
@@ -425,27 +428,27 @@ ORDER BY
 ```
 Number of rows returned by this query: 17.
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:09 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:46 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 252 </td> <td align="right"> 233.49 </td> <td align="right"> 274 </td> <td align="right"> 0.46 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 100 </td> <td align="right"> 210.84 </td> <td align="right"> 268 </td> <td align="right"> -1.94 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 246 </td> <td align="right"> 233.49 </td> <td align="right"> 274 </td> <td align="right"> 0.31 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 101 </td> <td align="right"> 195.83 </td> <td align="right"> 266 </td> <td align="right"> -1.35 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 237 </td> <td align="right"> 233.49 </td> <td align="right"> 274 </td> <td align="right"> 0.09 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 252 </td> <td align="right"> 233.49 </td> <td align="right"> 274 </td> <td align="right"> 0.46 </td> </tr>
-  <tr> <td> NA12883 </td> <td align="right">  94 </td> <td align="right"> 186.30 </td> <td align="right"> 254 </td> <td align="right"> -1.36 </td> </tr>
-  <tr> <td> NA12884 </td> <td align="right"> 246 </td> <td align="right"> 232.52 </td> <td align="right"> 272 </td> <td align="right"> 0.34 </td> </tr>
-  <tr> <td> NA12885 </td> <td align="right"> 251 </td> <td align="right"> 233.49 </td> <td align="right"> 274 </td> <td align="right"> 0.43 </td> </tr>
-  <tr> <td> NA12886 </td> <td align="right"> 250 </td> <td align="right"> 232.52 </td> <td align="right"> 272 </td> <td align="right"> 0.44 </td> </tr>
-  <tr> <td> NA12887 </td> <td align="right">  85 </td> <td align="right"> 203.06 </td> <td align="right"> 264 </td> <td align="right"> -1.94 </td> </tr>
-  <tr> <td> NA12888 </td> <td align="right">  95 </td> <td align="right"> 205.64 </td> <td align="right"> 267 </td> <td align="right"> -1.80 </td> </tr>
-  <tr> <td> NA12889 </td> <td align="right">  98 </td> <td align="right"> 205.87 </td> <td align="right"> 267 </td> <td align="right"> -1.76 </td> </tr>
-  <tr> <td> NA12890 </td> <td align="right"> 242 </td> <td align="right"> 222.27 </td> <td align="right"> 271 </td> <td align="right"> 0.40 </td> </tr>
-  <tr> <td> NA12891 </td> <td align="right"> 241 </td> <td align="right"> 229.03 </td> <td align="right"> 269 </td> <td align="right"> 0.30 </td> </tr>
-  <tr> <td> NA12892 </td> <td align="right">  92 </td> <td align="right"> 204.72 </td> <td align="right"> 266 </td> <td align="right"> -1.84 </td> </tr>
-  <tr> <td> NA12893 </td> <td align="right"> 238 </td> <td align="right"> 230.91 </td> <td align="right"> 271 </td> <td align="right"> 0.18 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 244 </td> <td align="right"> 196.17 </td> <td align="right"> 266 </td> <td align="right"> 0.68 </td> </tr>
+  <tr> <td> NA12878 </td> <td align="right">  96 </td> <td align="right"> 194.35 </td> <td align="right"> 264 </td> <td align="right"> -1.41 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 238 </td> <td align="right"> 196.17 </td> <td align="right"> 266 </td> <td align="right"> 0.60 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 100 </td> <td align="right"> 194.83 </td> <td align="right"> 265 </td> <td align="right"> -1.35 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 229 </td> <td align="right"> 196.17 </td> <td align="right"> 266 </td> <td align="right"> 0.47 </td> </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 244 </td> <td align="right"> 196.17 </td> <td align="right"> 266 </td> <td align="right"> 0.68 </td> </tr>
+  <tr> <td> NA12883 </td> <td align="right">  93 </td> <td align="right"> 185.30 </td> <td align="right"> 253 </td> <td align="right"> -1.36 </td> </tr>
+  <tr> <td> NA12884 </td> <td align="right"> 238 </td> <td align="right"> 195.19 </td> <td align="right"> 264 </td> <td align="right"> 0.62 </td> </tr>
+  <tr> <td> NA12885 </td> <td align="right"> 243 </td> <td align="right"> 196.17 </td> <td align="right"> 266 </td> <td align="right"> 0.67 </td> </tr>
+  <tr> <td> NA12886 </td> <td align="right"> 242 </td> <td align="right"> 195.19 </td> <td align="right"> 264 </td> <td align="right"> 0.68 </td> </tr>
+  <tr> <td> NA12887 </td> <td align="right">  82 </td> <td align="right"> 191.76 </td> <td align="right"> 261 </td> <td align="right"> -1.59 </td> </tr>
+  <tr> <td> NA12888 </td> <td align="right">  92 </td> <td align="right"> 194.35 </td> <td align="right"> 264 </td> <td align="right"> -1.47 </td> </tr>
+  <tr> <td> NA12889 </td> <td align="right">  95 </td> <td align="right"> 194.57 </td> <td align="right"> 264 </td> <td align="right"> -1.43 </td> </tr>
+  <tr> <td> NA12890 </td> <td align="right"> 236 </td> <td align="right"> 195.24 </td> <td align="right"> 265 </td> <td align="right"> 0.58 </td> </tr>
+  <tr> <td> NA12891 </td> <td align="right"> 233 </td> <td align="right"> 191.70 </td> <td align="right"> 261 </td> <td align="right"> 0.60 </td> </tr>
+  <tr> <td> NA12892 </td> <td align="right">  89 </td> <td align="right"> 193.42 </td> <td align="right"> 263 </td> <td align="right"> -1.50 </td> </tr>
+  <tr> <td> NA12893 </td> <td align="right"> 230 </td> <td align="right"> 193.58 </td> <td align="right"> 263 </td> <td align="right"> 0.52 </td> </tr>
    </table>
 
 Compare to [brca1.het](./heterozygous/brca1.het) (see the [vcftools command line](./heterozygous/brca1.log) used to create this file).
@@ -466,38 +469,38 @@ joinedResult <- inner_join(expectedResult, result, by=c("INDV"))
 ```
 
 ```
-## Warning: joining factor and character vector, coercing into character
-## vector
+## Warning in inner_join_impl(x, y, by$x, by$y): joining factor and character
+## vector, coercing into character vector
 ```
 
 ```r
 print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include.rownames=F)
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:09 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:46 2015 -->
 <table border=1>
 <tr> <th> E_HOM.x </th> <th> E_HOM.y </th> <th> F.x </th> <th> F.y </th> <th> INDV </th> <th> N_SITES.x </th> <th> N_SITES.y </th> <th> O_HOM.x </th> <th> O_HOM.y </th>  </tr>
-  <tr> <td align="right"> 185.60 </td> <td align="right"> 233.49 </td> <td align="right"> 0.71 </td> <td align="right"> 0.46 </td> <td> NA12877 </td> <td align="right"> 254 </td> <td align="right"> 274 </td> <td align="right"> 234 </td> <td align="right"> 252 </td> </tr>
-  <tr> <td align="right"> 195.70 </td> <td align="right"> 210.84 </td> <td align="right"> -1.28 </td> <td align="right"> -1.94 </td> <td> NA12878 </td> <td align="right"> 278 </td> <td align="right"> 268 </td> <td align="right">  90 </td> <td align="right"> 100 </td> </tr>
-  <tr> <td align="right"> 186.70 </td> <td align="right"> 233.49 </td> <td align="right"> 0.57 </td> <td align="right"> 0.31 </td> <td> NA12879 </td> <td align="right"> 256 </td> <td align="right"> 274 </td> <td align="right"> 226 </td> <td align="right"> 246 </td> </tr>
-  <tr> <td align="right"> 195.50 </td> <td align="right"> 195.83 </td> <td align="right"> -1.31 </td> <td align="right"> -1.35 </td> <td> NA12880 </td> <td align="right"> 277 </td> <td align="right"> 266 </td> <td align="right">  89 </td> <td align="right"> 101 </td> </tr>
-  <tr> <td align="right"> 185.10 </td> <td align="right"> 233.49 </td> <td align="right"> 0.47 </td> <td align="right"> 0.09 </td> <td> NA12881 </td> <td align="right"> 253 </td> <td align="right"> 274 </td> <td align="right"> 217 </td> <td align="right"> 237 </td> </tr>
-  <tr> <td align="right"> 186.10 </td> <td align="right"> 233.49 </td> <td align="right"> 0.68 </td> <td align="right"> 0.46 </td> <td> NA12882 </td> <td align="right"> 255 </td> <td align="right"> 274 </td> <td align="right"> 233 </td> <td align="right"> 252 </td> </tr>
-  <tr> <td align="right"> 197.40 </td> <td align="right"> 186.30 </td> <td align="right"> -1.19 </td> <td align="right"> -1.36 </td> <td> NA12883 </td> <td align="right"> 285 </td> <td align="right"> 254 </td> <td align="right">  93 </td> <td align="right">  94 </td> </tr>
-  <tr> <td align="right"> 187.20 </td> <td align="right"> 232.52 </td> <td align="right"> 0.60 </td> <td align="right"> 0.34 </td> <td> NA12884 </td> <td align="right"> 257 </td> <td align="right"> 272 </td> <td align="right"> 229 </td> <td align="right"> 246 </td> </tr>
-  <tr> <td align="right"> 186.50 </td> <td align="right"> 233.49 </td> <td align="right"> 0.65 </td> <td align="right"> 0.43 </td> <td> NA12885 </td> <td align="right"> 256 </td> <td align="right"> 274 </td> <td align="right"> 232 </td> <td align="right"> 251 </td> </tr>
-  <tr> <td align="right"> 186.10 </td> <td align="right"> 232.52 </td> <td align="right"> 0.65 </td> <td align="right"> 0.44 </td> <td> NA12886 </td> <td align="right"> 255 </td> <td align="right"> 272 </td> <td align="right"> 231 </td> <td align="right"> 250 </td> </tr>
-  <tr> <td align="right"> 195.10 </td> <td align="right"> 203.06 </td> <td align="right"> -1.44 </td> <td align="right"> -1.94 </td> <td> NA12887 </td> <td align="right"> 277 </td> <td align="right"> 264 </td> <td align="right">  77 </td> <td align="right">  85 </td> </tr>
-  <tr> <td align="right"> 196.90 </td> <td align="right"> 205.64 </td> <td align="right"> -1.34 </td> <td align="right"> -1.80 </td> <td> NA12888 </td> <td align="right"> 280 </td> <td align="right"> 267 </td> <td align="right">  86 </td> <td align="right">  95 </td> </tr>
-  <tr> <td align="right"> 195.10 </td> <td align="right"> 205.87 </td> <td align="right"> -1.35 </td> <td align="right"> -1.76 </td> <td> NA12889 </td> <td align="right"> 275 </td> <td align="right"> 267 </td> <td align="right">  87 </td> <td align="right">  98 </td> </tr>
-  <tr> <td align="right"> 184.60 </td> <td align="right"> 222.27 </td> <td align="right"> 0.59 </td> <td align="right"> 0.40 </td> <td> NA12890 </td> <td align="right"> 253 </td> <td align="right"> 271 </td> <td align="right"> 225 </td> <td align="right"> 242 </td> </tr>
-  <tr> <td align="right"> 181.60 </td> <td align="right"> 229.03 </td> <td align="right"> 0.55 </td> <td align="right"> 0.30 </td> <td> NA12891 </td> <td align="right"> 250 </td> <td align="right"> 269 </td> <td align="right"> 219 </td> <td align="right"> 241 </td> </tr>
-  <tr> <td align="right"> 196.90 </td> <td align="right"> 204.72 </td> <td align="right"> -1.32 </td> <td align="right"> -1.84 </td> <td> NA12892 </td> <td align="right"> 282 </td> <td align="right"> 266 </td> <td align="right">  85 </td> <td align="right">  92 </td> </tr>
-  <tr> <td align="right"> 183.80 </td> <td align="right"> 230.91 </td> <td align="right"> 0.49 </td> <td align="right"> 0.18 </td> <td> NA12893 </td> <td align="right"> 252 </td> <td align="right"> 271 </td> <td align="right"> 217 </td> <td align="right"> 238 </td> </tr>
+  <tr> <td align="right"> 185.60 </td> <td align="right"> 196.17 </td> <td align="right"> 0.71 </td> <td align="right"> 0.68 </td> <td> NA12877 </td> <td align="right"> 254 </td> <td align="right"> 266 </td> <td align="right"> 234 </td> <td align="right"> 244 </td> </tr>
+  <tr> <td align="right"> 195.70 </td> <td align="right"> 194.35 </td> <td align="right"> -1.28 </td> <td align="right"> -1.41 </td> <td> NA12878 </td> <td align="right"> 278 </td> <td align="right"> 264 </td> <td align="right">  90 </td> <td align="right">  96 </td> </tr>
+  <tr> <td align="right"> 186.70 </td> <td align="right"> 196.17 </td> <td align="right"> 0.57 </td> <td align="right"> 0.60 </td> <td> NA12879 </td> <td align="right"> 256 </td> <td align="right"> 266 </td> <td align="right"> 226 </td> <td align="right"> 238 </td> </tr>
+  <tr> <td align="right"> 195.50 </td> <td align="right"> 194.83 </td> <td align="right"> -1.31 </td> <td align="right"> -1.35 </td> <td> NA12880 </td> <td align="right"> 277 </td> <td align="right"> 265 </td> <td align="right">  89 </td> <td align="right"> 100 </td> </tr>
+  <tr> <td align="right"> 185.10 </td> <td align="right"> 196.17 </td> <td align="right"> 0.47 </td> <td align="right"> 0.47 </td> <td> NA12881 </td> <td align="right"> 253 </td> <td align="right"> 266 </td> <td align="right"> 217 </td> <td align="right"> 229 </td> </tr>
+  <tr> <td align="right"> 186.10 </td> <td align="right"> 196.17 </td> <td align="right"> 0.68 </td> <td align="right"> 0.68 </td> <td> NA12882 </td> <td align="right"> 255 </td> <td align="right"> 266 </td> <td align="right"> 233 </td> <td align="right"> 244 </td> </tr>
+  <tr> <td align="right"> 197.40 </td> <td align="right"> 185.30 </td> <td align="right"> -1.19 </td> <td align="right"> -1.36 </td> <td> NA12883 </td> <td align="right"> 285 </td> <td align="right"> 253 </td> <td align="right">  93 </td> <td align="right">  93 </td> </tr>
+  <tr> <td align="right"> 187.20 </td> <td align="right"> 195.19 </td> <td align="right"> 0.60 </td> <td align="right"> 0.62 </td> <td> NA12884 </td> <td align="right"> 257 </td> <td align="right"> 264 </td> <td align="right"> 229 </td> <td align="right"> 238 </td> </tr>
+  <tr> <td align="right"> 186.50 </td> <td align="right"> 196.17 </td> <td align="right"> 0.65 </td> <td align="right"> 0.67 </td> <td> NA12885 </td> <td align="right"> 256 </td> <td align="right"> 266 </td> <td align="right"> 232 </td> <td align="right"> 243 </td> </tr>
+  <tr> <td align="right"> 186.10 </td> <td align="right"> 195.19 </td> <td align="right"> 0.65 </td> <td align="right"> 0.68 </td> <td> NA12886 </td> <td align="right"> 255 </td> <td align="right"> 264 </td> <td align="right"> 231 </td> <td align="right"> 242 </td> </tr>
+  <tr> <td align="right"> 195.10 </td> <td align="right"> 191.76 </td> <td align="right"> -1.44 </td> <td align="right"> -1.59 </td> <td> NA12887 </td> <td align="right"> 277 </td> <td align="right"> 261 </td> <td align="right">  77 </td> <td align="right">  82 </td> </tr>
+  <tr> <td align="right"> 196.90 </td> <td align="right"> 194.35 </td> <td align="right"> -1.34 </td> <td align="right"> -1.47 </td> <td> NA12888 </td> <td align="right"> 280 </td> <td align="right"> 264 </td> <td align="right">  86 </td> <td align="right">  92 </td> </tr>
+  <tr> <td align="right"> 195.10 </td> <td align="right"> 194.57 </td> <td align="right"> -1.35 </td> <td align="right"> -1.43 </td> <td> NA12889 </td> <td align="right"> 275 </td> <td align="right"> 264 </td> <td align="right">  87 </td> <td align="right">  95 </td> </tr>
+  <tr> <td align="right"> 184.60 </td> <td align="right"> 195.24 </td> <td align="right"> 0.59 </td> <td align="right"> 0.58 </td> <td> NA12890 </td> <td align="right"> 253 </td> <td align="right"> 265 </td> <td align="right"> 225 </td> <td align="right"> 236 </td> </tr>
+  <tr> <td align="right"> 181.60 </td> <td align="right"> 191.70 </td> <td align="right"> 0.55 </td> <td align="right"> 0.60 </td> <td> NA12891 </td> <td align="right"> 250 </td> <td align="right"> 261 </td> <td align="right"> 219 </td> <td align="right"> 233 </td> </tr>
+  <tr> <td align="right"> 196.90 </td> <td align="right"> 193.42 </td> <td align="right"> -1.32 </td> <td align="right"> -1.50 </td> <td> NA12892 </td> <td align="right"> 282 </td> <td align="right"> 263 </td> <td align="right">  85 </td> <td align="right">  89 </td> </tr>
+  <tr> <td align="right"> 183.80 </td> <td align="right"> 193.58 </td> <td align="right"> 0.49 </td> <td align="right"> 0.52 </td> <td> NA12893 </td> <td align="right"> 252 </td> <td align="right"> 263 </td> <td align="right"> 217 </td> <td align="right"> 230 </td> </tr>
    </table>
 
-The logic in the query looks similar to vcftools [output_het method](http://sourceforge.net/p/vcftools/code/HEAD/tree/trunk/cpp/variant_file_output.cpp#l165) but there is clearly a difference.  TODO: investigate the difference further.
+The logic of the query is the same as vcftools [output_het method](http://sourceforge.net/p/vcftools/code/HEAD/tree/trunk/cpp/variant_file_output.cpp#l165), but the filtering criteria are slightly different, which explains the small difference in the results. The primary difference is due to using only SNPs in the query whereas vcftools uses both SNPs and indels. This is because the "expanded table" used in the query only contains non-variant segments for SNPs (i.e. indels matching the reference are not included), which results in inaccurate statistics for indels. There are a few other minor differences as well. For instance, vcftools discards the entire record if a [single sample is non-diploid](http://sourceforge.net/p/vcftools/code/HEAD/tree/trunk/cpp/entry_getters.cpp#l94) whereas the query only discards non-diploid samples within a record. Overall, the filtering differences are minor and the output of the query is largely consistent with vcftools.
 
 Check Identity By State
 -----------------------
@@ -679,8 +682,8 @@ ORDER BY reference_name, start, alternate_bases
 Number of rows returned by this query: 333.
 
 Displaying the first few results:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:14 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:49 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
@@ -716,8 +719,8 @@ nrow(inner_join(result, expectedResult, by=c("CHR", "POS", "OBS_HOM1", "OBS_HET"
 ```
 
 ```
-## Warning: joining character vector and factor, coercing into character
-## vector
+## Warning in inner_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
 ```
 
 ```
@@ -731,16 +734,16 @@ onlyBQ <- anti_join(result, expectedResult, , by=c("CHR", "POS", "OBS_HOM1", "OB
 ```
 
 ```
-## Warning: joining character vector and factor, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
 ```
 
 ```r
 print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:14 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:49 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
@@ -786,16 +789,16 @@ onlyVcftools <- anti_join(expectedResult, result, , by=c("CHR", "POS", "OBS_HOM1
 ```
 
 ```
-## Warning: joining factor and character vector, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining factor and character
+## vector, coercing into character vector
 ```
 
 ```r
 print(xtable(arrange(onlyVcftools, CHR, POS)), type="html", include.rownames=F)
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:14 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:49 2015 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ChiSq </th> <th> P </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407.00 </td> <td align="right"> 1.39 </td> <td align="right"> 0.53 </td> <td align="right">   8 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 8.82 </td> <td align="right"> 5.37 </td> <td align="right"> 0.82 </td> </tr>
@@ -837,8 +840,8 @@ ORDER BY
   call.call_set_name
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:16 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:50 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th>  </tr>
   <tr> <td> NA12891 </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196196 </td> <td align="right"> 41196429 </td> <td> A </td> <td>  </td> <td align="right"> 0.00 </td> <td> PASS </td> </tr>
@@ -897,6 +900,8 @@ FROM (
   FROM (
     SELECT
       reference_name,
+      reference_bases,
+      alternate_bases,
       INTEGER(FLOOR(start / 1000000)) AS window,
       CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
       COUNT(alternate_bases) WITHIN RECORD AS num_alts,
@@ -917,8 +922,8 @@ ORDER BY
   window_start
 ```
 The result:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:20 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:53 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41000000 </td> <td align="right"> 143 </td> <td align="right"> 132 </td> <td align="right"> 1.08 </td> <td align="right"> 275 </td> </tr>
@@ -929,8 +934,8 @@ Let's compare this to what we get from vcftools.  For information about the vcft
 ```r
 expectedResult <- read.table("./titv/platinum_genomes_brca1_expanded_merged.TsTv.summary", header=TRUE)
 ```
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:20 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:53 2015 -->
 <table border=1>
 <tr> <th> MODEL </th> <th> COUNT </th>  </tr>
   <tr> <td> AC </td> <td align="right">  48 </td> </tr>
@@ -979,8 +984,8 @@ SELECT
       
 ```
 Here's the first few variants reported by BigQuery:
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:22 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:54 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> </tr>
@@ -1010,28 +1015,28 @@ onlyBQ <- anti_join(result, expectedResult)
 ```
 
 ```
-## Warning: joining character vector and factor, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
 ```
 
 ```
-## Warning: joining character vector and factor, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
 ```
 
 ```
-## Warning: joining character vector and factor, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
 ```
 
-<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Wed Feb 25 16:54:22 2015 -->
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Oct 21 19:29:54 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> C </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> A </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> C </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> A </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> A </td> </tr>
    </table>
 The four variants identified only by BigQuery are from two positions, each having multiple alternate alleles.  The perl script used to identify positions with transitions and transversion did not account for this, it is likely vcftools does not either.  Because vcftools does not output we cannot say for sure whether these are the 4 variants that vcftools missed, but it is a safe assumption given that we have two additional transitions and two transversions from these positions (which matches the discrepencey we originally had) as well as a logical reason for a bug in vcftools.
 
@@ -1046,18 +1051,18 @@ nrow(anti_join(expectedResult, result))
 ```
 
 ```
-## Warning: joining factor and character vector, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining factor and character
+## vector, coercing into character vector
 ```
 
 ```
-## Warning: joining factor and character vector, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining factor and character
+## vector, coercing into character vector
 ```
 
 ```
-## Warning: joining factor and character vector, coercing into character
-## vector
+## Warning in anti_join_impl(x, y, by$x, by$y): joining factor and character
+## vector, coercing into character vector
 ```
 
 ```

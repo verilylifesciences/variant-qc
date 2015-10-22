@@ -33,7 +33,8 @@ The following example makes use of [Illumina Platinum Genomes](http://www.illumi
 ```r
 # By default this codelab runs upon the Illumina Platinum Genomes Variants.  
 # Change the table here if you wish to run these queries against your own data.
-queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants")
+queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                          "_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants")
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpCGIOnlyDataset.R")
@@ -78,7 +79,7 @@ Number of rows returned by this query: **335**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct  7 13:42:40 2015 -->
+<!-- Wed Oct 21 19:21:03 2015 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
@@ -132,7 +133,7 @@ Number of rows returned by this query: **10000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct  7 13:42:44 2015 -->
+<!-- Wed Oct 21 19:21:08 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> </tr>
@@ -162,7 +163,7 @@ result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
 ```
 
 ```
-# Variants are only SNPs and INDELs, with no special characters.
+# Check whether variants are only SNPs and INDELs, with no special characters.
 SELECT
   COUNT(1) AS number_of_variant_records,
   REGEXP_MATCH(alternate_bases,
@@ -181,7 +182,7 @@ Number of rows returned by this query: **1**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct  7 13:42:45 2015 -->
+<!-- Wed Oct 21 19:21:10 2015 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
@@ -226,7 +227,7 @@ Number of rows returned by this query: **7**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct  7 13:42:47 2015 -->
+<!-- Wed Oct 21 19:21:12 2015 -->
 <table border=1>
 <tr> <th> genotype </th> <th> genotype_count </th>  </tr>
   <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>
