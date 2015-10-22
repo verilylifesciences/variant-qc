@@ -8,7 +8,7 @@ SELECT
   reference_bases,
   GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
 FROM
-  [_THE_TABLE_]
+  [_GENOME_CALL_TABLE_]
 WHERE
   reference_name CONTAINS 'X' OR reference_name CONTAINS 'Y'
 OMIT

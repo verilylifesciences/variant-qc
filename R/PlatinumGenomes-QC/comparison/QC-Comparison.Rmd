@@ -32,8 +32,8 @@ project <- "YOUR-PROJECT-ID"
 # Set up for BigQuery access.
 source("../rHelpers/setup.R")
 
-replacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                     "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants",
+replacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                     "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants",
                      "#_WHERE_"="WHERE reference_name = 'chr17' AND start BETWEEN 41196311 AND 41277499")
 ```
 

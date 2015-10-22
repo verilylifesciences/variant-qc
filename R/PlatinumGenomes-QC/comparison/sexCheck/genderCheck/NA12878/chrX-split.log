@@ -1,0 +1,24 @@
+PLINK v1.90b2n 64-bit (2 Nov 2014) 
+9 arguments: --chr chrX --make-bed --out chrX-split --split-x hg19 --vcf /mnt/data/vcfOrig/NA12878_S1.genome.vcf
+Hostname: qc
+Working directory: /mnt/data/genderCheck/NA12878
+Start time: Thu Nov 13 20:31:19 2014
+
+Random number seed: 1415910679
+3714 MB RAM detected; reserving 1857 MB for main workspace.
+--vcf: chrX-split-temporary.bed + chrX-split-temporary.bim +
+chrX-split-temporary.fam written.
+(48330462 variants skipped.)
+2391543 variants loaded from .bim file.
+1 person (0 males, 0 females, 1 ambiguous) loaded from .fam.
+Ambiguous sex ID written to chrX-split.nosex .
+Using 1 thread.
+Before main variant filters, 1 founder and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate is 0.988891.
+2391543 variants and 1 person pass filters and QC.
+Note: No phenotypes present.
+--split-x: 626 chromosome codes changed.
+--make-bed to chrX-split.bed + chrX-split.bim + chrX-split.fam ... done.
+
+End time: Thu Nov 13 20:33:50 2014

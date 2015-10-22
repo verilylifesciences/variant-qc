@@ -18,7 +18,7 @@ FROM (
     SUM(call.genotype == -1) WITHIN RECORD AS no_calls,
     COUNT(call.genotype) WITHIN RECORD AS all_calls,
   FROM
-      [_THE_EXPANDED_TABLE_]
+      [_MULTISAMPLE_VARIANT_TABLE_]
     # Optionally add clause here to limit the query to a particular
     # region of the genome.
     #_WHERE_

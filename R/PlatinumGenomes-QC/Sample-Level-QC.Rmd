@@ -43,11 +43,11 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 ```{r}
-queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
+sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
 
 ibs <- read.table("./data/platinum-genomes-ibs.tsv",
                   col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
@@ -253,9 +253,9 @@ allResults <- full_join(allResults, result)
 
 ## Sex Inference
 
-For each genome, compare the gender from the sample information to the heterozygosity rate on the chromosome X calls.
+For each genome, compare the anatomical sex from the sample information to the heterozygosity rate on the chromosome X calls.
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/gender-check.sql",
+result <- DisplayAndDispatchQuery("./sql/check-sex.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
@@ -272,18 +272,18 @@ joinedResult <- inner_join(result, sampleInfo)
 ```
 
 And visualize the results:
-```{r genderSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r sexCheckSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(joinedResult) +
-  geom_boxplot(aes(x=gender, y=perct_het_alt_in_snvs, fill=gender)) +
+  geom_boxplot(aes(x=sex, y=perct_het_alt_in_snvs, fill=sex)) +
   scale_y_continuous(labels = percent_format()) +
   xlab("Gender") +
   ylab("Heterozygosity Rate ") +
   ggtitle("Box Plot: Heterozygosity Rate on the X Chromosome")
 ```
 
-```{r gender, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r sexCheck, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 p <- ggplot(joinedResult) +
-  geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=gender)) +
+  geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=sex)) +
   scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(labels = percent_format()) +
   xlab("Sample") +
@@ -319,7 +319,7 @@ Note that this `n^2` analysis is a cluster compute job instead of a BigQuery que
 ```{r message=FALSE, warning=FALSE}
 # Read in the demographic information for 1,000 Genomes.
 sampleData1kg <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
-sampleInfo1kg <- dplyr::select(sampleData1kg, call_call_set_name=Sample, gender=Gender, ethnicity=Super_Population)
+sampleInfo1kg <- dplyr::select(sampleData1kg, call_call_set_name=Sample, sex=Gender, ethnicity=Super_Population)
 
 # Update our sample information for Platinum Genomes as "Unknown" since this is what we are trying to check.
 sampleInfoToCheck <- mutate(sampleInfo, ethnicity="Unknown")

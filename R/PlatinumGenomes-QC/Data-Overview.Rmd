@@ -43,7 +43,8 @@ source("./rHelpers/setup.R")
 ```{r}
 # By default this codelab runs upon the Illumina Platinum Genomes Variants.  
 # Change the table here if you wish to run these queries against your own data.
-queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants")
+queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                          "_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants")
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpCGIOnlyDataset.R")
