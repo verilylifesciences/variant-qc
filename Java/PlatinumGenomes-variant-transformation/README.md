@@ -52,8 +52,7 @@ This job retrieves variants from the Genomics API, transforms them and writes th
 (2) Use [Apache Maven](http://maven.apache.org/download.cgi) to build the code.
 ```
 cd codelabs/Java/PlatinumGenomes-variant-transformation
-mvn compile
-mvn bundle:bundle
+mvn clean package
 ```
 (3) Create a BigQuery dataset in the web UI to hold the data.
 * Open the [BigQuery web UI](https://bigquery.cloud.google.com/).
@@ -62,11 +61,11 @@ mvn bundle:bundle
 
 (4) Run the pipeline locally over BRCA1 in Platinum Genomes with the command line:
 ```
-java -cp target/non-variant-segment-transformer-*.jar \
+java -cp target/non-variant-segment-transformer-*runnable.jar \
   com.google.cloud.genomics.examples.TransformNonVariantSegmentData \
   --project=YOUR_GOOGLE_CLOUD_PLATFORM_PROJECT_ID \
   --stagingLocation=gs://YOUR_BUCKET/dataflow-staging \
-  --genomicsSecretsFile=/PATH/TO/YOUR/client_secrets.json \
+  --secretsFile=/PATH/TO/YOUR/client_secrets.json \
   --datasetId=3049512673186936334 \
   --references=chr17:41196311:41277499 \
   --hasNonVariantSegments \
@@ -79,7 +78,7 @@ To run this job on the entire dataset:
 
 To see the help text for all pipeline options:
 ```
-java -cp target/non-variant-segment-transformer-*.jar \
+java -cp target/non-variant-segment-transformer-*runnable.jar \
   com.google.cloud.genomics.examples.TransformNonVariantSegmentData \
   --help=com.google.cloud.genomics.examples.TransformNonVariantSegmentData\$Options
 ```
