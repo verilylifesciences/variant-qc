@@ -2,6 +2,8 @@
 
 In Part 2 of the codelab, we perform a data transformation to make it more amenable to our QC analyses in Parts 3 and 4 of this codelab.
 
+We refer to the original table as the "genome calls" table.  It contains all reference calls and variant calls.  To facilitate variant-centric analysis, we generate a second table, the "multi-sample variants" table, based on the genome calls to document calls for all the variable sites. These are the positions where a variant was detected in any of the genomes in the cohort. Positions where only reference calls were detected were omitted, hence the the "multi-sample variants" table resembles the commonly accepted multi-sample VCF file.
+
 * [Motivation](#motivation)
 * [Running the Cluster Compute Job](#running-the-cluster-compute-job)
 * [Results](#results)
@@ -30,7 +32,7 @@ Suppose we want to calculate an aggregate for a particular variant, such as the 
 
 > If you are working with Platinum Genomes its okay to skip ahead to [Part 3: Sample-Level QC](./Sample-Level-QC.md) which makes use of previously computed results from this cluster compute job.
 
-If you are running this codelab against data that does not contain non-variant segments, this data conversion is unnecessary.  Just use the same BigQuery table for both `_THE_TABLE_` and `_THE_EXPANDED_TABLE_`.
+If you are running this codelab against data that does not contain non-variant segments, this data conversion is unnecessary.  Just use the same BigQuery table for both `_GENOME_CALL_TABLE_` and `_MULTISAMPLE_VARIANT_TABLE_`.
 
 ## Running the Cluster Compute Job
 
