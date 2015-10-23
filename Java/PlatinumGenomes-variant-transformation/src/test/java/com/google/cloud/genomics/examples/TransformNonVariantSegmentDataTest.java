@@ -13,7 +13,10 @@
  */
 package com.google.cloud.genomics.examples;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Arrays;
+import java.util.List;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
@@ -21,6 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.api.services.bigquery.model.TableRow;
 import com.google.cloud.dataflow.sdk.transforms.DoFnTester;
 import com.google.cloud.genomics.examples.TransformNonVariantSegmentData.FilterCallsFn;
 import com.google.cloud.genomics.examples.TransformNonVariantSegmentData.FlagVariantsWithAmbiguousCallsFn;
@@ -50,7 +54,7 @@ public class TransformNonVariantSegmentDataTest {
   }
 
   @Test
-  public void testFlagVariantsWithAmbiguousVariantCallsFn() {
+  public void testAmbiguousVariantCallsFns() {
 
     DoFnTester<Variant, Variant> flagVariantsFn =
         DoFnTester.of(new TransformNonVariantSegmentData.FlagVariantsWithAmbiguousCallsFn());
@@ -78,6 +82,12 @@ public class TransformNonVariantSegmentDataTest {
 
     Assert.assertThat(flagVariantsFn.processBatch(inputVariant, ambiguousInputVariant),
         CoreMatchers.allOf(CoreMatchers.hasItems(expectedVariant, ambiguousExpectedVariant)));
+        
+    DoFnTester<Variant, TableRow> formatVariantsFn = DoFnTester.of(new TransformNonVariantSegmentData.FormatVariantsFn());
+    List<TableRow> rows = formatVariantsFn.processBatch(expectedVariant, ambiguousExpectedVariant);
+    assertEquals(2, rows.size());
+    assertEquals("false", rows.get(0).get(TransformNonVariantSegmentData.HAS_AMBIGUOUS_CALLS_FIELD).toString());
+    assertEquals("true", rows.get(1).get(TransformNonVariantSegmentData.HAS_AMBIGUOUS_CALLS_FIELD).toString());
   }
 
 }

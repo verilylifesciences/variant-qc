@@ -176,7 +176,7 @@ public class TransformNonVariantSegmentData {
               .set("filter", (v.getFilterList() == null) ? new ArrayList<String>() : v.getFilterList())
               .set("quality", v.getQuality())
               .set("call", calls)
-              .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).getValues(0));
+              .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).getValues(0).getStringValue());
 
       c.output(row);
     }
