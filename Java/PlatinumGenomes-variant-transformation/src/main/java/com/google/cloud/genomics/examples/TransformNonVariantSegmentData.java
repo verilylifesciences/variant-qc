@@ -60,6 +60,8 @@ import com.google.common.io.Files;
 import com.google.genomics.v1.StreamVariantsRequest;
 import com.google.genomics.v1.Variant;
 import com.google.genomics.v1.VariantCall;
+import com.google.protobuf.ListValue;
+import com.google.protobuf.Value;
 
 /**
  * Sample pipeline that transforms data with non-variant segments (such as data that was in source
@@ -238,9 +240,20 @@ public class TransformNonVariantSegmentData {
     
     static {
       HAS_AMBIGUOUS_CALLS_INFO = new HashMap<String, List<String>>();
-      HAS_AMBIGUOUS_CALLS_INFO.put(HAS_AMBIGUOUS_CALLS_FIELD, Arrays.asList(Boolean.toString(Boolean.TRUE)));
+      HAS_AMBIGUOUS_CALLS_INFO.put(
+          HAS_AMBIGUOUS_CALLS_FIELD,
+          ListValue.newBuilder()
+              .addValues(Value.newBuilder().setStringValue(Boolean.toString(Boolean.TRUE)).build())
+              .build());
       NO_AMBIGUOUS_CALLS_INFO = new HashMap<String, List<String>>();
-      NO_AMBIGUOUS_CALLS_INFO.put(HAS_AMBIGUOUS_CALLS_FIELD, Arrays.asList(Boolean.toString(Boolean.FALSE)));
+      NO_AMBIGUOUS_CALLS_INFO
+          .put(
+              HAS_AMBIGUOUS_CALLS_FIELD,
+              ListValue
+                  .newBuilder()
+                  .addValues(
+                      Value.newBuilder().setStringValue(Boolean.toString(Boolean.FALSE)).build())
+                  .build());
     }
 
     @Override
