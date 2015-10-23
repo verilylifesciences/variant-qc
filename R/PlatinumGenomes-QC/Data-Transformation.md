@@ -2,12 +2,20 @@
 
 In Part 2 of the codelab, we perform a data transformation to make it more amenable to our QC analyses in Parts 3 and 4 of this codelab.
 
-We refer to the original table as the "genome calls" table.  It contains all reference calls and variant calls.  To facilitate variant-centric analysis, we generate a second table, the "multi-sample variants" table, based on the genome calls to document calls for all the variable sites. These are the positions where a variant was detected in any of the genomes in the cohort. Positions where only reference calls were detected were omitted, hence the the "multi-sample variants" table resembles the commonly accepted multi-sample VCF file.
-
+* [Overview](#overview)
 * [Motivation](#motivation)
 * [Running the Cluster Compute Job](#running-the-cluster-compute-job)
 * [Results](#results)
 * [Optional: modify the Cluster Compute Job](#optional-modify-the-cluster-compute-job)
+
+## Overview
+
+We refer to the original table as the "genome calls" table. It contains *all* reference calls and variant calls. To facilitate variant-centric analysis, we generate a second table, the "multi-sample variants" table.
+
+The multi-sample variants table resembles a multi-sample VCF file. In this table:
+
+* every variant record includes calls for *all* callsets
+* variants which contained *only reference calls for all callsets* are omitted
 
 ## Motivation
 
