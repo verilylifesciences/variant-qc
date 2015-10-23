@@ -23,7 +23,7 @@ FROM (
       CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
       COUNT(alternate_bases) WITHIN RECORD AS num_alts,
     FROM
-      [_THE_TABLE_]
+      [_GENOME_CALL_TABLE_]
     # Optionally add clause here to limit the query to a particular
     # region of the genome.
     #_WHERE_

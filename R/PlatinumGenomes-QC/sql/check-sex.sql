@@ -1,5 +1,5 @@
 # Compute the the homozygous and heterozygous variant counts for each individual
-# within chromosome X to help determine whether the gender phenotype value is
+# within chromosome X to help determine whether the sex phenotype value is
 # correct for each individual.
 SELECT
   call.call_set_name,
@@ -18,7 +18,7 @@ FROM (
     SOME(call.genotype > 0) AND NOT SOME(call.genotype = 0) WITHIN call AS hom_AA,
     SOME(call.genotype > 0) AND SOME(call.genotype = 0) WITHIN call AS het_RA
   FROM
-    [_THE_EXPANDED_TABLE_]
+    [_MULTISAMPLE_VARIANT_TABLE_]
   WHERE
     (reference_name = 'chrX' OR reference_name = 'X')
     AND start NOT BETWEEN 59999 AND 2699519

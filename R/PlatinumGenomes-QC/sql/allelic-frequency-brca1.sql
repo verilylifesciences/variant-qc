@@ -17,7 +17,7 @@ FROM (
     END,
     SUM(0 = call.genotype) WITHIN RECORD AS called_allele_count,
   FROM
-    [_THE_TABLE_]
+    [_GENOME_CALL_TABLE_]
   WHERE
     reference_name = 'chr17'
   OMIT RECORD IF EVERY(alternate_bases IS NOT NULL)
@@ -33,7 +33,7 @@ JOIN (
     SUM(0 = call.genotype) WITHIN RECORD AS ref_count,
     SUM(1 = call.genotype) WITHIN RECORD AS alt_count,
   FROM
-    [_THE_TABLE_]
+    [_GENOME_CALL_TABLE_]
   WHERE
     reference_name = 'chr17'
     AND start BETWEEN 41196311

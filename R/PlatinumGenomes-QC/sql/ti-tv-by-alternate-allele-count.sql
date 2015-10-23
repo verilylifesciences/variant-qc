@@ -18,7 +18,7 @@ FROM (
       COUNT(alternate_bases) WITHIN RECORD AS num_alts,
       SUM(call.genotype = 1) WITHIN RECORD AS alternate_allele_count,
     FROM
-      [_THE_TABLE_]
+      [_GENOME_CALL_TABLE_]
     # Optionally add clause here to limit the query to a particular
     # region of the genome.
     #_WHERE_

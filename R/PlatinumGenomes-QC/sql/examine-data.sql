@@ -10,7 +10,7 @@ SELECT
   quality,
   GROUP_CONCAT(filter) WITHIN RECORD AS filter,
 FROM
-  [_THE_TABLE_]
+  [_GENOME_CALL_TABLE_]
 WHERE
   reference_name = 'chr17'
 HAVING

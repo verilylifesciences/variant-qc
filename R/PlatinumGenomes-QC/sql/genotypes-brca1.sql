@@ -7,7 +7,7 @@ FROM (
   SELECT
     GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
   FROM
-  [_THE_TABLE_]
+  [_GENOME_CALL_TABLE_]
   WHERE
     reference_name CONTAINS '17' # To match both 'chr17' and '17'
     AND start BETWEEN 41196311

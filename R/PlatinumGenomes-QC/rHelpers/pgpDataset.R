@@ -16,8 +16,8 @@ require(RCurl)
 require(dplyr)
 
 # These tables contain the Complete Genomics PGP genomes and one variants-only Illumina genome.
-queryReplacements <- list("_THE_TABLE_"="google.com:biggene:pgp_20150205.variants",
-                          "_THE_EXPANDED_TABLE_"="google.com:biggene:pgp_20150205.expanded_variants")
+queryReplacements <- list("_GENOME_CALL_TABLE_"="google.com:biggene:pgp_20150205.variants",
+                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:pgp_20150205.expanded_variants")
 
 sampleData <- read.csv(textConnection(getURL("https://my.pgp-hms.org/google_surveys/1/download")))
 sampleInfo <- select(sampleData, call_call_set_name=Participant, gender=Sex.Gender)

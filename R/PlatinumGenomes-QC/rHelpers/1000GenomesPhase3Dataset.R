@@ -17,8 +17,8 @@ require(dplyr)
 
 # Notice that both tables are the same since 1,000 Genomes already has non-variant
 # calls within the variant records.
-queryReplacements <- list("_THE_TABLE_"="genomics-public-data:1000_genomes_phase_3.variants",
-                          "_THE_EXPANDED_TABLE_"="genomics-public-data:1000_genomes_phase_3.variants",
+queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:1000_genomes_phase_3.variants",
+                          "_MULTISAMPLE_VARIANT_TABLE_"="genomics-public-data:1000_genomes_phase_3.variants",
                           # Chromosomes do not start with the 'chr' prefix in this dataset
                           "chr"="")
 

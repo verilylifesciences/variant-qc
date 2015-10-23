@@ -5,7 +5,7 @@ SELECT
       reference_bases,
       alternate_bases
     FROM
-      [_THE_TABLE_]
+      [_GENOME_CALL_TABLE_]
     WHERE
       reference_name = 'chr17'
       AND start BETWEEN 41196311
