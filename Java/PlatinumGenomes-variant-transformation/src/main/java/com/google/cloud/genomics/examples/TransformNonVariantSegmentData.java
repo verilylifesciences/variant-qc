@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
@@ -29,9 +30,6 @@ import com.google.api.client.util.Preconditions;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.TableSchema;
-import com.google.api.services.genomics.model.Call;
-import com.google.api.services.genomics.model.SearchVariantsRequest;
-import com.google.api.services.genomics.model.Variant;
 import com.google.cloud.dataflow.sdk.Pipeline;
 import com.google.cloud.dataflow.sdk.io.BigQueryIO;
 import com.google.cloud.dataflow.sdk.options.Description;
@@ -43,12 +41,12 @@ import com.google.cloud.dataflow.sdk.transforms.DoFn;
 import com.google.cloud.dataflow.sdk.transforms.ParDo;
 import com.google.cloud.dataflow.sdk.transforms.Sum;
 import com.google.cloud.dataflow.sdk.values.PCollection;
-import com.google.cloud.genomics.dataflow.functions.JoinNonVariantSegmentsWithVariants;
+import com.google.cloud.genomics.dataflow.functions.grpc.JoinNonVariantSegmentsWithVariants;
 import com.google.cloud.genomics.dataflow.utils.DataflowWorkarounds;
 import com.google.cloud.genomics.dataflow.utils.GenomicsDatasetOptions;
 import com.google.cloud.genomics.dataflow.utils.GenomicsOptions;
-import com.google.cloud.genomics.utils.Contig.SexChromosomeFilter;
 import com.google.cloud.genomics.utils.GenomicsFactory;
+import com.google.cloud.genomics.utils.ShardUtils;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -59,6 +57,11 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import com.google.common.io.Files;
+import com.google.genomics.v1.StreamVariantsRequest;
+import com.google.genomics.v1.Variant;
+import com.google.genomics.v1.VariantCall;
+import com.google.protobuf.ListValue;
+import com.google.protobuf.Value;
 
 /**
  * Sample pipeline that transforms data with non-variant segments (such as data that was in source
@@ -149,14 +152,14 @@ public class TransformNonVariantSegmentData {
       Variant v = c.element();
 
       List<TableRow> calls = new ArrayList<>();
-      for (Call call : v.getCalls()) {
+      for (VariantCall call : v.getCallsList()) {
         calls.add(new TableRow()
             .set("call_set_name", call.getCallSetName())
             .set("phaseset", call.getPhaseset())
-            .set("genotype", call.getGenotype())
+            .set("genotype", call.getGenotypeList())
             .set("genotype_likelihood",
-                (call.getGenotypeLikelihood() == null) ? new ArrayList<Double>() :
-                  call.getGenotypeLikelihood()
+                (call.getGenotypeLikelihoodList() == null) ? new ArrayList<Double>() :
+                  call.getGenotypeLikelihoodList()
                   ));
       }
 
@@ -168,12 +171,12 @@ public class TransformNonVariantSegmentData {
               .set("end", v.getEnd())
               .set("reference_bases", v.getReferenceBases())
               .set("alternate_bases",
-                  (v.getAlternateBases() == null) ? new ArrayList<String>() : v.getAlternateBases())
-              .set("names", (v.getNames() == null) ? new ArrayList<String>() : v.getNames())
-              .set("filter", (v.getFilter() == null) ? new ArrayList<String>() : v.getFilter())
+                  (v.getAlternateBasesList() == null) ? new ArrayList<String>() : v.getAlternateBasesList())
+              .set("names", (v.getNamesList() == null) ? new ArrayList<String>() : v.getNamesList())
+              .set("filter", (v.getFilterList() == null) ? new ArrayList<String>() : v.getFilterList())
               .set("quality", v.getQuality())
               .set("call", calls)
-              .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).get(0));
+              .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).getValues(0).getStringValue());
 
       c.output(row);
     }
@@ -201,21 +204,23 @@ public class TransformNonVariantSegmentData {
       Variant variant = context.element();
 
       // We may have variants without calls if any callsets were deleted from the variant set.
-      if(!(null == variant.getCalls() || variant.getCalls().isEmpty())) {
-        List<Call> filteredCalls =
-            Lists.newArrayList(Iterables.filter(variant.getCalls(), new Predicate<Call>() {
-              @Override
-              public boolean apply(Call call) {
-                if (callSetNamesToExclude.contains(call.getCallSetName())) {
-                  return false;
-                }
-                return true;
-              }
-            }));
-        variant.setCalls(filteredCalls);
+      // Just emit those as-is.
+      if (null == variant.getCallsList() || variant.getCallsList().isEmpty()) {
+        context.output(variant);
       }
 
-      context.output(variant);
+      List<VariantCall> filteredCalls =
+          Lists.newArrayList(Iterables.filter(variant.getCallsList(), new Predicate<VariantCall>() {
+            @Override
+            public boolean apply(VariantCall call) {
+              if (callSetNamesToExclude.contains(call.getCallSetName())) {
+                return false;
+              }
+              return true;
+            }
+          }));
+
+      context.output(Variant.newBuilder(variant).clearCalls().addAllCalls(filteredCalls).build());
     }
   }
   
@@ -229,8 +234,27 @@ public class TransformNonVariantSegmentData {
    */
   public static final class FlagVariantsWithAmbiguousCallsFn extends DoFn<Variant, Variant> {
 
-    Aggregator<Long, Long> variantsWithAmbiguousCallsCount = 
-        createAggregator("Number of variants containing ambiguous calls", new Sum.SumLongFn());
+    final Aggregator<Long, Long> variantsWithAmbiguousCallsCount = createAggregator("Number of variants containing ambiguous calls", new Sum.SumLongFn());
+    public static final Map HAS_AMBIGUOUS_CALLS_INFO;
+    public static final Map NO_AMBIGUOUS_CALLS_INFO;
+    
+    static {
+      HAS_AMBIGUOUS_CALLS_INFO = new HashMap<String, List<String>>();
+      HAS_AMBIGUOUS_CALLS_INFO.put(
+          HAS_AMBIGUOUS_CALLS_FIELD,
+          ListValue.newBuilder()
+              .addValues(Value.newBuilder().setStringValue(Boolean.toString(Boolean.TRUE)).build())
+              .build());
+      NO_AMBIGUOUS_CALLS_INFO = new HashMap<String, List<String>>();
+      NO_AMBIGUOUS_CALLS_INFO
+          .put(
+              HAS_AMBIGUOUS_CALLS_FIELD,
+              ListValue
+                  .newBuilder()
+                  .addValues(
+                      Value.newBuilder().setStringValue(Boolean.toString(Boolean.FALSE)).build())
+                  .build());
+    }
 
     @Override
     public void processElement(ProcessContext context) {
@@ -238,22 +262,22 @@ public class TransformNonVariantSegmentData {
 
       // We may have variants without calls if any callsets were deleted from the variant set and/or
       // a filtering step removed all calls. Omit these variants from our output.
-      if(null == variant.getCalls() || variant.getCalls().isEmpty()) {
+      if(null == variant.getCallsList() || variant.getCallsList().isEmpty()) {
         return;
       }
 
       // Gather calls together for the same callSetName.
-      ListMultimap<String, Call> indexedCalls =
-          Multimaps.index(variant.getCalls(), new Function<Call, String>() {
+      ListMultimap<String, VariantCall> indexedCalls =
+          Multimaps.index(variant.getCallsList(), new Function<VariantCall, String>() {
             @Override
-            public String apply(final Call c) {
+            public String apply(final VariantCall c) {
               return c.getCallSetName();
             }
           });
 
       // Identify and count variants with multiple calls per callSetName.
       boolean isAmbiguous = false;
-      for (Entry<String, Collection<Call>> entry : indexedCalls.asMap().entrySet()) {
+      for (Entry<String, Collection<VariantCall>> entry : indexedCalls.asMap().entrySet()) {
         if (1 < entry.getValue().size()) {
           LOG.warning("Variant " + variant.getId() + " contains ambiguous calls for at least one genome: "
               + entry.getValue().iterator().next().getCallSetName());
@@ -264,12 +288,9 @@ public class TransformNonVariantSegmentData {
       }
 
       // Add the flag to the variant.
-      if(variant.getInfo() == null) {
-        variant.setInfo(new HashMap<String, List<String>>());
-      }
-      variant.getInfo().put(HAS_AMBIGUOUS_CALLS_FIELD, Arrays.asList(Boolean.toString(isAmbiguous)));
-
-      context.output(variant);
+      context.output(Variant.newBuilder(variant)
+          .putAllInfo(isAmbiguous ? HAS_AMBIGUOUS_CALLS_INFO : NO_AMBIGUOUS_CALLS_INFO)
+          .build());
     }
   }
 
@@ -298,14 +319,15 @@ public class TransformNonVariantSegmentData {
     }
 
     GenomicsFactory.OfflineAuth auth = GenomicsOptions.Methods.getGenomicsAuth(options);
-    List<SearchVariantsRequest> requests =
-        GenomicsDatasetOptions.Methods.getVariantRequests(options, auth,
-            SexChromosomeFilter.INCLUDE_XY);
-
+    List<StreamVariantsRequest> requests = options.isAllReferences() ?
+        ShardUtils.getVariantRequests(options.getDatasetId(), ShardUtils.SexChromosomeFilter.EXCLUDE_XY,
+            options.getBasesPerShard(), auth) :
+          ShardUtils.getVariantRequests(options.getDatasetId(), options.getReferences(), options.getBasesPerShard());
+    
     Pipeline p = Pipeline.create(options);
     DataflowWorkarounds.registerGenomicsCoders(p);
 
-    PCollection<SearchVariantsRequest> input = p.begin().apply(Create.of(requests));
+    PCollection<StreamVariantsRequest> input = p.begin().apply(Create.of(requests));
 
     // Create a collection of data with non-variant segments omitted but calls from overlapping
     // non-variant segments added to SNPs.
