@@ -16,7 +16,9 @@ package com.google.cloud.genomics.examples;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
@@ -28,9 +30,10 @@ import com.google.api.services.bigquery.model.TableRow;
 import com.google.cloud.dataflow.sdk.transforms.DoFnTester;
 import com.google.cloud.genomics.examples.TransformNonVariantSegmentData.FilterCallsFn;
 import com.google.cloud.genomics.examples.TransformNonVariantSegmentData.FlagVariantsWithAmbiguousCallsFn;
-import com.google.common.collect.ImmutableSet;
 import com.google.genomics.v1.Variant;
 import com.google.genomics.v1.VariantCall;
+import com.google.protobuf.ListValue;
+import com.google.protobuf.Value;
 
 @RunWith(JUnit4.class)
 public class TransformNonVariantSegmentDataTest {
@@ -38,17 +41,37 @@ public class TransformNonVariantSegmentDataTest {
   @Test
   public void testFilterVariantCallsFn() {
 
-    DoFnTester<Variant, Variant> filterCallsFn =
-        DoFnTester.of(new FilterCallsFn(ImmutableSet.of("filterMeOut", "alsoFilterMeOut")));
+    Map<String, ListValue> passingFilter = new HashMap<String, ListValue>();
+    passingFilter.put(
+        TransformNonVariantSegmentData.FILTER_FIELD,
+        ListValue.newBuilder()
+            .addValues(Value.newBuilder().setStringValue(TransformNonVariantSegmentData.PASSING_FILTER).build())
+            .build());
+    VariantCall call1 = VariantCall.newBuilder().putAllInfo(passingFilter).build();
+    
+    Map<String, ListValue> failingFilter = new HashMap<String, ListValue>();
+    failingFilter.put(
+        TransformNonVariantSegmentData.FILTER_FIELD,
+        ListValue.newBuilder()
+            .addValues(Value.newBuilder().setStringValue("VQSRTrancheSNP99.90to100.00").build())
+            .build());
+    VariantCall call2 = VariantCall.newBuilder().putAllInfo(failingFilter).build();
 
-    VariantCall call1 = VariantCall.newBuilder().setCallSetName("filterMeOut").build();
-    VariantCall call2 = VariantCall.newBuilder().setCallSetName("keepMe").build();
-    VariantCall call3 = VariantCall.newBuilder().setCallSetName("alsoFilterMeOut").build();
+    Map<String, ListValue> ambiguousFilter = new HashMap<String, ListValue>();
+    ambiguousFilter.put(
+        TransformNonVariantSegmentData.FILTER_FIELD,
+        ListValue.newBuilder()
+            .addValues(Value.newBuilder().setStringValue("VQSRTrancheSNP99.90to100.00").build())
+            .addValues(Value.newBuilder().setStringValue(TransformNonVariantSegmentData.PASSING_FILTER).build())
+            .build());    
+    VariantCall call3 = VariantCall.newBuilder().putAllInfo(ambiguousFilter).build();
+    
     Variant inputVariant =
         Variant.newBuilder().addAllCalls(Arrays.asList(call1, call2, call3)).build();
+    
+    Variant expectedVariant = Variant.newBuilder().addAllCalls(Arrays.asList(call1, call3)).build();
 
-    Variant expectedVariant = Variant.newBuilder().addAllCalls(Arrays.asList(call2)).build();
-
+    DoFnTester<Variant, Variant> filterCallsFn = DoFnTester.of(new FilterCallsFn());
     Assert.assertThat(filterCallsFn.processBatch(inputVariant),
         CoreMatchers.allOf(CoreMatchers.hasItems(expectedVariant)));
   }
