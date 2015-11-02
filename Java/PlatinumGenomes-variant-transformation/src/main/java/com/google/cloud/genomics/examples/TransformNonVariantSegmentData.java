@@ -294,8 +294,6 @@ public class TransformNonVariantSegmentData {
         PipelineOptionsFactory.fromArgs(args).withValidation()
             .as(TransformNonVariantSegmentData.Options.class);
 
-    // Option validation is not yet automatic, we make an explicit call here.
-    GenomicsDatasetOptions.Methods.validateOptions(options);
     Preconditions.checkState(options.getHasNonVariantSegments(),
         "This job is only valid for data containing non-variant segments. "
             + "Set the --hasNonVariantSegments command line option accordingly.");
