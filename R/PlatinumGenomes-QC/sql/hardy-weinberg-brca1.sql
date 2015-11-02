@@ -97,7 +97,7 @@ FROM (
                 SUM(SOME(0 = call.genotype) AND SOME(1 = call.genotype)) WITHIN call AS HET,
 
               FROM
-                [_THE_TABLE_]
+                [_GENOME_CALL_TABLE_]
               WHERE
                 reference_name = 'chr17'
                 AND start BETWEEN 41196311

@@ -38,7 +38,7 @@ FROM js(
       SUM(SOME(0 = call.genotype)
          AND SOME(1 = call.genotype)) WITHIN call AS het,
      FROM
-      [_THE_EXPANDED_TABLE_]
+      [_MULTISAMPLE_VARIANT_TABLE_]
      # Optionally add a clause here to limit the query to a particular
      # region of the genome.
      #_WHERE_

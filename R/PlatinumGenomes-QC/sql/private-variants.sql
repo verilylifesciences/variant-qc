@@ -35,7 +35,7 @@ FROM (
             call.call_set_name,
             call.genotype,
           FROM
-            [_THE_TABLE_]
+            [_GENOME_CALL_TABLE_]
           # Optionally add a clause here to limit the query to a particular
           # region of the genome.
           #_WHERE_

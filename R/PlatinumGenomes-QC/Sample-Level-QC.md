@@ -33,11 +33,11 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 
 ```r
-queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
+sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
 
 ibs <- read.table("./data/platinum-genomes-ibs.tsv",
                   col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
@@ -98,7 +98,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct  7 13:42:48 2015 -->
+<!-- Wed Oct 21 19:23:37 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -237,7 +237,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct  7 13:42:52 2015 -->
+<!-- Wed Oct 21 19:23:40 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -333,7 +333,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct  7 13:42:55 2015 -->
+<!-- Wed Oct 21 19:23:42 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> heterozygous_variant_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 3410507 </td> </tr>
@@ -450,7 +450,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct  7 13:42:58 2015 -->
+<!-- Wed Oct 21 19:23:45 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6135459 </td> <td align="right"> 6770355.20 </td> <td align="right"> 9546033 </td> <td align="right"> -0.23 </td> </tr>
@@ -505,17 +505,17 @@ allResults <- full_join(allResults, result)
 
 ## Sex Inference
 
-For each genome, compare the gender from the sample information to the heterozygosity rate on the chromosome X calls.
+For each genome, compare the anatomical sex from the sample information to the heterozygosity rate on the chromosome X calls.
 
 ```r
-result <- DisplayAndDispatchQuery("./sql/gender-check.sql",
+result <- DisplayAndDispatchQuery("./sql/check-sex.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
 
 ```
 # Compute the the homozygous and heterozygous variant counts for each individual
-# within chromosome X to help determine whether the gender phenotype value is
+# within chromosome X to help determine whether the sex phenotype value is
 # correct for each individual.
 SELECT
   call.call_set_name,
@@ -536,7 +536,7 @@ FROM (
   FROM
     [google.com:biggene:platinum_genomes.expanded_variants]
   WHERE
-    reference_name = 'chrX'
+    (reference_name = 'chrX' OR reference_name = 'X')
     AND start NOT BETWEEN 59999 AND 2699519
     AND start NOT BETWEEN 154931042 AND 155260559
   HAVING
@@ -554,7 +554,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct  7 13:43:02 2015 -->
+<!-- Wed Oct 21 19:23:48 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
@@ -575,19 +575,19 @@ And visualize the results:
 
 ```r
 ggplot(joinedResult) +
-  geom_boxplot(aes(x=gender, y=perct_het_alt_in_snvs, fill=gender)) +
+  geom_boxplot(aes(x=sex, y=perct_het_alt_in_snvs, fill=sex)) +
   scale_y_continuous(labels = percent_format()) +
   xlab("Gender") +
   ylab("Heterozygosity Rate ") +
   ggtitle("Box Plot: Heterozygosity Rate on the X Chromosome")
 ```
 
-<img src="figure/genderSummary-1.png" title="plot of chunk genderSummary" alt="plot of chunk genderSummary" style="display: block; margin: auto;" />
+<img src="figure/sexCheckSummary-1.png" title="plot of chunk sexCheckSummary" alt="plot of chunk sexCheckSummary" style="display: block; margin: auto;" />
 
 
 ```r
 p <- ggplot(joinedResult) +
-  geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=gender)) +
+  geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=sex)) +
   scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(labels = percent_format()) +
   xlab("Sample") +
@@ -600,7 +600,7 @@ if(nrow(result) <= 20) {
 }
 ```
 
-<img src="figure/gender-1.png" title="plot of chunk gender" alt="plot of chunk gender" style="display: block; margin: auto;" />
+<img src="figure/sexCheck-1.png" title="plot of chunk sexCheck" alt="plot of chunk sexCheck" style="display: block; margin: auto;" />
 
 Let's accumulate our sample-specific results for later use.
 
@@ -627,7 +627,7 @@ Note that this `n^2` analysis is a cluster compute job instead of a BigQuery que
 ```r
 # Read in the demographic information for 1,000 Genomes.
 sampleData1kg <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
-sampleInfo1kg <- dplyr::select(sampleData1kg, call_call_set_name=Sample, gender=Gender, ethnicity=Super_Population)
+sampleInfo1kg <- dplyr::select(sampleData1kg, call_call_set_name=Sample, sex=Gender, ethnicity=Super_Population)
 
 # Update our sample information for Platinum Genomes as "Unknown" since this is what we are trying to check.
 sampleInfoToCheck <- mutate(sampleInfo, ethnicity="Unknown")

@@ -31,7 +31,7 @@ FROM (
           call.call_set_name,
           call.genotype,
         FROM
-          [_THE_TABLE_]
+          [_GENOME_CALL_TABLE_]
         WHERE
           reference_name = 'chr17'
           AND start BETWEEN 41196311

@@ -13,7 +13,7 @@ FROM (
     NTH(2, call.genotype) WITHIN call AS second_allele,
     COUNT(alternate_bases) WITHIN RECORD AS num_alts
   FROM
-    [_THE_TABLE_]
+    [_GENOME_CALL_TABLE_]
   # Skip no-calls and single-allele genotypes
   OMIT call IF SOME(call.genotype < 0) OR (2 > COUNT(call.genotype))
   HAVING

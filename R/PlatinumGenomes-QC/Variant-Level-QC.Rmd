@@ -42,10 +42,10 @@ In Part 4 of the codelab, we perform some quality control analyses that could he
 
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 ```{r}
-queryReplacements <- list("_THE_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_THE_EXPANDED_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
+                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, gender=Gender)
+sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpCGIOnlyDataset.R")
@@ -175,7 +175,7 @@ First we use our sample information to determine which genomes are male.
 ```{r message=FALSE, warning=FALSE, comment=NA}
 maleSampleIds <- paste("'",
                        filter(sampleInfo,
-                              gender %in% c("MALE", "Male", "male", "M", "m"))$call_call_set_name,
+                              sex %in% c("MALE", "Male", "male", "M", "m"))$call_call_set_name,
                        "'", sep="", collapse=",")
 ```
 

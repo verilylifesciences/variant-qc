@@ -16,7 +16,7 @@ FROM (
       call.call_set_name,
       SOME(call.genotype == -1) WITHIN call AS has_no_calls,
     FROM
-      [_THE_TABLE_]
+      [_GENOME_CALL_TABLE_]
     # Optionally add clause here to limit the query to a particular
     # region of the genome.
     #_WHERE_
