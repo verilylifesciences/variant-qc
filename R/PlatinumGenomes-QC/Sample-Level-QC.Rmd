@@ -253,7 +253,7 @@ allResults <- full_join(allResults, result)
 
 ## Sex Inference
 
-For each genome, compare the anatomical sex from the sample information to the heterozygosity rate on the chromosome X calls.
+For each genome, compare the sex from the sample information to the heterozygosity rate on the chromosome X calls.
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/check-sex.sql",
                                   project=project,
@@ -276,7 +276,7 @@ And visualize the results:
 ggplot(joinedResult) +
   geom_boxplot(aes(x=sex, y=perct_het_alt_in_snvs, fill=sex)) +
   scale_y_continuous(labels = percent_format()) +
-  xlab("Gender") +
+  xlab("Sex") +
   ylab("Heterozygosity Rate ") +
   ggtitle("Box Plot: Heterozygosity Rate on the X Chromosome")
 ```
