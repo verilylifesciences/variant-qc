@@ -82,7 +82,7 @@ FROM (
               [genomics-public-data:platinum_genomes.variants]
             WHERE
               reference_name = 'chr17'
-            OMIT RECORD IF EVERY(alternate_bases IS NOT NULL)
+            OMIT RECORD IF NOT (EVERY(alternate_bases IS NULL) OR EVERY(alternate_bases = "<NON_REF>"))
               ) AS refs
           JOIN (
               SELECT
