@@ -71,19 +71,22 @@ FROM
   [genomics-public-data:platinum_genomes.variants]
 GROUP BY
   call.call_set_name
+ORDER BY
+  call.call_set_name
+  
 ```
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Mon Nov 16 17:32:28 2015 -->
+<!-- Mon Nov 16 19:59:22 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> number_of_calls </th>  </tr>
-  <tr> <td> NA12889 </td> <td align="right"> 49686680 </td> </tr>
-  <tr> <td> NA12886 </td> <td align="right"> 49802228 </td> </tr>
-  <tr> <td> NA12888 </td> <td align="right"> 53267797 </td> </tr>
-  <tr> <td> NA12890 </td> <td align="right"> 55528744 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 51612762 </td> </tr>
   <tr> <td> NA12878 </td> <td align="right"> 50722005 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 50994084 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 51707412 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 53298483 </td> </tr>
   <tr> <td> NA12882 </td> <td align="right"> 51187390 </td> </tr>
    </table>
 
@@ -172,7 +175,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Mon Nov 16 17:32:31 2015 -->
+<!-- Mon Nov 16 19:59:24 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -315,7 +318,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Mon Nov 16 17:32:34 2015 -->
+<!-- Mon Nov 16 19:59:27 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -411,7 +414,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Mon Nov 16 17:32:36 2015 -->
+<!-- Mon Nov 16 19:59:29 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> heterozygous_variant_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 3410507 </td> </tr>
@@ -528,7 +531,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Mon Nov 16 17:32:39 2015 -->
+<!-- Mon Nov 16 19:59:33 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6135459 </td> <td align="right"> 6770355.20 </td> <td align="right"> 9546033 </td> <td align="right"> -0.23 </td> </tr>
@@ -632,7 +635,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Mon Nov 16 17:32:42 2015 -->
+<!-- Mon Nov 16 19:59:36 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
@@ -773,7 +776,7 @@ Let's wrap up with a quick comparison using a few the variables we've collected 
 
 ```r
 plot(dplyr::select(allResults, number_of_calls, missingness_rate,
-                   private_variant_count, het_RA_count, hom_AA_count))
+                   private_variant_count, heterozygous_variant_count, O_HOM))
 ```
 
 <img src="figure/summary-1.png" title="plot of chunk summary" alt="plot of chunk summary" style="display: block; margin: auto;" />
