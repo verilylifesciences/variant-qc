@@ -33,6 +33,7 @@ source("./rHelpers/setup.R")
 
 In Part 3 of the codelab, we perform some quality control analyses that could help to identify any problematic genomes that should be removed from the cohort before proceeding with further analysis.  The appropriate cut off thresholds will depend upon the input dataset and/or other factors.
 
+* [Genome Call Rate](#genome-call-rate)
 * [Missingness Rate](#missingness-rate)
 * [Singleton Rate](#singleton-rate)
 * [Heterozygosity Rate](#heterozygosity-rate)
@@ -58,6 +59,52 @@ pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv",
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpCGIOnlyDataset.R")
+```
+
+## Genome Call Rate
+
+For each genome, count the number of calls (both variants and non-variant calls, if applicable).  Any genomes whose count is far away from the mean may indicate a problem.
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/genome-calls.sql",
+                                  project=project,
+                                  replacements=queryReplacements)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+DisplayQueryResults(result)
+```
+
+And visualizing the results:
+```{r genomeCallsSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+ggplot(result, aes(x=number_of_calls)) +
+  geom_histogram(color="black", fill="#FF6666") +
+  scale_x_continuous(labels=comma) +
+  xlab("Number of Calls") +
+  ylab("Sample Count") +
+  ggtitle("Histogram: Count of Calls Per Genome")
+```
+
+```{r genomeCalls, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+p <- ggplot(result) +
+  geom_point(aes(x=call_call_set_name, y=number_of_calls)) +
+  scale_x_discrete(expand=c(0.05, 1)) +
+  scale_y_continuous(labels=comma) +
+  xlab("Sample") +
+  ylab("Number of Calls") +
+  ggtitle("Scatter Plot: Count of Calls Per Genome")
+if(nrow(result) <= 20) {
+  p + theme(axis.text.x=element_text(angle=50, hjust=1))
+} else {
+  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank(), panel.grid.major.x=element_blank())
+}
+```
+
+Let's accumulate our sample-specific results for later use.
+```{r}
+allResults <- result
 ```
 
 ## Missingness Rate
@@ -109,7 +156,7 @@ if(nrow(result) <= 20) {
 
 Let's accumulate our sample-specific results for later use.
 ```{r}
-allResults <- result
+allResults <- full_join(allResults, result)
 ```
 
 ## Singleton Rate
@@ -377,12 +424,13 @@ To entirely remove a genome from a variant set in the Genomics API:
 
 # Summary
 
-Let's wrap up with a quick comparison using all the variables we've collected for each sample:
+Let's wrap up with a quick comparison using a few the variables we've collected for each sample.
 ```{r summary, fig.align="center", fig.width=12, fig.height=12, message=FALSE, comment=NA}
-plot(dplyr::select(allResults, -call_call_set_name))
+plot(dplyr::select(allResults, number_of_calls, missingness_rate,
+                   private_variant_count, het_RA_count, hom_AA_count))
 ```
 
-If we see any relationships that we do not expect, it may be worth a closer look.
+If we see any relationships that we do not expect, it may be worth a closer look.  We could also compare additional columns (only a few were included attempt to keep this plot scrutable).
 
 --------------------------------------------------------
 _Next_: [Part 4: Variant-Level QC](./Variant-Level-QC.md)
