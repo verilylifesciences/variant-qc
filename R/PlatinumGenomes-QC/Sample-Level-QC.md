@@ -53,7 +53,7 @@ pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv",
 
 ## Genome Call Rate
 
-For each genome, count the number of calls (both variants and non-variant calls, if applicable).  Any genomes whose count is far away from the mean may indicate a problem.
+For each genome, count the number of calls (both variants and non-variant calls, if applicable).  Any genomes whose count is far away from the mean may indicate a problem such as sample quality or identical data loaded multiple times.
 
 
 ```r
@@ -772,7 +772,7 @@ To entirely remove a genome from a variant set in the Genomics API:
 
 # Summary
 
-Let's wrap up with a quick comparison using a few the variables we've collected for each sample.
+Let's wrap up with a quick comparison using the variables we've collected for each sample.
 
 ```r
 plot(dplyr::select(allResults, number_of_calls, missingness_rate,
@@ -781,7 +781,7 @@ plot(dplyr::select(allResults, number_of_calls, missingness_rate,
 
 <img src="figure/summary-1.png" title="plot of chunk summary" alt="plot of chunk summary" style="display: block; margin: auto;" />
 
-If we see any relationships that we do not expect, it may be worth a closer look.  We could also compare additional columns (only a few were included attempt to keep this plot scrutable).
+If we see any relationships that we do not expect, it may be worth a closer look.  We could also compare additional columns (only a few were included to keep this plot scrutable).
 
 --------------------------------------------------------
 _Next_: [Part 4: Variant-Level QC](./Variant-Level-QC.md)
