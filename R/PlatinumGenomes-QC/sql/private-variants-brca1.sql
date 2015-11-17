@@ -36,11 +36,11 @@ FROM (
           reference_name = 'chr17'
           AND start BETWEEN 41196311
           AND 41277499
-        OMIT call IF EVERY(call.genotype = -1)
+        OMIT call IF EVERY(call.genotype <= 0)
           ),
         alternate_bases)
       )
-  OMIT RECORD IF alternate_bases IS NULL
+  OMIT RECORD IF EVERY(alternate_bases IS NULL) OR EVERY(alternate_bases = "<NON_REF>")
   HAVING
     cnt > 0
     )

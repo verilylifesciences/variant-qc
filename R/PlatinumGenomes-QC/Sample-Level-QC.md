@@ -22,6 +22,7 @@
 
 In Part 3 of the codelab, we perform some quality control analyses that could help to identify any problematic genomes that should be removed from the cohort before proceeding with further analysis.  The appropriate cut off thresholds will depend upon the input dataset and/or other factors.
 
+* [Genome Call Rate](#genome-call-rate)
 * [Missingness Rate](#missingness-rate)
 * [Singleton Rate](#singleton-rate)
 * [Heterozygosity Rate](#heterozygosity-rate)
@@ -48,6 +49,82 @@ pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv",
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpCGIOnlyDataset.R")
+```
+
+## Genome Call Rate
+
+For each genome, count the number of calls (both variants and non-variant calls, if applicable).  Any genomes whose count is far away from the mean may indicate a problem such as sample quality or identical data loaded multiple times.
+
+
+```r
+result <- DisplayAndDispatchQuery("./sql/genome-calls.sql",
+                                  project=project,
+                                  replacements=queryReplacements)
+```
+
+```
+# Count the number of calls per genome.
+SELECT
+  call.call_set_name,
+  COUNT(call.call_set_name) AS number_of_calls,
+FROM
+  [genomics-public-data:platinum_genomes.variants]
+GROUP BY
+  call.call_set_name
+ORDER BY
+  call.call_set_name
+  
+```
+Number of rows returned by this query: **17**.
+
+Displaying the first few rows of the dataframe of results:
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Mon Nov 16 19:59:22 2015 -->
+<table border=1>
+<tr> <th> call_call_set_name </th> <th> number_of_calls </th>  </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 51612762 </td> </tr>
+  <tr> <td> NA12878 </td> <td align="right"> 50722005 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 50994084 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 51707412 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 53298483 </td> </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 51187390 </td> </tr>
+   </table>
+
+And visualizing the results:
+
+```r
+ggplot(result, aes(x=number_of_calls)) +
+  geom_histogram(color="black", fill="#FF6666") +
+  scale_x_continuous(labels=comma) +
+  xlab("Number of Calls") +
+  ylab("Sample Count") +
+  ggtitle("Histogram: Count of Calls Per Genome")
+```
+
+<img src="figure/genomeCallsSummary-1.png" title="plot of chunk genomeCallsSummary" alt="plot of chunk genomeCallsSummary" style="display: block; margin: auto;" />
+
+
+```r
+p <- ggplot(result) +
+  geom_point(aes(x=call_call_set_name, y=number_of_calls)) +
+  scale_x_discrete(expand=c(0.05, 1)) +
+  scale_y_continuous(labels=comma) +
+  xlab("Sample") +
+  ylab("Number of Calls") +
+  ggtitle("Scatter Plot: Count of Calls Per Genome")
+if(nrow(result) <= 20) {
+  p + theme(axis.text.x=element_text(angle=50, hjust=1))
+} else {
+  p + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank(), panel.grid.major.x=element_blank())
+}
+```
+
+<img src="figure/genomeCalls-1.png" title="plot of chunk genomeCalls" alt="plot of chunk genomeCalls" style="display: block; margin: auto;" />
+
+Let's accumulate our sample-specific results for later use.
+
+```r
+allResults <- result
 ```
 
 ## Missingness Rate
@@ -98,7 +175,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct 21 19:23:37 2015 -->
+<!-- Mon Nov 16 19:59:24 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
@@ -157,7 +234,11 @@ if(nrow(result) <= 20) {
 Let's accumulate our sample-specific results for later use.
 
 ```r
-allResults <- result
+allResults <- full_join(allResults, result)
+```
+
+```
+## Joining by: "call_call_set_name"
 ```
 
 ## Singleton Rate
@@ -213,10 +294,10 @@ FROM (
           # Optionally add a clause here to limit the query to a particular
           # region of the genome.
           #_WHERE_
-          OMIT call IF EVERY(call.genotype = -1)
+          OMIT call IF EVERY(call.genotype <= 0)
         ), alternate_bases)
         )
-    OMIT RECORD IF alternate_bases IS NULL
+    OMIT RECORD IF EVERY(alternate_bases IS NULL) OR EVERY(alternate_bases = "<NON_REF>")
     HAVING
       cnt > 0
       )
@@ -237,7 +318,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct 21 19:23:40 2015 -->
+<!-- Mon Nov 16 19:59:27 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -333,7 +414,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct 21 19:23:42 2015 -->
+<!-- Mon Nov 16 19:59:29 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> heterozygous_variant_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 3410507 </td> </tr>
@@ -450,7 +531,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct 21 19:23:45 2015 -->
+<!-- Mon Nov 16 19:59:33 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6135459 </td> <td align="right"> 6770355.20 </td> <td align="right"> 9546033 </td> <td align="right"> -0.23 </td> </tr>
@@ -505,7 +586,7 @@ allResults <- full_join(allResults, result)
 
 ## Sex Inference
 
-For each genome, compare the anatomical sex from the sample information to the heterozygosity rate on the chromosome X calls.
+For each genome, compare the sex from the sample information to the heterozygosity rate on the chromosome X calls.
 
 ```r
 result <- DisplayAndDispatchQuery("./sql/check-sex.sql",
@@ -554,7 +635,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct 21 19:23:48 2015 -->
+<!-- Mon Nov 16 19:59:36 2015 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
@@ -577,7 +658,7 @@ And visualize the results:
 ggplot(joinedResult) +
   geom_boxplot(aes(x=sex, y=perct_het_alt_in_snvs, fill=sex)) +
   scale_y_continuous(labels = percent_format()) +
-  xlab("Gender") +
+  xlab("Sex") +
   ylab("Heterozygosity Rate ") +
   ggtitle("Box Plot: Heterozygosity Rate on the X Chromosome")
 ```
@@ -691,15 +772,16 @@ To entirely remove a genome from a variant set in the Genomics API:
 
 # Summary
 
-Let's wrap up with a quick comparison using all the variables we've collected for each sample:
+Let's wrap up with a quick comparison using the variables we've collected for each sample.
 
 ```r
-plot(dplyr::select(allResults, -call_call_set_name))
+plot(dplyr::select(allResults, number_of_calls, missingness_rate,
+                   private_variant_count, heterozygous_variant_count, O_HOM))
 ```
 
 <img src="figure/summary-1.png" title="plot of chunk summary" alt="plot of chunk summary" style="display: block; margin: auto;" />
 
-If we see any relationships that we do not expect, it may be worth a closer look.
+If we see any relationships that we do not expect, it may be worth a closer look.  We could also compare additional columns (only a few were included to keep this plot scrutable).
 
 --------------------------------------------------------
 _Next_: [Part 4: Variant-Level QC](./Variant-Level-QC.md)

@@ -20,7 +20,7 @@ FROM (
     [_GENOME_CALL_TABLE_]
   WHERE
     reference_name = 'chr17'
-  OMIT RECORD IF EVERY(alternate_bases IS NOT NULL)
+  OMIT RECORD IF NOT (EVERY(alternate_bases IS NULL) OR EVERY(alternate_bases = "<NON_REF>"))
     ) AS refs
 JOIN (
   SELECT
