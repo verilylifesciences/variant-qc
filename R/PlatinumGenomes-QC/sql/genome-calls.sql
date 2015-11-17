@@ -6,3 +6,6 @@ FROM
   [_GENOME_CALL_TABLE_]
 GROUP BY
   call.call_set_name
+ORDER BY
+  call.call_set_name
+  
