@@ -313,16 +313,17 @@ public class TransformNonVariantSegmentData {
         .apply(Create.of(requests))
         .apply(new VariantStreamer(auth, ShardBoundary.Requirement.STRICT, null));
 
-    PCollection<Variant> filteredVariants = options.getOmitLowQualityCalls()
-        ? variants.apply(ParDo.of(new FilterCallsFn())) : variants; 
+    PCollection<Variant> filteredVariants =
+        options.getOmitLowQualityCalls() ? variants.apply(ParDo.of(new FilterCallsFn())) : variants;
     
-    JoinNonVariantSegmentsWithVariants.joinVariantsTransform(filteredVariants)
-    .apply(ParDo.of(new FlagVariantsWithAmbiguousCallsFn()))
-    .apply(ParDo.of(new FormatVariantsFn()))
-    .apply(
-        BigQueryIO.Write.to(options.getOutputTable()).withSchema(getTableSchema())
-            .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
-            .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_TRUNCATE));
+    JoinNonVariantSegmentsWithVariants
+        .joinVariantsTransform(filteredVariants)
+        .apply(ParDo.of(new FlagVariantsWithAmbiguousCallsFn()))
+        .apply(ParDo.of(new FormatVariantsFn()))
+        .apply(
+            BigQueryIO.Write.to(options.getOutputTable()).withSchema(getTableSchema())
+                .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+                .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_TRUNCATE));
 
     p.run();
   }
