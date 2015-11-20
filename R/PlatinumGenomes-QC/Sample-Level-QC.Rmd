@@ -58,7 +58,7 @@ pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv",
                   col.names=c("call_call_set_name", "PC1", "PC2", "count"))
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
-# source("./rHelpers/pgpCGIOnlyDataset.R")
+# source("./rHelpers/pgpDataset.R")
 ```
 
 ## Genome Call Rate
