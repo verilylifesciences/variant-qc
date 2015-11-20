@@ -48,7 +48,7 @@ sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/plati
 sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
-# source("./rHelpers/pgpCGIOnlyDataset.R")
+# source("./rHelpers/pgpDataset.R")
 ```
 
 ## Ti/Tv by Genomic Window
