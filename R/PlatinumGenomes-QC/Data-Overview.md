@@ -36,7 +36,7 @@ The following example makes use of [Illumina Platinum Genomes](http://www.illumi
 queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants")
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
-# source("./rHelpers/pgpCGIOnlyDataset.R")
+# source("./rHelpers/pgpDataset.R")
 ```
 
 ## Variants
