@@ -41,10 +41,9 @@ import com.google.cloud.dataflow.sdk.transforms.Sum;
 import com.google.cloud.dataflow.sdk.values.PCollection;
 import com.google.cloud.genomics.dataflow.functions.grpc.JoinNonVariantSegmentsWithVariants;
 import com.google.cloud.genomics.dataflow.readers.VariantStreamer;
-import com.google.cloud.genomics.dataflow.utils.DataflowWorkarounds;
-import com.google.cloud.genomics.dataflow.utils.GenomicsDatasetOptions;
 import com.google.cloud.genomics.dataflow.utils.GenomicsOptions;
-import com.google.cloud.genomics.utils.GenomicsFactory;
+import com.google.cloud.genomics.dataflow.utils.ShardOptions;
+import com.google.cloud.genomics.utils.OfflineAuth;
 import com.google.cloud.genomics.utils.ShardBoundary;
 import com.google.cloud.genomics.utils.ShardUtils;
 import com.google.cloud.genomics.utils.grpc.VariantUtils;
@@ -91,10 +90,13 @@ public class TransformNonVariantSegmentData {
   /**
    * Options supported by {@link TransformNonVariantSegmentData}.
    * <p>
-   * Inherits standard configuration options for Genomics pipelines and datasets.
+   * Inherits standard configuration options for pipelines operating on shards of genomic data.
    */
-  private static interface Options extends GenomicsDatasetOptions {
-    @Description("BigQuery table to write to, specified as "
+  private static interface Options extends ShardOptions, JoinNonVariantSegmentsWithVariants.Options {
+    @Description("The ID of the Google Genomics variant set this pipeline is accessing.")
+    String getVariantSetId();
+
+    void setVariantSetId(String variantSetId);    @Description("BigQuery table to write to, specified as "
         + "<project_id>:<dataset_id>.<table_id>. The dataset must already exist.")
     @Validation.Required
     String getOutputTable();
@@ -298,14 +300,13 @@ public class TransformNonVariantSegmentData {
         "This job is only valid for data containing non-variant segments. "
             + "Set the --hasNonVariantSegments command line option accordingly.");
 
-    GenomicsFactory.OfflineAuth auth = GenomicsOptions.Methods.getGenomicsAuth(options);
+    OfflineAuth auth = GenomicsOptions.Methods.getGenomicsAuth(options);
     List<StreamVariantsRequest> requests = options.isAllReferences() ?
-        ShardUtils.getVariantRequests(options.getDatasetId(), ShardUtils.SexChromosomeFilter.EXCLUDE_XY,
+        ShardUtils.getVariantRequests(options.getVariantSetId(), ShardUtils.SexChromosomeFilter.EXCLUDE_XY,
             options.getBasesPerShard(), auth) :
-          ShardUtils.getVariantRequests(options.getDatasetId(), options.getReferences(), options.getBasesPerShard());
+          ShardUtils.getVariantRequests(options.getVariantSetId(), options.getReferences(), options.getBasesPerShard());
     
     Pipeline p = Pipeline.create(options);
-    DataflowWorkarounds.registerGenomicsCoders(p);
 
     // Create a collection of data with non-variant segments omitted but calls from overlapping
     // non-variant segments added to SNPs and write them to BigQuery.
