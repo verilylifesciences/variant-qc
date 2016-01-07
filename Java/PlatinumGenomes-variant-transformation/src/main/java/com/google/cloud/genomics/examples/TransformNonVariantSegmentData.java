@@ -94,9 +94,11 @@ public class TransformNonVariantSegmentData {
    */
   private static interface Options extends ShardOptions, JoinNonVariantSegmentsWithVariants.Options {
     @Description("The ID of the Google Genomics variant set this pipeline is accessing.")
+    @Validation.Required
     String getVariantSetId();
+    void setVariantSetId(String variantSetId);
 
-    void setVariantSetId(String variantSetId);    @Description("BigQuery table to write to, specified as "
+    @Description("BigQuery table to write to, specified as "
         + "<project_id>:<dataset_id>.<table_id>. The dataset must already exist.")
     @Validation.Required
     String getOutputTable();
