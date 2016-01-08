@@ -65,8 +65,7 @@ java -cp target/non-variant-segment-transformer-*runnable.jar \
   com.google.cloud.genomics.examples.TransformNonVariantSegmentData \
   --project=YOUR_GOOGLE_CLOUD_PLATFORM_PROJECT_ID \
   --stagingLocation=gs://YOUR_BUCKET/dataflow-staging \
-  --secretsFile=/PATH/TO/YOUR/client_secrets.json \
-  --datasetId=3049512673186936334 \
+  --variantSetId=3049512673186936334 \
   --references=chr17:41196311:41277499 \
   --hasNonVariantSegments \
   --outputTable=YOUR_BIGQUERY_DATASET.YOUR_BIGQUERY_DESTINATION_TABLE
