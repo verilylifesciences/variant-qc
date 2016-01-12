@@ -54,6 +54,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
+import com.google.common.collect.HashMultiset;
 import com.google.genomics.v1.StreamVariantsRequest;
 import com.google.genomics.v1.Variant;
 import com.google.genomics.v1.VariantCall;
@@ -84,6 +85,13 @@ public class TransformNonVariantSegmentData {
       .getLogger(TransformNonVariantSegmentData.class.getName());
 
   public static final String HAS_AMBIGUOUS_CALLS_FIELD = "ambiguousCalls";
+  // AC : allele count in genotypes, for each ALT allele, in the same order as listed
+  public static final String ALLELE_COUNT_FIELD = "AC";
+  // AF : allele frequency for each ALT allele in the same order as listed: use this when estimated from primary
+  // data, not called genotypes
+  public static final String ALLELE_FREQUENCY_FIELD = "AF";
+  // AN : total number of alleles in called genotypes
+  public static final String ALLELE_NUMBER_FIELD = "AN";
   public static final String FILTER_FIELD = "FILTER";
   public static final String PASSING_FILTER = "PASS";
   
@@ -135,6 +143,9 @@ public class TransformNonVariantSegmentData {
     fields.add(new TableFieldSchema().setName("names").setType("STRING").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName("filter").setType("STRING").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName("quality").setType("FLOAT"));
+    fields.add(new TableFieldSchema().setName(ALLELE_NUMBER_FIELD).setType("INTEGER"));
+    fields.add(new TableFieldSchema().setName(ALLELE_COUNT_FIELD).setType("INTEGER").setMode("REPEATED"));
+    fields.add(new TableFieldSchema().setName(ALLELE_FREQUENCY_FIELD).setType("FLOAT").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName(HAS_AMBIGUOUS_CALLS_FIELD).setType("BOOLEAN"));
     fields.add(new TableFieldSchema().setName("call").setType("RECORD").setMode("REPEATED")
         .setFields(callFields));
@@ -143,7 +154,7 @@ public class TransformNonVariantSegmentData {
   }
 
   /**
-   * Pipeline function to prepare the data for writing to BigQuery.
+   * Pipeline function to prepare the data for writing to BigQuery, including computing allelic frequency.
    * 
    * It builds a TableRow object containing data from the variant mapped onto the schema to be used
    * for the destination table.
@@ -153,8 +164,13 @@ public class TransformNonVariantSegmentData {
     public void processElement(ProcessContext c) {
       Variant v = c.element();
 
+      HashMultiset genotypeCount = HashMultiset.create();  // Typical genotypes observed are -1,0,1,2
+      
       List<TableRow> calls = new ArrayList<>();
       for (VariantCall call : v.getCallsList()) {
+        
+        genotypeCount.addAll(call.getGenotypeList());
+        
         calls.add(new TableRow()
             .set("call_set_name", call.getCallSetName())
             .set("phaseset", call.getPhaseset())
@@ -165,6 +181,20 @@ public class TransformNonVariantSegmentData {
                   ));
       }
 
+      // Compute AN/AC/AF.  Note that no-calls (genotype -1) are excluded from AN.
+      int numAlts = v.getAlternateBasesCount();
+      int alleleNumber = 0;
+      List<Integer> alleleCount = new ArrayList<Integer>(numAlts);
+      List<Double> alleleFrequency = new ArrayList<Double>(numAlts);
+      for (int i = 0; i <= numAlts; i++) {
+        alleleNumber += genotypeCount.count(i);
+      }
+      for (int j = 1; j <= numAlts; j++) {
+        alleleCount.add(j - 1, genotypeCount.count(j));
+        alleleFrequency.add(j - 1,
+            (0 < alleleNumber) ? (genotypeCount.count(j) / (double) alleleNumber) : 0.0);
+      }
+      
       TableRow row =
           new TableRow()
               .set("variant_id", v.getId())
@@ -177,8 +207,11 @@ public class TransformNonVariantSegmentData {
               .set("names", (v.getNamesList() == null) ? new ArrayList<String>() : v.getNamesList())
               .set("filter", (v.getFilterList() == null) ? new ArrayList<String>() : v.getFilterList())
               .set("quality", v.getQuality())
-              .set("call", calls)
-              .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).getValues(0).getStringValue());
+              .set(ALLELE_NUMBER_FIELD, alleleNumber)
+              .set(ALLELE_COUNT_FIELD, alleleCount)
+              .set(ALLELE_FREQUENCY_FIELD, alleleFrequency)              
+              .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).getValues(0).getStringValue())
+              .set("call", calls);
 
       c.output(row);
     }
