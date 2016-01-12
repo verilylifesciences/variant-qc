@@ -69,6 +69,8 @@ import com.google.protobuf.Value;
  *
  * This is currently done only for SNP variants. Indels and structural variants are left as-is.
  *
+ * This pipeline assumes the call set names in the variant set are unique.
+ * 
  * The data source is the Google Genomics Variants API. The data sink is BigQuery.
  *
  * <p>
@@ -85,6 +87,7 @@ public class TransformNonVariantSegmentData {
       .getLogger(TransformNonVariantSegmentData.class.getName());
 
   public static final String HAS_AMBIGUOUS_CALLS_FIELD = "ambiguousCalls";
+  public static final String REF_MATCH_CALLSETS_FIELD = "refMatchCallsets";
   // AC : allele count in genotypes, for each ALT allele, in the same order as listed
   public static final String ALLELE_COUNT_FIELD = "AC";
   // AF : allele frequency for each ALT allele in the same order as listed: use this when estimated from primary
@@ -147,6 +150,7 @@ public class TransformNonVariantSegmentData {
     fields.add(new TableFieldSchema().setName(ALLELE_COUNT_FIELD).setType("INTEGER").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName(ALLELE_FREQUENCY_FIELD).setType("FLOAT").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName(HAS_AMBIGUOUS_CALLS_FIELD).setType("BOOLEAN"));
+    fields.add(new TableFieldSchema().setName(REF_MATCH_CALLSETS_FIELD).setType("STRING").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName("call").setType("RECORD").setMode("REPEATED")
         .setFields(callFields));
 
@@ -164,21 +168,25 @@ public class TransformNonVariantSegmentData {
     public void processElement(ProcessContext c) {
       Variant v = c.element();
 
-      HashMultiset genotypeCount = HashMultiset.create();  // This will typically hold counts for genotypes -1,0,1,2.
+      List<String> refMatchCallsets = new ArrayList<>();
+      HashMultiset<Integer> genotypeCount = HashMultiset.create();  // This will typically hold counts for genotypes -1,0,1,2.
       
       List<TableRow> calls = new ArrayList<>();
       for (VariantCall call : v.getCallsList()) {
-        
         genotypeCount.addAll(call.getGenotypeList());
-        
-        calls.add(new TableRow()
-            .set("call_set_name", call.getCallSetName())
-            .set("phaseset", call.getPhaseset())
-            .set("genotype", call.getGenotypeList())
-            .set("genotype_likelihood",
-                (call.getGenotypeLikelihoodList() == null) ? new ArrayList<Double>() :
-                  call.getGenotypeLikelihoodList()
-                  ));
+
+        if (Iterables.all(call.getGenotypeList(), Predicates.equalTo(0))) {
+          refMatchCallsets.add(call.getCallSetName());
+        } else {
+          calls.add(new TableRow()
+              .set("call_set_name", call.getCallSetName())
+              .set("phaseset", call.getPhaseset())
+              .set("genotype", call.getGenotypeList())
+              .set(
+                  "genotype_likelihood",
+                  (call.getGenotypeLikelihoodList() == null) ? new ArrayList<Double>() : call
+                      .getGenotypeLikelihoodList()));
+        }
       }
 
       // Compute AN/AC/AF.  Note that no-calls (genotype -1) are excluded from AN.
@@ -211,6 +219,7 @@ public class TransformNonVariantSegmentData {
               .set(ALLELE_COUNT_FIELD, alleleCount)
               .set(ALLELE_FREQUENCY_FIELD, alleleFrequency)              
               .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).getValues(0).getStringValue())
+              .set(REF_MATCH_CALLSETS_FIELD, refMatchCallsets)
               .set("call", calls);
 
       c.output(row);

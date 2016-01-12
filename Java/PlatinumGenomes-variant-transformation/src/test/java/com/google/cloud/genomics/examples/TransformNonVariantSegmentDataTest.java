@@ -116,13 +116,13 @@ public class TransformNonVariantSegmentDataTest {
   @Test
   public void testFormatVariantsFn() {
 
-    VariantCall noCall = VariantCall.newBuilder().addAllGenotype(Arrays.asList(-1, -1)).build();
-    VariantCall noCallRef = VariantCall.newBuilder().addAllGenotype(Arrays.asList(-1, 0)).build();
-    VariantCall noCallAlt = VariantCall.newBuilder().addAllGenotype(Arrays.asList(-1, 1)).build();
-    VariantCall refMatch = VariantCall.newBuilder().addAllGenotype(Arrays.asList(0, 0)).build();
-    VariantCall hetAlt = VariantCall.newBuilder().addAllGenotype(Arrays.asList(0, 1)).build();
-    VariantCall homAlt = VariantCall.newBuilder().addAllGenotype(Arrays.asList(1, 1)).build();
-    VariantCall multiAllelic = VariantCall.newBuilder().addAllGenotype(Arrays.asList(1, 2)).build();
+    VariantCall noCall = VariantCall.newBuilder().setCallSetName("noCall").addAllGenotype(Arrays.asList(-1, -1)).build();
+    VariantCall noCallRef = VariantCall.newBuilder().setCallSetName("noCallRef").addAllGenotype(Arrays.asList(-1, 0)).build();
+    VariantCall noCallAlt = VariantCall.newBuilder().setCallSetName("noCallAlt").addAllGenotype(Arrays.asList(-1, 1)).build();
+    VariantCall refMatch = VariantCall.newBuilder().setCallSetName("refMatch").addAllGenotype(Arrays.asList(0, 0)).build();
+    VariantCall hetAlt = VariantCall.newBuilder().setCallSetName("hetAlt").addAllGenotype(Arrays.asList(0, 1)).build();
+    VariantCall homAlt = VariantCall.newBuilder().setCallSetName("homAlt").addAllGenotype(Arrays.asList(1, 1)).build();
+    VariantCall multiAllelic = VariantCall.newBuilder().setCallSetName("multiAllelic").addAllGenotype(Arrays.asList(1, 2)).build();
 
     Variant inputVariant = Variant.newBuilder()
         .addAllAlternateBases(Arrays.asList("A", "C"))
@@ -150,14 +150,17 @@ public class TransformNonVariantSegmentDataTest {
     assertEquals(10, rows.get(0).get(TransformNonVariantSegmentData.ALLELE_NUMBER_FIELD));
     assertEquals(Arrays.asList(5, 1), rows.get(0).get(TransformNonVariantSegmentData.ALLELE_COUNT_FIELD));
     assertEquals(Arrays.asList(5/(double)10, 1/(double)10), rows.get(0).get(TransformNonVariantSegmentData.ALLELE_FREQUENCY_FIELD));
+    assertEquals(Arrays.asList("refMatch"), rows.get(0).get(TransformNonVariantSegmentData.REF_MATCH_CALLSETS_FIELD));
     
     assertEquals(0, rows.get(1).get(TransformNonVariantSegmentData.ALLELE_NUMBER_FIELD));
     assertEquals(Arrays.asList(0, 0), rows.get(1).get(TransformNonVariantSegmentData.ALLELE_COUNT_FIELD));
     assertEquals(Arrays.asList(0.0, 0.0), rows.get(1).get(TransformNonVariantSegmentData.ALLELE_FREQUENCY_FIELD));
+    assertEquals(Arrays.asList(), rows.get(1).get(TransformNonVariantSegmentData.REF_MATCH_CALLSETS_FIELD));
     
     assertEquals(3, rows.get(2).get(TransformNonVariantSegmentData.ALLELE_NUMBER_FIELD));
     assertEquals(Arrays.asList(0, 0), rows.get(2).get(TransformNonVariantSegmentData.ALLELE_COUNT_FIELD));
     assertEquals(Arrays.asList(0.0, 0.0), rows.get(2).get(TransformNonVariantSegmentData.ALLELE_FREQUENCY_FIELD));
+    assertEquals(Arrays.asList("refMatch"), rows.get(2).get(TransformNonVariantSegmentData.REF_MATCH_CALLSETS_FIELD));
   }
   
 }
