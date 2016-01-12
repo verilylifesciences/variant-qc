@@ -164,7 +164,7 @@ public class TransformNonVariantSegmentData {
     public void processElement(ProcessContext c) {
       Variant v = c.element();
 
-      HashMultiset genotypeCount = HashMultiset.create();  // This will typically hold counts for genotypes -1,0,1,2.
+      HashMultiset genotypeCount = HashMultiset.create();  // Typical genotypes observed are -1,0,1,2
       
       List<TableRow> calls = new ArrayList<>();
       for (VariantCall call : v.getCallsList()) {
