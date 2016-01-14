@@ -135,22 +135,25 @@ public class TransformNonVariantSegmentData {
     callFields.add(new TableFieldSchema().setName("genotype_likelihood").setType("FLOAT")
         .setMode("REPEATED"));
 
+    List<TableFieldSchema> altFields = new ArrayList<>();
+    altFields.add(new TableFieldSchema().setName("alternate_bases").setType("STRING"));
+    altFields.add(new TableFieldSchema().setName(ALLELE_COUNT_FIELD).setType("INTEGER"));
+    altFields.add(new TableFieldSchema().setName(ALLELE_FREQUENCY_FIELD).setType("FLOAT"));
+    
     List<TableFieldSchema> fields = new ArrayList<>();
     fields.add(new TableFieldSchema().setName("variant_id").setType("STRING"));
     fields.add(new TableFieldSchema().setName("reference_name").setType("STRING"));
     fields.add(new TableFieldSchema().setName("start").setType("INTEGER"));
     fields.add(new TableFieldSchema().setName("end").setType("INTEGER"));
     fields.add(new TableFieldSchema().setName("reference_bases").setType("STRING"));
-    fields.add(new TableFieldSchema().setName("alternate_bases").setType("STRING")
-        .setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName("names").setType("STRING").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName("filter").setType("STRING").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName("quality").setType("FLOAT"));
     fields.add(new TableFieldSchema().setName(ALLELE_NUMBER_FIELD).setType("INTEGER"));
-    fields.add(new TableFieldSchema().setName(ALLELE_COUNT_FIELD).setType("INTEGER").setMode("REPEATED"));
-    fields.add(new TableFieldSchema().setName(ALLELE_FREQUENCY_FIELD).setType("FLOAT").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName(HAS_AMBIGUOUS_CALLS_FIELD).setType("BOOLEAN"));
     fields.add(new TableFieldSchema().setName(REF_MATCH_CALLSETS_FIELD).setType("STRING").setMode("REPEATED"));
+    fields.add(new TableFieldSchema().setName("alt").setType("RECORD").setMode("REPEATED")
+        .setFields(altFields));
     fields.add(new TableFieldSchema().setName("call").setType("RECORD").setMode("REPEATED")
         .setFields(callFields));
 
@@ -190,18 +193,20 @@ public class TransformNonVariantSegmentData {
       }
 
       // Compute AN/AC/AF.  Note that no-calls (genotype -1) are excluded from AN.
+      List<TableRow> alts = new ArrayList<>();
       int numAlts = v.getAlternateBasesCount();
       int alleleNumber = 0;
-      List<Integer> alleleCount = new ArrayList<Integer>(numAlts);
-      List<Double> alleleFrequency = new ArrayList<Double>(numAlts);
       for (int i = 0; i <= numAlts; i++) {
         alleleNumber += genotypeCount.count(i);
       }
-      for (int j = 1; j <= numAlts; j++) {
-        alleleCount.add(j - 1, genotypeCount.count(j));
-        alleleFrequency.add(j - 1,
-            (0 < alleleNumber) ? (genotypeCount.count(j) / (double) alleleNumber) : 0.0);
+      for (int j = 0; j < numAlts; j++) {
+        alts.add(new TableRow()
+            .set("alternate_bases", v.getAlternateBases(j))
+            .set(ALLELE_COUNT_FIELD, genotypeCount.count(j + 1))
+            .set(ALLELE_FREQUENCY_FIELD,
+                (0 < alleleNumber) ? (genotypeCount.count(j + 1) / (double) alleleNumber) : 0.0));
       }
+      
       
       TableRow row =
           new TableRow()
@@ -210,14 +215,11 @@ public class TransformNonVariantSegmentData {
               .set("start", v.getStart())
               .set("end", v.getEnd())
               .set("reference_bases", v.getReferenceBases())
-              .set("alternate_bases",
-                  (v.getAlternateBasesList() == null) ? new ArrayList<String>() : v.getAlternateBasesList())
+              .set("alt", alts)
               .set("names", (v.getNamesList() == null) ? new ArrayList<String>() : v.getNamesList())
               .set("filter", (v.getFilterList() == null) ? new ArrayList<String>() : v.getFilterList())
               .set("quality", v.getQuality())
               .set(ALLELE_NUMBER_FIELD, alleleNumber)
-              .set(ALLELE_COUNT_FIELD, alleleCount)
-              .set(ALLELE_FREQUENCY_FIELD, alleleFrequency)              
               .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).getValues(0).getStringValue())
               .set(REF_MATCH_CALLSETS_FIELD, refMatchCallsets)
               .set("call", calls);

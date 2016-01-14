@@ -148,18 +148,18 @@ public class TransformNonVariantSegmentDataTest {
     assertEquals(3, rows.size());
     
     assertEquals(10, rows.get(0).get(TransformNonVariantSegmentData.ALLELE_NUMBER_FIELD));
-    assertEquals(Arrays.asList(5, 1), rows.get(0).get(TransformNonVariantSegmentData.ALLELE_COUNT_FIELD));
-    assertEquals(Arrays.asList(5/(double)10, 1/(double)10), rows.get(0).get(TransformNonVariantSegmentData.ALLELE_FREQUENCY_FIELD));
+    assertEquals("[{alternate_bases=A, AC=5, AF=0.5}, {alternate_bases=C, AC=1, AF=0.1}]",
+        rows.get(0).get("alt").toString());
     assertEquals(Arrays.asList("refMatch"), rows.get(0).get(TransformNonVariantSegmentData.REF_MATCH_CALLSETS_FIELD));
     
     assertEquals(0, rows.get(1).get(TransformNonVariantSegmentData.ALLELE_NUMBER_FIELD));
-    assertEquals(Arrays.asList(0, 0), rows.get(1).get(TransformNonVariantSegmentData.ALLELE_COUNT_FIELD));
-    assertEquals(Arrays.asList(0.0, 0.0), rows.get(1).get(TransformNonVariantSegmentData.ALLELE_FREQUENCY_FIELD));
+    assertEquals("[{alternate_bases=A, AC=0, AF=0.0}, {alternate_bases=C, AC=0, AF=0.0}]",
+        rows.get(1).get("alt").toString());
     assertEquals(Arrays.asList(), rows.get(1).get(TransformNonVariantSegmentData.REF_MATCH_CALLSETS_FIELD));
     
     assertEquals(3, rows.get(2).get(TransformNonVariantSegmentData.ALLELE_NUMBER_FIELD));
-    assertEquals(Arrays.asList(0, 0), rows.get(2).get(TransformNonVariantSegmentData.ALLELE_COUNT_FIELD));
-    assertEquals(Arrays.asList(0.0, 0.0), rows.get(2).get(TransformNonVariantSegmentData.ALLELE_FREQUENCY_FIELD));
+    assertEquals("[{alternate_bases=A, AC=0, AF=0.0}, {alternate_bases=C, AC=0, AF=0.0}]",
+        rows.get(2).get("alt").toString());
     assertEquals(Arrays.asList("refMatch"), rows.get(2).get(TransformNonVariantSegmentData.REF_MATCH_CALLSETS_FIELD));
   }
   
