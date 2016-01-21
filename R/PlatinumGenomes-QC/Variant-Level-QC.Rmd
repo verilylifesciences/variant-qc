@@ -166,7 +166,7 @@ Displaying the first few rows of the dataframe of results:
 DisplayQueryResults(result)
 ```
 
-See also [a version of this query](./sql/hardy-weinberg-udf.sql) that uses the new BigQuery feature of user-defined javascript functions which is currently in Alpha.  For more info, see https://www.youtube.com/watch?v=GrD7ymUPt3M#t=1377.
+See also [a version of this query](./sql/hardy-weinberg-udf.sql) that uses BigQuery [user-defined javascript functions](https://cloud.google.com/bigquery/user-defined-functions).
 
 ## Heterozygous Haplotype
 For each variant within the X and Y chromosome, identify heterozygous variants in male genomes.
