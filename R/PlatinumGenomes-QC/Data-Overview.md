@@ -77,8 +77,8 @@ ORDER BY
 Number of rows returned by this query: **335**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Fri Oct 23 14:48:12 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:35 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
@@ -131,8 +131,8 @@ LIMIT
 Number of rows returned by this query: **10000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Fri Oct 23 14:48:15 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:39 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> </tr>
@@ -180,8 +180,8 @@ GROUP BY
 Number of rows returned by this query: **1**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Fri Oct 23 14:48:17 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:40 2016 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
@@ -225,8 +225,8 @@ ORDER BY
 Number of rows returned by this query: **7**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Fri Oct 23 14:48:18 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:41 2016 -->
 <table border=1>
 <tr> <th> genotype </th> <th> genotype_count </th>  </tr>
   <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>
@@ -240,15 +240,17 @@ Displaying the first few rows of the dataframe of results:
 
 
 > In the case of Platinum Genomes we see from the query results the variety of genotypes just within BRCA1:
-* no-calls (the -1 values)
-* genotypes higher than 1 indicating that the data is not strictly bi-allelic
-* genotypes consisting of just a single allele on an autosome
+>
+> * no-calls (the -1 values)
+> * genotypes higher than 1 indicating that the data is not strictly bi-allelic
+> * genotypes consisting of just a single allele on an autosome
 
 Remove the WHERE clause to run this query over the entire dataset.
 
 # Summary
 
 > To summarize attributes we need to consider when working with Platinum Genomes data:
+>
 > * It has non-variant segments which adds complexity above and beyond [similar examples for the 1,000 Genomes dataset](https://github.com/googlegenomics/bigquery-examples/blob/master/1000genomes/sql/README.md).
 > * It is comprised only of SNPs and INDELs (contains no structural variants).
 > * The values for `alternate_bases` are just comprised of the letters A,C,G,T (e.g., contains no `<DEL>` values).

@@ -74,12 +74,13 @@ GROUP BY
 ORDER BY
   call.call_set_name
   
+Running query:   RUNNING  2.4sRunning query:   RUNNING  3.0sRunning query:   RUNNING  3.6sRunning query:   RUNNING  4.2s
 ```
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Mon Nov 16 19:59:22 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:48 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> number_of_calls </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 51612762 </td> </tr>
@@ -169,21 +170,21 @@ ORDER BY
 ```
 
 ```
-Warning: inaccurate integer conversion in coercion
+Warning: NAs introduced by coercion to integer range
 ```
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Mon Nov 16 19:59:24 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:50 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 58122228 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 59224162 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 58539440 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 58261455 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.02 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 42249595 </td> <td align="right"> 2147483647 </td> <td align="right"> 0.01 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right">  </td> <td align="right"> 0.01 </td> </tr>
+  <tr> <td> NA12878 </td> <td align="right"> 58122228 </td> <td align="right">  </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 59224162 </td> <td align="right">  </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 58539440 </td> <td align="right">  </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 58261455 </td> <td align="right">  </td> <td align="right"> 0.02 </td> </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 42249595 </td> <td align="right">  </td> <td align="right"> 0.01 </td> </tr>
    </table>
 
 For some datasets, we see numeric overflow when bigrquery converts 64-bit integer results from BigQuery to 32-bit R integers in the dataframe. For this query, the particular column with the overflow is not used in our downstream analysis in R, so we can omit it.
@@ -317,8 +318,8 @@ ORDER BY
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Mon Nov 16 19:59:27 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:54 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -413,8 +414,8 @@ ORDER BY
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Mon Nov 16 19:59:29 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:56 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> heterozygous_variant_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 3410507 </td> </tr>
@@ -530,8 +531,8 @@ ORDER BY
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Mon Nov 16 19:59:33 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:59 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6135459 </td> <td align="right"> 6770355.20 </td> <td align="right"> 9546033 </td> <td align="right"> -0.23 </td> </tr>
@@ -634,8 +635,8 @@ ORDER BY
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Mon Nov 16 19:59:36 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:12:03 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
@@ -694,6 +695,7 @@ allResults <- full_join(allResults, result)
 For each genome, compare the ethncity from the sample information to the clustering in this analysis.
 
 For this check, we:
+
 * use the intersection of common variants found in both 1,000 Genomes phase 1 variants and Platinum Genomes
 * compute PCA on those variants in common between the two data
 * examine whether the individuals in Platinum Genomes cluster with other samples of the same ethnicity
