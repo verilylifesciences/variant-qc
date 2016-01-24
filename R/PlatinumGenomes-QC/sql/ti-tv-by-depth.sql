@@ -2,7 +2,7 @@
 SELECT
   call.call_set_name,
   (transitions/transversions) AS titv_ratio,
-  call.DP AS average_depth,
+  FLOAT(call.DP) AS average_depth,
 FROM (
   SELECT
     call.call_set_name,
