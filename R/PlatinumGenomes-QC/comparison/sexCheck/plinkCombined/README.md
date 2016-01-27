@@ -18,7 +18,7 @@ This directory contains the inputs and outputs of PLINK check-sex analysis.
 
 #### Outputs:
   * [sex-check-with-fam](sex-check-with-fam.sexcheck):
-    * PLINK output when using actual pedgiree info.
+    * PLINK output when using actual pedigree info.
 
   * [sex-check-no-fam](sex-check-no-fam.sexcheck):
     * PLINK output when using a dummy .fam file where all individuals have
