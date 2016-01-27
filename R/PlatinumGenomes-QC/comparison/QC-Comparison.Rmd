@@ -40,6 +40,37 @@ replacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genome
 Sample-Level QC
 ===============
 
+Sex Inference
+-------------
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("../sql/check-sex.sql",
+                                  project=project,
+                                  replacements=replacements)
+```
+Number of rows returned by this query: `r nrow(result)`.
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(result), type="html", include.rownames=F)
+```
+
+Comparison with PLINK sex-check results (ignoring pedigree info):
+```{r warning=FALSE, results="asis"}
+plinkResult <- read.table("./sexCheck/plinkCombined/sex-check-no-fam.sexcheck", header=TRUE)
+result <- rename(result, IID=call_call_set_name)
+joinedResult <- inner_join(plinkResult, result, by=c("IID"))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+print(xtable(joinedResult), type="html", include.rownames=F)
+```
+
+Gender determination based on homozygosity (inbreeding) rate, F, is the same in both methods (considering male for F > 0.5, and female for F < 0).
+
+The slight difference in the F values is due to differences in allele frequency calculations, which results in more SNPs being ignored in PLINK. For instance, ~85,000 of ~345,000 SNPs are excluded in PLINK but only ~41,000 are excluded in the above query (due to having frequency of 1.0 or 0.0). As a concrete example, the SNP in position 2704300 has 15 individuals with 0/0 allele and 2 individuals with 0/1 allele. The minor allele frequency is therefore 2/34 = 0.06, whereas the PLINK allele frequency is 1.0 (actual ratio in PLINK's calculations is 24/24), which results in exclusion of this SNP from the PLINK analysis.
+
+PLINK also considers pedigree info in its analysis. The above results do not use pedigree info, but those results are also provided in [sex-check-with-fam](./sexCheck/plinkCombined/sex-check-with-fam.sexcheck).
+
+Lastly, the 'expanded table' used in the query only contains non-variant segments for SNPs (i.e. indels matching the reference are not included). Thus, indels were also excluded from the above analysis as they would result in inaccurate statistics.
+
 Check Singletons
 ----------------
 ```{r message=FALSE, warning=FALSE, comment=NA}
