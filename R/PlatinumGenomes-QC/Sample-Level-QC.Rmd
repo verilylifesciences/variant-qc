@@ -353,6 +353,7 @@ allResults <- full_join(allResults, result)
 For each genome, compare the ethncity from the sample information to the clustering in this analysis.
 
 For this check, we:
+
 * use the intersection of common variants found in both 1,000 Genomes phase 1 variants and Platinum Genomes
 * compute PCA on those variants in common between the two data
 * examine whether the individuals in Platinum Genomes cluster with other samples of the same ethnicity

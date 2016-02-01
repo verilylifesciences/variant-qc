@@ -15,7 +15,7 @@
 require(RCurl)
 require(dplyr)
 
-# These tables contain the Complete Genomics PGP genomes and one variants-only Illumina genome.
+# These tables contain the Complete Genomics PGP genomes.
 queryReplacements <- list("_GENOME_CALL_TABLE_"="google.com:biggene:pgp_20150205.genome_calls",
                           "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:pgp_20150205.multisample_variants",
                           "DP"="totalReadCount" # for Ti/Tv by depth

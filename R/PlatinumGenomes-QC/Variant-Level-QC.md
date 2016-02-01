@@ -98,8 +98,8 @@ ORDER BY
 Number of rows returned by this query: **2279**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct 21 19:27:11 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:10:58 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr1 </td> <td align="right">   0 </td> <td align="right"> 293 </td> <td align="right"> 198 </td> <td align="right"> 1.48 </td> <td align="right"> 491 </td> </tr>
@@ -173,8 +173,8 @@ ORDER BY
 Number of rows returned by this query: **35**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct 21 19:27:14 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:21 2016 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> alternate_allele_count </th>  </tr>
   <tr> <td align="right"> 350843 </td> <td align="right"> 172896 </td> <td align="right"> 2.03 </td> <td align="right">  34 </td> </tr>
@@ -216,16 +216,15 @@ result <- DisplayAndDispatchQuery(query,
 SELECT
   call.call_set_name,
   (transitions/transversions) AS titv_ratio,
-  average_depth,
+  call.DP AS average_depth,
 FROM (
   SELECT
     call.call_set_name,
     SUM(mutation IN ('A->G', 'G->A', 'C->T', 'T->C')) AS transitions,
     SUM(mutation IN ('A->C', 'C->A', 'G->T', 'T->G',
                      'A->T', 'T->A', 'C->G', 'G->C')) AS transversions,
-    ROUND(AVG(call.DP)) AS average_depth,
+    call.DP
   FROM (
-
     SELECT
       reference_bases,
       alternate_bases,
@@ -245,17 +244,16 @@ FROM (
       # Optionally add clause here to limit the query to a particular
       # region of the genome.
       #_WHERE_
-      )
-    WHERE
-      call.DP is not null
+    )
+    OMIT call if call.DP IS NULL
     HAVING
       # Skip 1/2 genotypes _and non-SNP variants
       num_alts = 1
       AND reference_bases IN ('A','C','G','T')
       AND alternate_bases IN ('A','C','G','T'))
-    GROUP BY
-      call.call_set_name,
-      call.DP,)
+  GROUP BY
+    call.call_set_name,
+    call.DP)
 WHERE
   transversions > 0
 GROUP BY
@@ -267,16 +265,16 @@ ORDER BY
   average_depth
 ```
 
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct 21 19:27:17 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:24 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> titv_ratio </th> <th> average_depth </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.79 </td> <td align="right"> 1.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.81 </td> <td align="right"> 2.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.82 </td> <td align="right"> 3.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.85 </td> <td align="right"> 4.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.87 </td> <td align="right"> 5.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.86 </td> <td align="right"> 6.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.79 </td> <td align="right">   1 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.81 </td> <td align="right">   2 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.82 </td> <td align="right">   3 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.85 </td> <td align="right">   4 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.87 </td> <td align="right">   5 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.86 </td> <td align="right">   6 </td> </tr>
    </table>
 
 
@@ -335,8 +333,8 @@ ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alternat
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct 21 19:27:20 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:28 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
@@ -460,8 +458,8 @@ ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct 21 19:27:23 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:31 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -521,8 +519,8 @@ ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Oct 21 19:27:24 2015 -->
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Jan 22 10:11:33 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> not displayed </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> </tr>
@@ -536,13 +534,16 @@ Displaying the first few rows of the dataframe of results:
 # Removing variants from the Cohort
 
 To mark a variant as problematic so that downstream analyses can filter it out:
+
 * See the [variant update](https://cloud.google.com/genomics/v1beta2/reference/variants/update) method.
 
 To remove variants from BigQuery only:
+
 * Materialize the results of queries that include the non-problematic variants to a new table.
 * Alternatively, write a custom filtering job similar to what we explored in [Part 2: Data Conversion](./Data-Conversion.md) of this codelab.
 
 To entirely remove a variant from a variant set in the Genomics API:
+
 * See the [variant delete](https://cloud.google.com/genomics/v1beta2/reference/variants/delete) method.
 * *Note:* deletion cannot be undone.
 * If you wish to copy a variant to a different variantSet prior to deleting it, see the [variantSet mergeVariants](https://cloud.google.com/genomics/v1beta2/reference/variantsets/mergeVariants) method.
