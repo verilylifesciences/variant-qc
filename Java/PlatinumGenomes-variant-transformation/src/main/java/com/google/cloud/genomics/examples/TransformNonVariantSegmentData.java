@@ -88,6 +88,7 @@ public class TransformNonVariantSegmentData {
 
   public static final String HAS_AMBIGUOUS_CALLS_FIELD = "ambiguousCalls";
   public static final String REF_MATCH_CALLSETS_FIELD = "refMatchCallsets";
+  public static final String ALT_RECORD_FIELD = "alt";
   // AC : allele count in genotypes, for each ALT allele, in the same order as listed
   public static final String ALLELE_COUNT_FIELD = "AC";
   // AF : allele frequency for each ALT allele in the same order as listed: use this when estimated from primary
@@ -95,6 +96,7 @@ public class TransformNonVariantSegmentData {
   public static final String ALLELE_FREQUENCY_FIELD = "AF";
   // AN : total number of alleles in called genotypes
   public static final String ALLELE_NUMBER_FIELD = "AN";
+  public static final String DEPTH_FIELD = "DP";
   public static final String FILTER_FIELD = "FILTER";
   public static final String PASSING_FILTER = "PASS";
   
@@ -134,6 +136,7 @@ public class TransformNonVariantSegmentData {
         .setMode("REPEATED"));
     callFields.add(new TableFieldSchema().setName("genotype_likelihood").setType("FLOAT")
         .setMode("REPEATED"));
+    callFields.add(new TableFieldSchema().setName(DEPTH_FIELD).setType("INTEGER"));
 
     List<TableFieldSchema> altFields = new ArrayList<>();
     altFields.add(new TableFieldSchema().setName("alternate_bases").setType("STRING"));
@@ -152,7 +155,7 @@ public class TransformNonVariantSegmentData {
     fields.add(new TableFieldSchema().setName(ALLELE_NUMBER_FIELD).setType("INTEGER"));
     fields.add(new TableFieldSchema().setName(HAS_AMBIGUOUS_CALLS_FIELD).setType("BOOLEAN"));
     fields.add(new TableFieldSchema().setName(REF_MATCH_CALLSETS_FIELD).setType("STRING").setMode("REPEATED"));
-    fields.add(new TableFieldSchema().setName("alt").setType("RECORD").setMode("REPEATED")
+    fields.add(new TableFieldSchema().setName(ALT_RECORD_FIELD).setType("RECORD").setMode("REPEATED")
         .setFields(altFields));
     fields.add(new TableFieldSchema().setName("call").setType("RECORD").setMode("REPEATED")
         .setFields(callFields));
@@ -181,6 +184,13 @@ public class TransformNonVariantSegmentData {
         if (Iterables.all(call.getGenotypeList(), Predicates.equalTo(0))) {
           refMatchCallsets.add(call.getCallSetName());
         } else {
+          String depth = null;
+          if (null != call.getInfo().get(DEPTH_FIELD)) {
+            String value = call.getInfo().get(DEPTH_FIELD).getValues(0).getStringValue();
+            if (!(null == value || value.equals("."))) {
+              depth = value;
+            }
+          }
           calls.add(new TableRow()
               .set("call_set_name", call.getCallSetName())
               .set("phaseset", call.getPhaseset())
@@ -188,7 +198,8 @@ public class TransformNonVariantSegmentData {
               .set(
                   "genotype_likelihood",
                   (call.getGenotypeLikelihoodList() == null) ? new ArrayList<Double>() : call
-                      .getGenotypeLikelihoodList()));
+                      .getGenotypeLikelihoodList())
+              .set(DEPTH_FIELD, depth));
         }
       }
 

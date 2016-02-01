@@ -114,7 +114,7 @@ public class TransformNonVariantSegmentDataTest {
   }
 
   @Test
-  public void testFormatVariantsFn() {
+  public void testFormatAlt() {
 
     VariantCall noCall = VariantCall.newBuilder().setCallSetName("noCall").addAllGenotype(Arrays.asList(-1, -1)).build();
     VariantCall noCallRef = VariantCall.newBuilder().setCallSetName("noCallRef").addAllGenotype(Arrays.asList(-1, 0)).build();
@@ -163,4 +163,44 @@ public class TransformNonVariantSegmentDataTest {
     assertEquals(Arrays.asList("refMatch"), rows.get(2).get(TransformNonVariantSegmentData.REF_MATCH_CALLSETS_FIELD));
   }
   
+  @Test
+  public void testFormatCalls() {
+
+    Map depthInfo = new HashMap<String, List<String>>();
+    depthInfo.put(
+        TransformNonVariantSegmentData.DEPTH_FIELD,
+        ListValue.newBuilder()
+            .addValues(Value.newBuilder().setStringValue("30").build())
+            .build());
+
+    Map dotDepthInfo = new HashMap<String, List<String>>();
+    dotDepthInfo.put(
+        TransformNonVariantSegmentData.DEPTH_FIELD,
+        ListValue.newBuilder()
+            .addValues(Value.newBuilder().setStringValue(".").build())
+            .build());
+
+    VariantCall callWithValidDepth = VariantCall.newBuilder()
+        .setCallSetName("hetAlt").addAllGenotype(Arrays.asList(0, 1))
+        .putAllInfo(depthInfo)
+        .build();
+    
+    VariantCall callWithDotDepth = VariantCall.newBuilder()
+        .setCallSetName("homAlt").addAllGenotype(Arrays.asList(1, 1))
+        .putAllInfo(dotDepthInfo)
+        .build();
+    
+    Variant variant = Variant.newBuilder()
+        .putAllInfo(FlagVariantsWithAmbiguousCallsFn.NO_AMBIGUOUS_CALLS_INFO)
+        .addAllCalls(Arrays.asList(callWithValidDepth, callWithDotDepth))
+        .build();
+    
+    DoFnTester<Variant, TableRow> formatVariantsFn = DoFnTester.of(new TransformNonVariantSegmentData.FormatVariantsFn());
+    List<TableRow> rows = formatVariantsFn.processBatch(variant);
+    assertEquals(1, rows.size());
+    
+    assertEquals("[{call_set_name=hetAlt, phaseset=, genotype=[0, 1], genotype_likelihood=[], DP=30},"
+        + " {call_set_name=homAlt, phaseset=, genotype=[1, 1], genotype_likelihood=[], DP=null}]",
+        rows.get(0).get("call").toString()); 
+  }
 }
