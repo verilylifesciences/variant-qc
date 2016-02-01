@@ -337,7 +337,7 @@ public class TransformNonVariantSegmentData {
 
     OfflineAuth auth = GenomicsOptions.Methods.getGenomicsAuth(options);
     List<StreamVariantsRequest> requests = options.isAllReferences() ?
-        ShardUtils.getVariantRequests(options.getVariantSetId(), ShardUtils.SexChromosomeFilter.EXCLUDE_XY,
+        ShardUtils.getVariantRequests(options.getVariantSetId(), ShardUtils.SexChromosomeFilter.INCLUDE_XY,
             options.getBasesPerShard(), auth) :
           ShardUtils.getVariantRequests(options.getVariantSetId(), options.getReferences(), options.getBasesPerShard());
     
