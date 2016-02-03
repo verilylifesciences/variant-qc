@@ -5,9 +5,10 @@ This directory contains the inputs and outputs of PLINK check-sex analysis.
     * These files were transformed from a VCF file that was created using
       the query included below. The primary reason for using a customized input
       file was to ensure PLINK used the same input as BigQuery. For instance,
-      the 'expanded table' used in the query only contains non-variant segments
-      for SNPs (i.e. indels matching the reference are not included). Thus,
-      indels needed to be excluded in the provided inputs.
+      the multi-sample variants table used in the query only contains
+      reference-matches for SNPs (i.e. indels matching the reference are not
+      included). Thus, indels needed to be excluded from the provided inputs
+      as well.
       Also, to obtain accurate results in PLINK, the input files must
       contain merged info about all samples for each SNP. Thus, using
       separate VCF files (each containing info for a specific individual)

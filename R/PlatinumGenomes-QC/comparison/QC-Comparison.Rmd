@@ -69,7 +69,7 @@ The slight difference in the F values is due to differences in allele frequency 
 
 PLINK also considers pedigree info in its analysis. The above results do not use pedigree info, but those results are also provided in [sex-check-with-fam](./sexCheck/plinkCombined/sex-check-with-fam.sexcheck).
 
-Lastly, the 'expanded table' used in the query only contains non-variant segments for SNPs (i.e. indels matching the reference are not included). Thus, indels were also excluded from the above analysis as they would result in inaccurate statistics.
+Lastly, the multi-sample variants table used in the query only contains reference-matches for SNPs (i.e. indels matching the reference are not included). Thus, indels were also excluded from the above analysis as they would result in inaccurate statistics.
 
 Check Singletons
 ----------------
