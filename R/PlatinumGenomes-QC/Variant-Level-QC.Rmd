@@ -45,7 +45,7 @@ By default this codelab runs upon the Illumina Platinum Genomes Variants. Update
 queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
+sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpDataset.R")
@@ -166,7 +166,7 @@ Displaying the first few rows of the dataframe of results:
 DisplayQueryResults(result)
 ```
 
-See also [a version of this query](./sql/hardy-weinberg-udf.sql) that uses the new BigQuery feature of user-defined javascript functions which is currently in Alpha.  For more info, see https://www.youtube.com/watch?v=GrD7ymUPt3M#t=1377.
+See also [a version of this query](./sql/hardy-weinberg-udf.sql) that uses BigQuery [user-defined javascript functions](https://cloud.google.com/bigquery/user-defined-functions).
 
 ## Heterozygous Haplotype
 For each variant within the X and Y chromosome, identify heterozygous variants in male genomes.
@@ -197,13 +197,15 @@ DisplayQueryResults(result)
 # Removing variants from the Cohort
 
 To mark a variant as problematic so that downstream analyses can filter it out:
-* See the [variant update](https://cloud.google.com/genomics/v1beta2/reference/variants/update) method.
+
+* See the [variants patch](https://cloud.google.com/genomics/reference/rest/v1/variants/patch) method.
 
 To remove variants from BigQuery only:
+
 * Materialize the results of queries that include the non-problematic variants to a new table.
 * Alternatively, write a custom filtering job similar to what we explored in [Part 2: Data Conversion](./Data-Conversion.md) of this codelab.
 
 To entirely remove a variant from a variant set in the Genomics API:
-* See the [variant delete](https://cloud.google.com/genomics/v1beta2/reference/variants/delete) method.
+
+* See the [variants delete](https://cloud.google.com/genomics/reference/rest/v1/variants/delete) method.
 * *Note:* deletion cannot be undone.
-* If you wish to copy a variant to a different variantSet prior to deleting it, see the [variantSet mergeVariants](https://cloud.google.com/genomics/v1beta2/reference/variantsets/mergeVariants) method.

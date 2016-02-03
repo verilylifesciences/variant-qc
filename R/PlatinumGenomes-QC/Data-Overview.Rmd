@@ -127,15 +127,17 @@ DisplayQueryResults(result, 10)
 
 
 > In the case of Platinum Genomes we see from the query results the variety of genotypes just within BRCA1:
-* no-calls (the -1 values)
-* genotypes higher than 1 indicating that the data is not strictly bi-allelic
-* genotypes consisting of just a single allele on an autosome
+>
+> * no-calls (the -1 values)
+> * genotypes higher than 1 indicating that the data is not strictly bi-allelic
+> * genotypes consisting of just a single allele on an autosome
 
 Remove the WHERE clause to run this query over the entire dataset.
 
 # Summary
 
 > To summarize attributes we need to consider when working with Platinum Genomes data:
+>
 > * It has non-variant segments which adds complexity above and beyond [similar examples for the 1,000 Genomes dataset](https://github.com/googlegenomics/bigquery-examples/blob/master/1000genomes/sql/README.md).
 > * It is comprised only of SNPs and INDELs (contains no structural variants).
 > * The values for `alternate_bases` are just comprised of the letters A,C,G,T (e.g., contains no `<DEL>` values).

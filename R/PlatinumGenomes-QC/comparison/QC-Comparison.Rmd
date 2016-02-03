@@ -123,7 +123,7 @@ colnames(expectedResult) <- gsub('\\.+', '_', colnames(expectedResult))
 ```
 
 ```{r results="asis"}
-result <- rename(result, INDV=call_call_set_name)
+result <- dplyr::rename(result, INDV=call_call_set_name)
 joinedResult <- inner_join(expectedResult, result, by=c("INDV"))
 print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include.rownames=F)
 ```
@@ -136,18 +136,8 @@ There are a few other minor differences as well. For instance, vcftools discards
 
 Check Identity By State
 -----------------------
-The Dataflow job was run like so:
-```
-java -cp target/google-genomics-dataflow-v1beta2-0.2-SNAPSHOT.jar \
-com.google.cloud.genomics.dataflow.pipelines.IdentityByState \
---project=YOUR-PROJECT \
---stagingLocation=gs://YOUR-BUCKET/staging \
---output=gs://YOUR-BUCKET/output/platinum-genomes-brca1-ibs.tsv \
---genomicsSecretsFile=/PATH/TO/YOUR/client_secrets.json \
---datasetId=3049512673186936334 \
---gvcf \
---references=chr17:41196311:41277499
-```
+The Dataflow job was run on variant set 3049512673186936334 over references chr17:41196311:41277499.  See the [Google Genomics Cookbook](http://googlegenomics.readthedocs.org/en/latest/use_cases/compute_identity_by_state/index.html) for the full instructions to run this job.
+
 ```{r ibs}
 result <- read.table("./identity-by-state/platinum-genomes-brca1-ibs.tsv",
                   col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
@@ -188,8 +178,7 @@ print(xtable(head(result)), type="html", include.rownames=F)
 Compare to [brca1.hwe](./hwe/brca1.hwe) (see the [vcftools command line](./hwe/brca1.log) used to create this file).
 
 ```{r}
-require(dplyr)
-result <- rename(result, CHR=reference_name, POS=start)
+result <- dplyr::rename(result, CHR=reference_name, POS=start)
 df <- read.table("./hwe/brca1.hwe", header=TRUE)
 obsSplitCol <- "OBS.HOM1.HET.HOM2."
 obsTemp <- read.table(text=as.character(df[, obsSplitCol]), sep = "/")

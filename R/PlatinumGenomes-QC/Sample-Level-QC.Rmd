@@ -353,6 +353,7 @@ allResults <- full_join(allResults, result)
 For each genome, compare the ethncity from the sample information to the clustering in this analysis.
 
 For this check, we:
+
 * use the intersection of common variants found in both 1,000 Genomes phase 1 variants and Platinum Genomes
 * compute PCA on those variants in common between the two data
 * examine whether the individuals in Platinum Genomes cluster with other samples of the same ethnicity
@@ -412,14 +413,17 @@ ggplot(ibs) +
 # Removing Genomes from the Cohort
 
 To only remove a genome from BigQuery only:
-* Re-export the table to BigQuery using the `--call_set_id` flag on the `exportvariants` command in [api-client-java](http://github.com/googlegenomics/api-client-java) to list which callsets to _include_ in the export.
+
+* Re-export the table to BigQuery using the `--call-set-ids` flag on the `gcloud alpha genomics variantsets export` command.
 
 To exclude a genome from data returned by the Genomics API:
-* See the `callSetIds` property on the [variants search](https://cloud.google.com/genomics/v1beta2/reference/variants/search) method.
+
+* See the `callSetIds` property on the [variants search](https://cloud.google.com/genomics/reference/rest/v1/variants/search) method.
 
 To entirely remove a genome from a variant set in the Genomics API:
-* See the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
-* To delete a callset using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
+
+* See the [callsets delete](https://cloud.google.com/genomics/reference/rest/v1/callsets/delete) method.
+* To delete a callset using a command line tool, see the `gcloud alpha genomics callsets delete` command.
 * *Note:* deletion cannot be undone.
 
 # Summary

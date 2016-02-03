@@ -6,7 +6,7 @@ In this codelab, you will use [Google Genomics](https://cloud.google.com/genomic
 * use BigQuery to explore population variation
 * zoom in to specific genome regions, including using the Genomics API to look all the way down to raw reads
 * run a GWAS over the variants within BRCA1
-* visualize and annotate results using various R packages, including [BioConductor](http://www.bioconductor.org)
+* visualize and annotate results using various R packages, including [Bioconductor](http://www.bioconductor.org)
 
 ### Instructions
 You can watch, read or execute the analysis:
