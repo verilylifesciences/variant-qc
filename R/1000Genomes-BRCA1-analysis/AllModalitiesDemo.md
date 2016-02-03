@@ -26,9 +26,9 @@ The VCFs comprising this dataset are **1.12 TB** when uncompressed and provide i
   * [Querying](#querying)
 * [Zooming-In](#zooming-in)
   * [Simplistic GWAS](#simplistic-gwas)
-  * [Annotate Variants with BioConductor](#annotate-variants-with-bioconductor)
+  * [Annotate Variants with Bioconductor](#annotate-variants-with-bioconductor)
 * [Zooming-In Even Further](#zooming-in-even-further)
-  * [Visualize Reads with BioConductor](#visualize-reads-with-bioconductor)
+  * [Visualize Reads with Bioconductor](#visualize-reads-with-bioconductor)
 * [Provenance](#provenance)
 
 Working at Scale
@@ -46,7 +46,7 @@ In this example we are reading in previously computed results, but its easy to s
 ```r
 pca_1kg <- read.table("./data/1kg-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 ```
-This analysis performed an `O(N^2)` computation upon the relevant fields within the *terabyte* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/v1beta2/reference/variants) for its input.  See the Google Genomics [PCA cookbook entry](http://googlegenomics.readthedocs.org/en/latest/use_cases/compute_principal_coordinate_analysis/index.html) for implementation details and instructions as to how to run this job.
+This analysis performed an `O(N^2)` computation upon the relevant fields within the *terabyte* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/reference/rest/v1/variants) for its input.  See the Google Genomics [PCA cookbook entry](http://googlegenomics.readthedocs.org/en/latest/use_cases/compute_principal_coordinate_analysis/index.html) for implementation details and instructions as to how to run this job.
 
 Visualizing the results, we see quite distinct clusters:
 
@@ -346,7 +346,7 @@ head(result)
 6            712              1025                 1           929.544
 ```
 
-### Annotate Variants with BioConductor
+### Annotate Variants with Bioconductor
 
 Now let's use the [GoogleGenomics R client](https://github.com/googlegenomics/api-client-r) to retrieve the full records for the variants in which we are interested.
 
@@ -441,7 +441,7 @@ $info$DS[[1]]
 [1] "0.000"
 ```
 
-We can also convert this data to [BioConductor](http://www.bioconductor.org/) datatypes such as [GRanges data type](http://www.bioconductor.org/packages/release/bioc/vignettes/GenomicRanges/inst/doc/GenomicRangesIntroduction.pdf).
+We can also convert this data to [Bioconductor](http://www.bioconductor.org/) datatypes such as [GRanges data type](http://www.bioconductor.org/packages/release/bioc/vignettes/GenomicRanges/inst/doc/GenomicRangesIntroduction.pdf).
 
 ```r
 granges <- variantsToGRanges(variants)
@@ -480,7 +480,7 @@ GRanges object with 20 ranges and 4 metadata columns:
   seqinfo: 1 sequence from an unspecified genome; no seqlengths
 ```
 
-This allows us to utilize the various BioConductor variant annotation packages:
+This allows us to utilize the various Bioconductor variant annotation packages:
 
 
 ```r
@@ -621,9 +621,9 @@ So a question for our users who have much experience in this domain: what should
 Zooming-in Even Further
 ------------------------
 
-### Visualize Reads with BioConductor
+### Visualize Reads with Bioconductor
 
-We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta2/reference/readgroupsets) for a given sample and examine coverage:
+We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/reference/rest/v1/readgroupsets) for a given sample and examine coverage:
 
 ```r
 galignments <- getReads(readGroupSetId="CMvnhpKTFhDnk4_9zcKO3_YB", chromosome="17",
@@ -687,9 +687,9 @@ sessionInfo()
 ```
 
 ```
-R version 3.2.0 (2015-04-16)
+R version 3.2.2 (2015-08-14)
 Platform: x86_64-apple-darwin13.4.0 (64-bit)
-Running under: OS X 10.10.5 (Yosemite)
+Running under: OS X 10.11.3 (El Capitan)
 
 locale:
 [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -699,49 +699,52 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] ggbio_1.16.0                           
- [2] TxDb.Hsapiens.UCSC.hg19.knownGene_3.1.2
- [3] GenomicFeatures_1.20.1                 
- [4] AnnotationDbi_1.30.1                   
- [5] Biobase_2.28.0                         
- [6] BSgenome.Hsapiens.UCSC.hg19_1.4.0      
- [7] BSgenome_1.36.0                        
- [8] rtracklayer_1.28.4                     
- [9] GoogleGenomics_1.1.3                   
-[10] VariantAnnotation_1.14.1               
-[11] GenomicAlignments_1.4.1                
-[12] Rsamtools_1.20.4                       
-[13] Biostrings_2.36.1                      
-[14] XVector_0.8.0                          
-[15] GenomicRanges_1.20.4                   
-[16] GenomeInfoDb_1.4.0                     
-[17] IRanges_2.2.2                          
-[18] S4Vectors_0.6.0                        
-[19] BiocGenerics_0.14.0                    
-[20] bigrquery_0.1.0                        
-[21] dplyr_0.4.2                            
-[22] ggplot2_1.0.1                          
-[23] scales_0.2.5                           
-[24] knitr_1.10.5                           
+ [1] RCurl_1.95-4.6                         
+ [2] bitops_1.0-6                           
+ [3] xtable_1.7-4                           
+ [4] ggbio_1.16.0                           
+ [5] TxDb.Hsapiens.UCSC.hg19.knownGene_3.1.2
+ [6] GenomicFeatures_1.20.1                 
+ [7] AnnotationDbi_1.30.1                   
+ [8] Biobase_2.28.0                         
+ [9] BSgenome.Hsapiens.UCSC.hg19_1.4.0      
+[10] BSgenome_1.36.0                        
+[11] rtracklayer_1.28.4                     
+[12] GoogleGenomics_1.1.3                   
+[13] VariantAnnotation_1.14.1               
+[14] GenomicAlignments_1.4.1                
+[15] Rsamtools_1.20.4                       
+[16] Biostrings_2.36.1                      
+[17] XVector_0.8.0                          
+[18] GenomicRanges_1.20.4                   
+[19] GenomeInfoDb_1.4.0                     
+[20] IRanges_2.2.2                          
+[21] S4Vectors_0.6.0                        
+[22] BiocGenerics_0.14.0                    
+[23] bigrquery_0.1.0                        
+[24] dplyr_0.4.3                            
+[25] ggplot2_1.0.1                          
+[26] scales_0.3.0                           
+[27] knitr_1.10.5                           
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.0          biovizBase_1.16.0    lattice_0.20-31     
+ [1] Rcpp_0.12.0          biovizBase_1.16.0    lattice_0.20-33     
  [4] assertthat_0.1       digest_0.6.8         R6_2.1.1            
  [7] plyr_1.8.3           futile.options_1.0.0 acepack_1.3-3.3     
 [10] RSQLite_1.0.0        evaluate_0.7.2       httr_1.0.0          
 [13] zlibbioc_1.14.0      lazyeval_0.1.10      curl_0.9.3          
-[16] rstudioapi_0.3.1     rpart_4.1-9          proto_0.3-10        
-[19] labeling_0.3         splines_3.2.0        BiocParallel_1.2.2  
-[22] foreign_0.8-63       stringr_1.0.0        RCurl_1.95-4.6      
-[25] biomaRt_2.24.0       munsell_0.4.2        nnet_7.3-9          
-[28] gridExtra_0.9.1      Hmisc_3.16-0         XML_3.98-1.2        
-[31] reshape_0.8.5        MASS_7.3-40          bitops_1.0-6        
-[34] RBGL_1.44.0          grid_3.2.0           jsonlite_0.9.17     
-[37] GGally_0.5.0         gtable_0.1.2         DBI_0.3.1           
-[40] magrittr_1.5         formatR_1.2          graph_1.46.0        
-[43] stringi_0.5-5        reshape2_1.4.1       latticeExtra_0.6-26 
-[46] futile.logger_1.4.1  Formula_1.2-1        RColorBrewer_1.1-2  
-[49] rjson_0.2.15         lambda.r_1.1.7       tools_3.2.0         
-[52] dichromat_2.0-0      OrganismDbi_1.10.0   survival_2.38-1     
-[55] colorspace_1.2-6     cluster_2.0.1       
+[16] rstudioapi_0.3.1     rpart_4.1-10         rmarkdown_0.7       
+[19] proto_0.3-10         labeling_0.3         splines_3.2.2       
+[22] BiocParallel_1.2.2   foreign_0.8-65       stringr_1.0.0       
+[25] biomaRt_2.24.0       munsell_0.4.2        httpuv_1.3.3        
+[28] htmltools_0.2.6      nnet_7.3-10          gridExtra_0.9.1     
+[31] Hmisc_3.16-0         XML_3.98-1.2         reshape_0.8.5       
+[34] MASS_7.3-43          RBGL_1.44.0          grid_3.2.2          
+[37] jsonlite_0.9.17      GGally_0.5.0         gtable_0.1.2        
+[40] DBI_0.3.1            magrittr_1.5         formatR_1.2         
+[43] graph_1.46.0         stringi_0.5-5        reshape2_1.4.1      
+[46] latticeExtra_0.6-26  futile.logger_1.4.1  Formula_1.2-1       
+[49] RColorBrewer_1.1-2   rjson_0.2.15         lambda.r_1.1.7      
+[52] tools_3.2.2          dichromat_2.0-0      OrganismDbi_1.10.0  
+[55] survival_2.38-3      colorspace_1.2-6     cluster_2.0.3       
 ```

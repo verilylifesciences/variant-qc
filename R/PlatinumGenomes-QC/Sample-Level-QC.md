@@ -74,13 +74,12 @@ GROUP BY
 ORDER BY
   call.call_set_name
   
-Running query:   RUNNING  2.4sRunning query:   RUNNING  3.0sRunning query:   RUNNING  3.6sRunning query:   RUNNING  4.2s
 ```
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:48 2016 -->
+<!-- Wed Feb  3 13:35:17 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> number_of_calls </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 51612762 </td> </tr>
@@ -176,7 +175,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:50 2016 -->
+<!-- Wed Feb  3 13:35:20 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right">  </td> <td align="right"> 0.01 </td> </tr>
@@ -319,7 +318,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:54 2016 -->
+<!-- Wed Feb  3 13:35:23 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -415,7 +414,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:56 2016 -->
+<!-- Wed Feb  3 13:35:25 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> heterozygous_variant_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 3410507 </td> </tr>
@@ -532,7 +531,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:59 2016 -->
+<!-- Wed Feb  3 13:35:29 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6135459 </td> <td align="right"> 6770355.20 </td> <td align="right"> 9546033 </td> <td align="right"> -0.23 </td> </tr>
@@ -636,7 +635,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:12:03 2016 -->
+<!-- Wed Feb  3 13:35:32 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
@@ -762,14 +761,17 @@ ggplot(ibs) +
 # Removing Genomes from the Cohort
 
 To only remove a genome from BigQuery only:
-* Re-export the table to BigQuery using the `--call_set_id` flag on the `exportvariants` command in [api-client-java](http://github.com/googlegenomics/api-client-java) to list which callsets to _include_ in the export.
+
+* Re-export the table to BigQuery using the `--call-set-ids` flag on the `gcloud alpha genomics variantsets export` command.
 
 To exclude a genome from data returned by the Genomics API:
-* See the `callSetIds` property on the [variants search](https://cloud.google.com/genomics/v1beta2/reference/variants/search) method.
+
+* See the `callSetIds` property on the [variants search](https://cloud.google.com/genomics/reference/rest/v1/variants/search) method.
 
 To entirely remove a genome from a variant set in the Genomics API:
-* See the [callsets delete](https://cloud.google.com/genomics/v1beta2/reference/callsets/delete) method.
-* To delete a callset using a command line tool, see the the `deletecallset` command in [api-client-java](http://github.com/googlegenomics/api-client-java).
+
+* See the [callsets delete](https://cloud.google.com/genomics/reference/rest/v1/callsets/delete) method.
+* To delete a callset using a command line tool, see the the `gcloud alpha genomics callsets` command.
 * *Note:* deletion cannot be undone.
 
 # Summary
