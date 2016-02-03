@@ -423,7 +423,7 @@ To exclude a genome from data returned by the Genomics API:
 To entirely remove a genome from a variant set in the Genomics API:
 
 * See the [callsets delete](https://cloud.google.com/genomics/reference/rest/v1/callsets/delete) method.
-* To delete a callset using a command line tool, see the the `gcloud alpha genomics callsets` command.
+* To delete a callset using a command line tool, see the `gcloud alpha genomics callsets delete` command.
 * *Note:* deletion cannot be undone.
 
 # Summary

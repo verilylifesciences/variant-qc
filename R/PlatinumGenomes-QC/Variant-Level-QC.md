@@ -535,7 +535,7 @@ Displaying the first few rows of the dataframe of results:
 
 To mark a variant as problematic so that downstream analyses can filter it out:
 
-* See the [variant patch](https://cloud.google.com/genomics/reference/rest/v1/variants/patch) method.
+* See the [variants patch](https://cloud.google.com/genomics/reference/rest/v1/variants/patch) method.
 
 To remove variants from BigQuery only:
 
@@ -544,5 +544,5 @@ To remove variants from BigQuery only:
 
 To entirely remove a variant from a variant set in the Genomics API:
 
-* See the [variant delete](https://cloud.google.com/genomics/reference/rest/v1/variants/delete) method.
+* See the [variants delete](https://cloud.google.com/genomics/reference/rest/v1/variants/delete) method.
 * *Note:* deletion cannot be undone.
