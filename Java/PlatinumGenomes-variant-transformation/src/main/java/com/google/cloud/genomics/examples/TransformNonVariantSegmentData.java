@@ -117,6 +117,11 @@ public class TransformNonVariantSegmentData {
     String getOutputTable();
     void setOutputTable(String value);
     
+    @Description("Whether to append to an existing BigQuery table.")
+    @Default.Boolean(false)
+    boolean getAppendToTable();
+    void setAppendToTable(boolean value);
+    
     @Description("Omit low quality variant calls.  Specifically, exclude any variant calls where call.FILTER != \"PASS\".")
     @Default.Boolean(false)
     boolean getOmitLowQualityCalls();
@@ -381,7 +386,8 @@ public class TransformNonVariantSegmentData {
         .apply(
             BigQueryIO.Write.to(options.getOutputTable()).withSchema(getTableSchema())
                 .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
-                .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_TRUNCATE));
+                .withWriteDisposition(options.getAppendToTable()
+                    ? BigQueryIO.Write.WriteDisposition.WRITE_APPEND : BigQueryIO.Write.WriteDisposition.WRITE_EMPTY));
 
     p.run();
   }
