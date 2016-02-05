@@ -321,8 +321,8 @@ joinedResult <- inner_join(result, sampleInfo)
 And visualize the results:
 ```{r sexCheckSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(joinedResult) +
-  geom_boxplot(aes(x=sex, y=F, fill=sex, color=sex)) +
-  scale_y_continuous() +
+  geom_boxplot(aes(x=sex, y=perct_het_alt_in_snvs, fill=sex)) +
+  scale_y_continuous(labels = percent_format()) +
   xlab("Sex") +
   ylab("Heterozygosity Rate ") +
   ggtitle("Box Plot: Heterozygosity Rate on the X Chromosome")
@@ -330,9 +330,9 @@ ggplot(joinedResult) +
 
 ```{r sexCheck, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 p <- ggplot(joinedResult) +
-  geom_point(aes(x=call_call_set_name, y=F, color=sex)) +
+  geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=sex)) +
   scale_x_discrete(expand=c(0.05, 1)) +
-  scale_y_continuous() +
+  scale_y_continuous(labels = percent_format()) +
   xlab("Sample") +
   ylab("Heterozygosity Rate ") +
   ggtitle("Scatter Plot: Heterozygosity Rate on the X Chromosome")
