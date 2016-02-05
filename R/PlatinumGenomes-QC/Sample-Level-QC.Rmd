@@ -331,6 +331,9 @@ allResults <- full_join(allResults, result)
 ## Sex Inference
 
 For each genome, compare the sex from the sample information to the heterozygosity rate on the chromosome X calls.
+
+In the query that follows we specifically examine the percentage of SNP variants that are heterozygous but note that the Inbreeding Coefficient query above can also be used as a sex check when run upon only chromosome X omitting the pseudoautosomal regions.  For more detail, see the [comparison](./comparison/QC-Comparison.md) against results from other tools.
+
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/check-sex.sql",
                                   project=project,
