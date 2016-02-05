@@ -26,6 +26,7 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 * [Missingness Rate](#missingness-rate)
 * [Singleton Rate](#singleton-rate)
 * [Heterozygosity Rate](#heterozygosity-rate)
+* [Homozygosity Rate](#homozygosity-rate)
 * [Inbreeding Coefficient](#inbreeding-coefficient)
 * [Sex Inference](#sex-inference)
 * [Ethnicity Inference](#ethnicity-inference)
@@ -79,7 +80,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:35:17 2016 -->
+<!-- Fri Feb  5 09:41:19 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> number_of_calls </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 51612762 </td> </tr>
@@ -175,7 +176,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:35:20 2016 -->
+<!-- Fri Feb  5 09:41:21 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right">  </td> <td align="right"> 0.01 </td> </tr>
@@ -318,7 +319,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:35:23 2016 -->
+<!-- Fri Feb  5 09:41:24 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -414,7 +415,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:35:25 2016 -->
+<!-- Fri Feb  5 09:41:27 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> heterozygous_variant_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 3410507 </td> </tr>
@@ -465,6 +466,91 @@ allResults <- full_join(allResults, result)
 ```
 ## Joining by: "call_call_set_name"
 ```
+
+## Homozygosity Rate
+
+For each genome, calculate the fraction of homozygous positions per chromosome.  This is useful to identify uniparental disomy (UPD) or large stretches of homozygosity.
+
+
+```r
+result <- DisplayAndDispatchQuery("./sql/homozygous-variants-alt.sql",
+                                  project=project,
+                                  replacements=queryReplacements)
+```
+
+```
+# Compute the fraction of homozygous calls for each individual.
+
+SELECT
+call.call_set_name,
+reference_name,
+HOM,
+HET_HOM,
+N_SITES,
+ROUND((HOM) / (HET_HOM), 5) AS F
+FROM (
+  SELECT
+  call.call_set_name,
+  reference_name,
+  SUM(first_allele = 1 and second_allele = 1) AS HOM,
+  SUM(first_allele + second_allele > 0)  AS HET_HOM,
+  COUNT(call.call_set_name) AS N_SITES,
+  FROM (
+    SELECT
+    reference_name,
+    start,
+    reference_bases,
+    GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+    call.call_set_name,
+    NTH(1, call.genotype) WITHIN call AS first_allele,
+    NTH(2, call.genotype) WITHIN call AS second_allele,
+    COUNT(alternate_bases) WITHIN RECORD AS num_alts,
+    SUM(call.genotype > 0) WITHIN RECORD AS called_alt_allele_count,
+    FROM
+    [google.com:biggene:platinum_genomes.expanded_variants]
+    # Optionally add a clause here to limit the query to a particular
+    # region of the genome.
+    #_WHERE_
+    # Skip no calls and haploid sites
+    OMIT call IF SOME(call.genotype < 0) OR EVERY(call.genotype = 0) OR (2 != COUNT(call.genotype))
+    HAVING
+    # Skip 1/2 genotypes.
+    num_alts = 1
+    # Only use SNPs since non-variant segments are only included for SNPs.
+    AND reference_bases IN ('A','C','G','T')
+    AND alternate_bases IN ('A','C','G','T')
+  )
+  GROUP BY
+  call.call_set_name,
+  reference_name
+)
+ORDER BY
+call.call_set_name,
+reference_name
+```
+Number of rows returned by this query: **425**.
+
+Let's join this with the sample information:
+
+
+```r
+joinedResult <- inner_join(result, sampleInfo)
+```
+
+And visualizing the results:
+
+```r
+  ggplot(joinedResult, aes(y=F, x=reference_name, color=sex)) +
+  geom_boxplot() +
+  facet_grid(sex ~ .) +
+  scale_y_continuous(labels=comma) +
+  ylab("Fraction of Homozyous Variants") +
+  xlab("Reference Name") +
+  ggtitle("Fraction of Homozygous Variants Per Genome") +
+  theme(axis.text.x=element_text(angle=50, hjust=1))
+```
+
+<img src="figure/homozygosityAltSummary-1.png" title="plot of chunk homozygosityAltSummary" alt="plot of chunk homozygosityAltSummary" style="display: block; margin: auto;" />
 
 ## Inbreeding Coefficient
 
@@ -531,7 +617,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:35:29 2016 -->
+<!-- Fri Feb  5 09:41:35 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6135459 </td> <td align="right"> 6770355.20 </td> <td align="right"> 9546033 </td> <td align="right"> -0.23 </td> </tr>
@@ -588,6 +674,9 @@ allResults <- full_join(allResults, result)
 
 For each genome, compare the sex from the sample information to the heterozygosity rate on the chromosome X calls.
 
+In the query that follows we specifically examine the percentage of SNP variants that are heterozygous but note that the Inbreeding Coefficient query above can also be used as a sex check when run upon only chromosome X omitting the pseudoautosomal regions.  For more detail, see the [comparison](./comparison/QC-Comparison.md) against results from other tools.
+
+
 ```r
 result <- DisplayAndDispatchQuery("./sql/check-sex.sql",
                                   project=project,
@@ -635,7 +724,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:35:32 2016 -->
+<!-- Fri Feb  5 09:41:38 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
