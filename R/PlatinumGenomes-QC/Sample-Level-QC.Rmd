@@ -37,6 +37,7 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 * [Missingness Rate](#missingness-rate)
 * [Singleton Rate](#singleton-rate)
 * [Heterozygosity Rate](#heterozygosity-rate)
+* [Homozygosity Rate](#homozygosity-rate)
 * [Inbreeding Coefficient](#inbreeding-coefficient)
 * [Sex Inference](#sex-inference)
 * [Ethnicity Inference](#ethnicity-inference)
@@ -249,6 +250,35 @@ if(nrow(result) <= 20) {
 Let's accumulate our sample-specific results for later use.
 ```{r}
 allResults <- full_join(allResults, result)
+```
+
+## Homozygosity Rate
+
+For each genome, calculate the fraction of homozygous positions per chromosome.  This is useful to identify uniparental disomy (UPD) or large stretches of homozygosity.
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/homozygous-variants-alt.sql",
+                                  project=project,
+                                  replacements=queryReplacements)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Let's join this with the sample information:
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+joinedResult <- inner_join(result, sampleInfo)
+```
+
+And visualizing the results:
+```{r homozygosityAltSummary, fig.align="center", fig.width=12, message=FALSE, comment=NA}
+  ggplot(joinedResult, aes(y=F, x=reference_name, color=sex)) +
+  geom_boxplot() +
+  facet_grid(sex ~ .) +
+  scale_y_continuous(labels=comma) +
+  ylab("Fraction of Homozyous Variants") +
+  xlab("Reference Name") +
+  ggtitle("Fraction of Homozygous Variants Per Genome") +
+  theme(axis.text.x=element_text(angle=50, hjust=1))
 ```
 
 ## Inbreeding Coefficient

@@ -11,7 +11,7 @@ FROM (
   SELECT
   call.call_set_name,
   reference_name,
-  SUM(first_allele =1 and second_allele = 1) AS HOM,
+  SUM(first_allele = 1 and second_allele = 1) AS HOM,
   SUM(first_allele + second_allele > 0)  AS HET_HOM,
   COUNT(call.call_set_name) AS N_SITES,
   FROM (
