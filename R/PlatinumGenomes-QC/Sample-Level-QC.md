@@ -80,7 +80,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Feb  5 09:41:19 2016 -->
+<!-- Mon Feb  8 16:00:53 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> number_of_calls </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 51612762 </td> </tr>
@@ -176,7 +176,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Feb  5 09:41:21 2016 -->
+<!-- Mon Feb  8 16:00:55 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right">  </td> <td align="right"> 0.01 </td> </tr>
@@ -319,7 +319,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Feb  5 09:41:24 2016 -->
+<!-- Mon Feb  8 16:00:58 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -415,7 +415,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Feb  5 09:41:27 2016 -->
+<!-- Mon Feb  8 16:01:01 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> heterozygous_variant_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 3410507 </td> </tr>
@@ -432,7 +432,7 @@ And visualizing the results:
 ggplot(result, aes(x=heterozygous_variant_count)) +
   geom_histogram(color="black", fill="#FF6666") +
   scale_x_continuous(labels=comma) +
-  xlab("Number of Heterozyous Variants") +
+  xlab("Number of Heterozygous Variants") +
   ylab("Sample Count") +
   ggtitle("Histogram: Count of Heterozygous Variants Per Genome")
 ```
@@ -544,7 +544,7 @@ And visualizing the results:
   geom_boxplot() +
   facet_grid(sex ~ .) +
   scale_y_continuous(labels=comma) +
-  ylab("Fraction of Homozyous Variants") +
+  ylab("Fraction of Homozygous Variants") +
   xlab("Reference Name") +
   ggtitle("Fraction of Homozygous Variants Per Genome") +
   theme(axis.text.x=element_text(angle=50, hjust=1))
@@ -617,7 +617,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Feb  5 09:41:35 2016 -->
+<!-- Mon Feb  8 16:01:08 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 6135459 </td> <td align="right"> 6770355.20 </td> <td align="right"> 9546033 </td> <td align="right"> -0.23 </td> </tr>
@@ -724,7 +724,7 @@ Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Feb  5 09:41:38 2016 -->
+<!-- Mon Feb  8 16:01:11 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>

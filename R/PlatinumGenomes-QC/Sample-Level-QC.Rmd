@@ -227,7 +227,7 @@ And visualizing the results:
 ggplot(result, aes(x=heterozygous_variant_count)) +
   geom_histogram(color="black", fill="#FF6666") +
   scale_x_continuous(labels=comma) +
-  xlab("Number of Heterozyous Variants") +
+  xlab("Number of Heterozygous Variants") +
   ylab("Sample Count") +
   ggtitle("Histogram: Count of Heterozygous Variants Per Genome")
 ```
@@ -275,7 +275,7 @@ And visualizing the results:
   geom_boxplot() +
   facet_grid(sex ~ .) +
   scale_y_continuous(labels=comma) +
-  ylab("Fraction of Homozyous Variants") +
+  ylab("Fraction of Homozygous Variants") +
   xlab("Reference Name") +
   ggtitle("Fraction of Homozygous Variants Per Genome") +
   theme(axis.text.x=element_text(angle=50, hjust=1))
