@@ -25,7 +25,7 @@ For details as to how the comparison data was created, see the [provenance detai
 # Set up for BigQuery access.
 source("../rHelpers/setup.R")
 
-replacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
+brca1Replacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
                      "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants",
                      "#_WHERE_"="WHERE reference_name = 'chr17' AND start BETWEEN 41196311 AND 41277499")
 ```
@@ -33,13 +33,145 @@ replacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genome
 Sample-Level QC
 ===============
 
+Sex Inference
+-------------
+
+```r
+chrXreplacements <- brca1Replacements
+chrXreplacements[["#_WHERE_"]] <- "WHERE
+      (reference_name = 'chrX' OR reference_name = 'X')
+      # Omit pseudoautosomal regions.
+      AND start NOT BETWEEN 59999 AND 2699519
+      AND start NOT BETWEEN 154931042 AND 155260559"
+result <- DisplayAndDispatchQuery("../sql/homozygous-variants.sql",
+                                  project=project,
+                                  replacements=chrXreplacements)
+```
+
+```
+# Compute the expected and observed homozygosity rate for each individual.
+SELECT
+  call.call_set_name,
+  O_HOM,
+  ROUND(E_HOM, 2) as E_HOM,
+  N_SITES,
+  ROUND((O_HOM - E_HOM) / (N_SITES - E_HOM), 5) AS F
+FROM (
+  SELECT
+    call.call_set_name,
+    SUM(first_allele = second_allele) AS O_HOM,
+    SUM(1.0 - (2.0 * freq * (1.0 - freq) * (called_allele_count / (called_allele_count - 1.0)))) AS E_HOM,
+    COUNT(call.call_set_name) AS N_SITES,
+  FROM (
+    SELECT
+      reference_name,
+      start,
+      reference_bases,
+      GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+      call.call_set_name,
+      NTH(1, call.genotype) WITHIN call AS first_allele,
+      NTH(2, call.genotype) WITHIN call AS second_allele,
+      COUNT(alternate_bases) WITHIN RECORD AS num_alts,
+      SUM(call.genotype >= 0) WITHIN RECORD AS called_allele_count,
+      IF((SUM(1 = call.genotype) > 0),
+        SUM(call.genotype = 1)/SUM(call.genotype >= 0),
+        -1)  WITHIN RECORD AS freq
+    FROM
+      [google.com:biggene:platinum_genomes.expanded_variants]
+    # Optionally add a clause here to limit the query to a particular
+    # region of the genome.
+    WHERE
+      (reference_name = 'chrX' OR reference_name = 'X')
+      # Omit pseudoautosomal regions.
+      AND start NOT BETWEEN 59999 AND 2699519
+      AND start NOT BETWEEN 154931042 AND 155260559
+    # Skip no calls and haploid sites
+    OMIT call IF SOME(call.genotype < 0) OR (2 != COUNT(call.genotype))
+    HAVING
+      # Skip 1/2 genotypes.
+      num_alts = 1
+      # Only use SNPs since non-variant segments are only included for SNPs.
+      AND reference_bases IN ('A','C','G','T')
+      AND alternate_bases IN ('A','C','G','T')
+      # Skip records where all samples have the same allele.
+      AND freq > 0 AND freq < 1 
+      )
+  GROUP BY
+    call.call_set_name
+    )
+ORDER BY
+  call.call_set_name
+```
+Number of rows returned by this query: 17.
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Feb  5 09:39:38 2016 -->
+<table border=1>
+<tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 265172 </td> <td align="right"> 223422.05 </td> <td align="right"> 302481 </td> <td align="right"> 0.53 </td> </tr>
+  <tr> <td> NA12878 </td> <td align="right"> 197271 </td> <td align="right"> 224311.85 </td> <td align="right"> 303635 </td> <td align="right"> -0.34 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 196046 </td> <td align="right"> 222897.89 </td> <td align="right"> 301742 </td> <td align="right"> -0.34 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 195863 </td> <td align="right"> 222819.36 </td> <td align="right"> 301609 </td> <td align="right"> -0.34 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 196283 </td> <td align="right"> 222841.38 </td> <td align="right"> 301652 </td> <td align="right"> -0.34 </td> </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 267371 </td> <td align="right"> 223328.70 </td> <td align="right"> 302268 </td> <td align="right"> 0.56 </td> </tr>
+  <tr> <td> NA12883 </td> <td align="right"> 264362 </td> <td align="right"> 223365.36 </td> <td align="right"> 302381 </td> <td align="right"> 0.52 </td> </tr>
+  <tr> <td> NA12884 </td> <td align="right"> 263023 </td> <td align="right"> 222863.53 </td> <td align="right"> 301661 </td> <td align="right"> 0.51 </td> </tr>
+  <tr> <td> NA12885 </td> <td align="right"> 198997 </td> <td align="right"> 223108.13 </td> <td align="right"> 301969 </td> <td align="right"> -0.31 </td> </tr>
+  <tr> <td> NA12886 </td> <td align="right"> 262797 </td> <td align="right"> 223119.26 </td> <td align="right"> 302007 </td> <td align="right"> 0.50 </td> </tr>
+  <tr> <td> NA12887 </td> <td align="right"> 194596 </td> <td align="right"> 222835.51 </td> <td align="right"> 301683 </td> <td align="right"> -0.36 </td> </tr>
+  <tr> <td> NA12888 </td> <td align="right"> 260919 </td> <td align="right"> 220533.15 </td> <td align="right"> 298587 </td> <td align="right"> 0.52 </td> </tr>
+  <tr> <td> NA12889 </td> <td align="right"> 262693 </td> <td align="right"> 221787.14 </td> <td align="right"> 300313 </td> <td align="right"> 0.52 </td> </tr>
+  <tr> <td> NA12890 </td> <td align="right"> 198485 </td> <td align="right"> 223700.20 </td> <td align="right"> 302828 </td> <td align="right"> -0.32 </td> </tr>
+  <tr> <td> NA12891 </td> <td align="right"> 259696 </td> <td align="right"> 219237.47 </td> <td align="right"> 296917 </td> <td align="right"> 0.52 </td> </tr>
+  <tr> <td> NA12892 </td> <td align="right"> 196375 </td> <td align="right"> 222980.23 </td> <td align="right"> 301911 </td> <td align="right"> -0.34 </td> </tr>
+  <tr> <td> NA12893 </td> <td align="right"> 262389 </td> <td align="right"> 220878.12 </td> <td align="right"> 299037 </td> <td align="right"> 0.53 </td> </tr>
+   </table>
+
+Comparison with PLINK sex-check results (ignoring pedigree info):
+
+```r
+plinkResult <- read.table("./sexCheck/plinkCombined/sex-check-no-fam.sexcheck", header=TRUE)
+result <- rename(result, IID=call_call_set_name)
+joinedResult <- inner_join(plinkResult, result, by=c("IID"))
+```
+
+<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
+<!-- Fri Feb  5 09:39:38 2016 -->
+<table border=1>
+<tr> <th> FID </th> <th> IID </th> <th> PEDSEX </th> <th> SNPSEX </th> <th> STATUS </th> <th> F.x </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F.y </th>  </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12877 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td> OK </td> <td align="right"> 0.58 </td> <td align="right"> 265172 </td> <td align="right"> 223422.05 </td> <td align="right"> 302481 </td> <td align="right"> 0.53 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12878 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td> OK </td> <td align="right"> -0.47 </td> <td align="right"> 197271 </td> <td align="right"> 224311.85 </td> <td align="right"> 303635 </td> <td align="right"> -0.34 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12879 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td> OK </td> <td align="right"> -0.47 </td> <td align="right"> 196046 </td> <td align="right"> 222897.89 </td> <td align="right"> 301742 </td> <td align="right"> -0.34 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12880 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td> OK </td> <td align="right"> -0.47 </td> <td align="right"> 195863 </td> <td align="right"> 222819.36 </td> <td align="right"> 301609 </td> <td align="right"> -0.34 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12881 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td> OK </td> <td align="right"> -0.47 </td> <td align="right"> 196283 </td> <td align="right"> 222841.38 </td> <td align="right"> 301652 </td> <td align="right"> -0.34 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12882 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td> OK </td> <td align="right"> 0.61 </td> <td align="right"> 267371 </td> <td align="right"> 223328.70 </td> <td align="right"> 302268 </td> <td align="right"> 0.56 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12883 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td> OK </td> <td align="right"> 0.58 </td> <td align="right"> 264362 </td> <td align="right"> 223365.36 </td> <td align="right"> 302381 </td> <td align="right"> 0.52 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12884 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td> OK </td> <td align="right"> 0.57 </td> <td align="right"> 263023 </td> <td align="right"> 222863.53 </td> <td align="right"> 301661 </td> <td align="right"> 0.51 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12885 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td> OK </td> <td align="right"> -0.43 </td> <td align="right"> 198997 </td> <td align="right"> 223108.13 </td> <td align="right"> 301969 </td> <td align="right"> -0.31 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12886 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td> OK </td> <td align="right"> 0.57 </td> <td align="right"> 262797 </td> <td align="right"> 223119.26 </td> <td align="right"> 302007 </td> <td align="right"> 0.50 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12887 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td> OK </td> <td align="right"> -0.49 </td> <td align="right"> 194596 </td> <td align="right"> 222835.51 </td> <td align="right"> 301683 </td> <td align="right"> -0.36 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12888 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td> OK </td> <td align="right"> 0.57 </td> <td align="right"> 260919 </td> <td align="right"> 220533.15 </td> <td align="right"> 298587 </td> <td align="right"> 0.52 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12889 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td> OK </td> <td align="right"> 0.61 </td> <td align="right"> 262693 </td> <td align="right"> 221787.14 </td> <td align="right"> 300313 </td> <td align="right"> 0.52 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12890 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td> OK </td> <td align="right"> -0.45 </td> <td align="right"> 198485 </td> <td align="right"> 223700.20 </td> <td align="right"> 302828 </td> <td align="right"> -0.32 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12891 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td> OK </td> <td align="right"> 0.58 </td> <td align="right"> 259696 </td> <td align="right"> 219237.47 </td> <td align="right"> 296917 </td> <td align="right"> 0.52 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12892 </td> <td align="right">   2 </td> <td align="right">   2 </td> <td> OK </td> <td align="right"> -0.47 </td> <td align="right"> 196375 </td> <td align="right"> 222980.23 </td> <td align="right"> 301911 </td> <td align="right"> -0.34 </td> </tr>
+  <tr> <td align="right"> 1463 </td> <td> NA12893 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td> OK </td> <td align="right"> 0.58 </td> <td align="right"> 262389 </td> <td align="right"> 220878.12 </td> <td align="right"> 299037 </td> <td align="right"> 0.53 </td> </tr>
+   </table>
+
+Gender determination based on homozygosity (inbreeding) rate, F, is the same in both methods (considering male for F > 0.5, and female for F < 0).
+
+The slight difference in the F values is due to differences in allele frequency calculations, which results in more SNPs being ignored in PLINK. For instance, ~85,000 of ~345,000 SNPs are excluded in PLINK but only ~41,000 are excluded in the above query (due to having frequency of 1.0 or 0.0). As a concrete example, the SNP in position 2704300 has 15 individuals with 0/0 allele and 2 individuals with 0/1 allele. The minor allele frequency is therefore 2/34 = 0.06, whereas the PLINK allele frequency is 1.0 (actual ratio in PLINK's calculations is 24/24), which results in exclusion of this SNP from the PLINK analysis.
+
+PLINK also considers pedigree info in its analysis. The above results do not use pedigree info, but those results are also provided in [sex-check-with-fam](./sexCheck/plinkCombined/sex-check-with-fam.sexcheck).
+
+Lastly, the multi-sample variants table used in the query only contains reference-matches for SNPs (i.e. indels matching the reference are not included). Thus, indels were also excluded from the above analysis as they would result in inaccurate statistics.
+
 Check Singletons
 ----------------
 
 ```r
 result <- DisplayAndDispatchQuery("../sql/private-variants-brca1.sql",
                                   project=project,
-                                  replacements=replacements)
+                                  replacements=brca1Replacements)
 ```
 
 ```
@@ -103,7 +235,7 @@ ORDER BY
 Number of rows returned by this query: 63.
 
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:38 2016 -->
+<!-- Fri Feb  5 09:39:41 2016 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td> S </td> <td> CT </td> <td> C </td> <td> NA12883 </td> <td> "0,1" </td> <td align="right">   1 </td> </tr>
@@ -189,6 +321,25 @@ nrow(inner_join(result, expectedResult))
 ```
 
 ```
+## Joining by: c("CHROM", "POS", "SINGLETON_DOUBLETON", "INDV")
+```
+
+```
+## Warning in inner_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
+```
+
+```
+## Warning in inner_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
+```
+
+```
+## Warning in inner_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
+```
+
+```
 ## [1] 75
 ```
 
@@ -222,7 +373,7 @@ print(xtable(onlyBQ), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:38 2016 -->
+<!-- Fri Feb  5 09:39:41 2016 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> REF </th> <th> ALT </th> <th> INDV </th> <th> genotype </th> <th> num_samples_with_variant </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41211485 </td> <td> S </td> <td> CACA </td> <td> CACAACA </td> <td> NA12878 </td> <td> "1,2" </td> <td align="right">   1 </td> </tr>
@@ -258,7 +409,7 @@ print(xtable(onlyVcftools), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:38 2016 -->
+<!-- Fri Feb  5 09:39:41 2016 -->
 <table border=1>
 <tr> <th> CHROM </th> <th> POS </th> <th> SINGLETON_DOUBLETON </th> <th> ALLELE </th> <th> INDV </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252694.00 </td> <td> S </td> <td> AAT </td> <td> NA12886 </td> </tr>
@@ -280,7 +431,7 @@ having <- paste("start = ", onlyVcftools$POS,
                 sep="", collapse=" OR ")
 result <- DisplayAndDispatchQuery("../sql/examine-data.sql",
                                   project=project,
-                                  replacements=c(replacements,
+                                  replacements=c(brca1Replacements,
                                                  "_HAVING_"=having))
 ```
 
@@ -309,7 +460,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:40 2016 -->
+<!-- Fri Feb  5 09:39:43 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th>  </tr>
   <tr> <td> NA12886 </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> <td align="right"> 0.00 </td> <td> PASS </td> </tr>
@@ -354,7 +505,7 @@ Check Individual Heterozygosity
 ```r
 result <- DisplayAndDispatchQuery("../sql/homozygous-variants.sql",
                                   project=project,
-                                  replacements=replacements)
+                                  replacements=brca1Replacements)
 ```
 
 ```
@@ -410,7 +561,7 @@ ORDER BY
 Number of rows returned by this query: 17.
 
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:42 2016 -->
+<!-- Fri Feb  5 09:39:46 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 244 </td> <td align="right"> 196.17 </td> <td align="right"> 266 </td> <td align="right"> 0.68 </td> </tr>
@@ -459,7 +610,7 @@ print(xtable(joinedResult[,order(colnames(joinedResult))]), type="html", include
 ```
 
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:42 2016 -->
+<!-- Fri Feb  5 09:39:46 2016 -->
 <table border=1>
 <tr> <th> E_HOM.x </th> <th> E_HOM.y </th> <th> F.x </th> <th> F.y </th> <th> INDV </th> <th> N_SITES.x </th> <th> N_SITES.y </th> <th> O_HOM.x </th> <th> O_HOM.y </th>  </tr>
   <tr> <td align="right"> 185.60 </td> <td align="right"> 196.17 </td> <td align="right"> 0.71 </td> <td align="right"> 0.68 </td> <td> NA12877 </td> <td align="right"> 254 </td> <td align="right"> 266 </td> <td align="right"> 234 </td> <td align="right"> 244 </td> </tr>
@@ -553,7 +704,7 @@ Check Hardy-Weinberg Equilibrium
 sortAndLimit <- "ORDER BY reference_name, start, alternate_bases"
 result <- DisplayAndDispatchQuery("../sql/hardy-weinberg.sql",
                                   project=project,
-                                  replacements=c(replacements,
+                                  replacements=c(brca1Replacements,
                                                  "#_ORDER_BY_"=sortAndLimit))
 ```
 
@@ -658,7 +809,7 @@ Number of rows returned by this query: 333.
 
 Displaying the first few results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:46 2016 -->
+<!-- Fri Feb  5 09:39:49 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
@@ -693,6 +844,11 @@ nrow(inner_join(result, expectedResult, by=c("CHR", "POS", "OBS_HOM1", "OBS_HET"
 ```
 
 ```
+## Warning in inner_join_impl(x, y, by$x, by$y): joining character vector and
+## factor, coercing into character vector
+```
+
+```
 ## [1] 305
 ```
 
@@ -712,7 +868,7 @@ print(xtable(arrange(onlyBQ, CHR, POS)), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:46 2016 -->
+<!-- Fri Feb  5 09:39:50 2016 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> <td align="right">  10 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 10.72 </td> <td align="right"> 5.56 </td> <td align="right"> 0.72 </td> <td align="right"> 1.14 </td> <td> FALSE </td> </tr>
@@ -767,7 +923,7 @@ print(xtable(arrange(onlyVcftools, CHR, POS)), type="html", include.rownames=F)
 ```
 
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:46 2016 -->
+<!-- Fri Feb  5 09:39:50 2016 -->
 <table border=1>
 <tr> <th> CHR </th> <th> POS </th> <th> ChiSq </th> <th> P </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407.00 </td> <td align="right"> 1.39 </td> <td align="right"> 0.53 </td> <td align="right">   8 </td> <td align="right">   7 </td> <td align="right">   0 </td> <td align="right"> 8.82 </td> <td align="right"> 5.37 </td> <td align="right"> 0.82 </td> </tr>
@@ -781,7 +937,7 @@ having <- paste("start <= ", onlyVcftools$POS,
                 "end >= ", onlyVcftools$POS+1)
 result <- DisplayAndDispatchQuery("../sql/examine-data.sql",
                                   project=project,
-                                  replacements=c(replacements,
+                                  replacements=c(brca1Replacements,
                                                  "_HAVING_"=having))
 ```
 
@@ -810,7 +966,7 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:48 2016 -->
+<!-- Fri Feb  5 09:39:51 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th>  </tr>
   <tr> <td> NA12891 </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196196 </td> <td align="right"> 41196429 </td> <td> A </td> <td>  </td> <td align="right"> 0.00 </td> <td> PASS </td> </tr>
@@ -845,7 +1001,7 @@ Check Transition-Transversion Ratio
 ```r
 result <- DisplayAndDispatchQuery("../sql/ti-tv-ratio.sql",
                                   project=project,
-                                  replacements=c(replacements,
+                                  replacements=c(brca1Replacements,
                                                  "_WINDOW_SIZE_"="1000000"))
 ```
 
@@ -892,7 +1048,7 @@ ORDER BY
 ```
 The result:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:51 2016 -->
+<!-- Fri Feb  5 09:39:54 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41000000 </td> <td align="right"> 143 </td> <td align="right"> 132 </td> <td align="right"> 1.08 </td> <td align="right"> 275 </td> </tr>
@@ -904,7 +1060,7 @@ Let's compare this to what we get from vcftools.  For information about the vcft
 expectedResult <- read.table("./titv/platinum_genomes_brca1_expanded_merged.TsTv.summary", header=TRUE)
 ```
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:51 2016 -->
+<!-- Fri Feb  5 09:39:54 2016 -->
 <table border=1>
 <tr> <th> MODEL </th> <th> COUNT </th>  </tr>
   <tr> <td> AC </td> <td align="right">  48 </td> </tr>
@@ -924,7 +1080,7 @@ Let's figure out what the differences are.  First, we need to get the specific m
 ```r
 result <- DisplayAndDispatchQuery("../sql/ti-tv-variants.sql",
                                   project=project,
-                                  replacements=replacements)
+                                  replacements=brca1Replacements)
 ```
 
 ```
@@ -954,7 +1110,7 @@ SELECT
 ```
 Here's the first few variants reported by BigQuery:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:52 2016 -->
+<!-- Fri Feb  5 09:39:55 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td> G </td> <td> A </td> </tr>
@@ -999,11 +1155,11 @@ onlyBQ <- anti_join(result, expectedResult)
 ```
 
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:58:52 2016 -->
+<!-- Fri Feb  5 09:39:55 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> A </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> C </td> </tr>
+  <tr> <td> chr17 </td> <td align="right"> 41273094 </td> <td> G </td> <td> A </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> C </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41252696 </td> <td> T </td> <td> A </td> </tr>
    </table>
@@ -1013,6 +1169,25 @@ Let's double check that no variants were identified only by vcftools.
 
 ```r
 nrow(anti_join(expectedResult, result))
+```
+
+```
+## Joining by: c("reference_name", "start", "reference_bases", "alternate_bases")
+```
+
+```
+## Warning in anti_join_impl(x, y, by$x, by$y): joining factor and character
+## vector, coercing into character vector
+```
+
+```
+## Warning in anti_join_impl(x, y, by$x, by$y): joining factor and character
+## vector, coercing into character vector
+```
+
+```
+## Warning in anti_join_impl(x, y, by$x, by$y): joining factor and character
+## vector, coercing into character vector
 ```
 
 ```
