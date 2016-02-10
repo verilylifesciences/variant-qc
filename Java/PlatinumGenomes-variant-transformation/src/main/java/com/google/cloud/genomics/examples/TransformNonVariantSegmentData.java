@@ -208,12 +208,14 @@ public class TransformNonVariantSegmentData {
         }
       }
 
-      // Compute AN/AC/AF.  Note that no-calls (genotype -1) are excluded from AN.
+      // Compute AN/AC/AF for SNPs.  Note that no-calls (genotype -1) are excluded from AN.
       List<TableRow> alts = new ArrayList<>();
       int numAlts = v.getAlternateBasesCount();
       int alleleNumber = 0;
-      for (int i = 0; i <= numAlts; i++) {
-        alleleNumber += genotypeCount.count(i);
+      if (VariantUtils.IS_SNP.apply(v)) {
+        for (int i = 0; i <= numAlts; i++) {
+          alleleNumber += genotypeCount.count(i);
+        }
       }
       for (int j = 0; j < numAlts; j++) {
         alts.add(new TableRow()
@@ -277,6 +279,11 @@ public class TransformNonVariantSegmentData {
             }
           }));
 
+      // After filtering, the variant may no longer have any calls.  Skip empty variants.
+      if (filteredCalls.isEmpty()) {
+        return;
+      }
+      
       context.output(Variant.newBuilder(variant).clearCalls().addAllCalls(filteredCalls).build());
     }
   }
