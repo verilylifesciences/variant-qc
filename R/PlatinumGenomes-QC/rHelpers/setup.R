@@ -42,7 +42,7 @@ require(ggplot2)
 #' DisplayAndDispatchQuery('https://raw.githubusercontent.com/googlegenomics/codelabs/master/R/PlatinumGenomes-QC/sql/private-variants.sql',
 #'                         project=YOUR-PROJECT_ID,
 #'                         replacements=list('_GENOME_CALL_TABLE_'='genomics-public-data:platinum_genomes.variants'),
-#'                         destination_table='deflaux'YOUR-DATASET.YOUR-NEW-TABLE')
+#'                         destination_table='YOUR-DATASET.YOUR-NEW-TABLE')
 #'
 DisplayAndDispatchQuery <- function(queryUri, project, replacements=list(), ...) {
   if (missing(queryUri)) {
@@ -72,7 +72,7 @@ DisplayAndDispatchQuery <- function(queryUri, project, replacements=list(), ...)
   query_exec(querySql, project, ...)
 }
 
-#' This is a helper method to display the first few rows of query results.
+#' This is a helper method to display the first few rows of the query results.
 #'
 #' It prints the results in a format suitable for HTML display such as on github.  Additionally,
 #' if the results contain commonly named columns for genomic data, it attempts to suppress the display
