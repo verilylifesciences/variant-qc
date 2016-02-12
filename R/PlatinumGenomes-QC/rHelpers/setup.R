@@ -19,7 +19,32 @@ require(scales)
 require(bigrquery)
 require(ggplot2)
 
-DisplayAndDispatchQuery <- function(queryUri, project, replacements=list()) {
+#' This is a helper method to perform common tasks when dispatching SQL from external files
+#' to BigQuery.
+#'
+#' This method will obtain SQL from a local or remote file, optionally perform text replacements,
+#' display it, and send it to BigQuery for execution.
+#'
+#' @param queryUri File path or URI to the file containing the query.
+#' @param project The Google Cloud Platform project within which this query should run.
+#' @param replacements A list of key/value pairs to be search/replace on an exact match basis
+#'    within the text of the query.
+#' @param ... Any additional arguments will be passed to the bigrquery::query_exec method.  This is useful
+#'    if you want to pass `destination_table=YOUR-DATASET.YOUR-NEW-TABLE`, `warn=FALSE` or
+#'    `max_pages=Inf` to query_exec.
+#' @return the dataframe holding the query result or null
+#'
+#' @examples
+#' DisplayAndDispatchQuery('https://raw.githubusercontent.com/googlegenomics/codelabs/master/R/PlatinumGenomes-QC/sql/private-variants.sql',
+#'                         project=YOUR-PROJECT_ID,
+#'                         replacements=list('_GENOME_CALL_TABLE_'='genomics-public-data:platinum_genomes.variants'))
+#'
+#' DisplayAndDispatchQuery('https://raw.githubusercontent.com/googlegenomics/codelabs/master/R/PlatinumGenomes-QC/sql/private-variants.sql',
+#'                         project=YOUR-PROJECT_ID,
+#'                         replacements=list('_GENOME_CALL_TABLE_'='genomics-public-data:platinum_genomes.variants'),
+#'                         destination_table='deflaux'YOUR-DATASET.YOUR-NEW-TABLE')
+#'
+DisplayAndDispatchQuery <- function(queryUri, project, replacements=list(), ...) {
   if (missing(queryUri)) {
     stop("Pass the file path or url to the file containing the query.")
   }
@@ -44,9 +69,19 @@ DisplayAndDispatchQuery <- function(queryUri, project, replacements=list()) {
   cat(querySql)
 
   # Dispatch the query to BigQuery.
-  query_exec(querySql, project)
+  query_exec(querySql, project, ...)
 }
 
+#' This is a helper method to display the first few rows of query results.
+#'
+#' It prints the results in a format suitable for HTML display such as on github.  Additionally,
+#' if the results contain commonly named columns for genomic data, it attempts to suppress the display
+#' of callset identifier with the allele value.
+#'
+#' @param result A dataframe (e.g., results from bigrquery)
+#' @param n The number of results to display.
+#' @return an HTML table of results.
+#'
 DisplayQueryResults <- function(result, n=6) {
   if(is.null(result)) {
     cat("**None**")
@@ -54,7 +89,8 @@ DisplayQueryResults <- function(result, n=6) {
     # Suppress the printing of sample identifiers when the data contains allele
     # values.  This is brittle since the query could use a different name for the columns
     # containing the identifier or allele.
-    if(2 == length(intersect(c("call_call_set_name", "alternate_bases"), colnames(result)))) {
+    if(2 == length(intersect(c("call_call_set_name", "alternate_bases", "alt.alternate_bases"),
+                             colnames(result)))) {
       result <- mutate(result, call_call_set_name = "not displayed")
     }
     print(xtable(head(result, n=n)), type="html", include.rownames=F)
