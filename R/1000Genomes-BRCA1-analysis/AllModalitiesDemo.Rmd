@@ -26,9 +26,9 @@ The VCFs comprising this dataset are **1.12 TB** when uncompressed and provide i
   * [Querying](#querying)
 * [Zooming-In](#zooming-in)
   * [Simplistic GWAS](#simplistic-gwas)
-  * [Annotate Variants with BioConductor](#annotate-variants-with-bioconductor)
+  * [Annotate Variants with Bioconductor](#annotate-variants-with-bioconductor)
 * [Zooming-In Even Further](#zooming-in-even-further)
-  * [Visualize Reads with BioConductor](#visualize-reads-with-bioconductor)
+  * [Visualize Reads with Bioconductor](#visualize-reads-with-bioconductor)
 * [Provenance](#provenance)
 
 Working at Scale
@@ -53,7 +53,7 @@ project <- "YOUR-PROJECT-ID"
 ```{r message=FALSE, comment=NA}
 pca_1kg <- read.table("./data/1kg-pca.tsv", col.names=c("Sample", "PC1", "PC2"))
 ```
-This analysis performed an `O(N^2)` computation upon the relevant fields within the *terabyte* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/v1beta2/reference/variants) for its input.  See the Google Genomics [PCA cookbook entry](http://googlegenomics.readthedocs.org/en/latest/use_cases/compute_principal_coordinate_analysis/index.html) for implementation details and instructions as to how to run this job.
+This analysis performed an `O(N^2)` computation upon the relevant fields within the *terabyte* of data by running an [Apache Spark](http://spark.apache.org/) job which used the [Google Genomics Variants API](https://cloud.google.com/genomics/reference/rest/v1/variants) for its input.  See the Google Genomics [PCA cookbook entry](http://googlegenomics.readthedocs.org/en/latest/use_cases/compute_principal_coordinate_analysis/index.html) for implementation details and instructions as to how to run this job.
 
 Visualizing the results, we see quite distinct clusters:
 ```{r pca, fig.align="center", fig.width=10, message=FALSE, comment=NA}
@@ -193,7 +193,7 @@ Note that even though this query ran over a small region of the genome, with a m
 head(result)
 ```
 
-### Annotate Variants with BioConductor
+### Annotate Variants with Bioconductor
 
 Now let's use the [GoogleGenomics R client](https://github.com/googlegenomics/api-client-r) to retrieve the full records for the variants in which we are interested.
 ```{r message=FALSE, comment=NA}
@@ -221,13 +221,13 @@ names(variants[[1]]$calls[[1]])
 variants[[1]]$calls[[1]]
 ```
 
-We can also convert this data to [BioConductor](http://www.bioconductor.org/) datatypes such as [GRanges data type](http://www.bioconductor.org/packages/release/bioc/vignettes/GenomicRanges/inst/doc/GenomicRangesIntroduction.pdf).
+We can also convert this data to [Bioconductor](http://www.bioconductor.org/) datatypes such as [GRanges data type](http://www.bioconductor.org/packages/release/bioc/vignettes/GenomicRanges/inst/doc/GenomicRangesIntroduction.pdf).
 ```{r message=FALSE, comment=NA}
 granges <- variantsToGRanges(variants)
 granges
 ```
 
-This allows us to utilize the various BioConductor variant annotation packages:
+This allows us to utilize the various Bioconductor variant annotation packages:
 
 ```{r comment=NA, message=FALSE}
 require(VariantAnnotation)
@@ -249,9 +249,9 @@ So a question for our users who have much experience in this domain: what should
 Zooming-in Even Further
 ------------------------
 
-### Visualize Reads with BioConductor
+### Visualize Reads with Bioconductor
 
-We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/v1beta2/reference/readgroupsets) for a given sample and examine coverage:
+We can also retrieve the reads from the [Genomics Reads API](https://cloud.google.com/genomics/reference/rest/v1/readgroupsets) for a given sample and examine coverage:
 ```{r message=FALSE, comment=NA}
 galignments <- getReads(readGroupSetId="CMvnhpKTFhDnk4_9zcKO3_YB", chromosome="17",
                      start=41218200, end=41218500, converter=readsToGAlignments)

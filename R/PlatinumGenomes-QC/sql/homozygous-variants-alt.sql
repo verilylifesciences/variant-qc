@@ -11,7 +11,7 @@ FROM (
   SELECT
   call.call_set_name,
   reference_name,
-  SUM(first_allele =1 and second_allele = 1) AS HOM,
+  SUM(first_allele = 1 and second_allele = 1) AS HOM,
   SUM(first_allele + second_allele > 0)  AS HET_HOM,
   COUNT(call.call_set_name) AS N_SITES,
   FROM (
@@ -26,7 +26,7 @@ FROM (
     COUNT(alternate_bases) WITHIN RECORD AS num_alts,
     SUM(call.genotype > 0) WITHIN RECORD AS called_alt_allele_count,
     FROM
-    [_MULTISAMPLE_VARIANT_TABLE_]
+    [_GENOME_CALL_TABLE_]
     # Optionally add a clause here to limit the query to a particular
     # region of the genome.
     #_WHERE_

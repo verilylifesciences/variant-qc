@@ -35,7 +35,7 @@ By default this codelab runs upon the Illumina Platinum Genomes Variants. Update
 queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
                           "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-sampleInfo <- select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
+sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpDataset.R")
@@ -99,7 +99,7 @@ Number of rows returned by this query: **2279**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:10:58 2016 -->
+<!-- Wed Feb  3 13:48:15 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr1 </td> <td align="right">   0 </td> <td align="right"> 293 </td> <td align="right"> 198 </td> <td align="right"> 1.48 </td> <td align="right"> 491 </td> </tr>
@@ -174,7 +174,7 @@ Number of rows returned by this query: **35**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:21 2016 -->
+<!-- Wed Feb  3 13:48:18 2016 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> alternate_allele_count </th>  </tr>
   <tr> <td align="right"> 350843 </td> <td align="right"> 172896 </td> <td align="right"> 2.03 </td> <td align="right">  34 </td> </tr>
@@ -216,7 +216,7 @@ result <- DisplayAndDispatchQuery(query,
 SELECT
   call.call_set_name,
   (transitions/transversions) AS titv_ratio,
-  call.DP AS average_depth,
+  FLOAT(call.DP) AS average_depth,
 FROM (
   SELECT
     call.call_set_name,
@@ -266,15 +266,15 @@ ORDER BY
 ```
 
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:24 2016 -->
+<!-- Wed Feb  3 13:48:22 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> titv_ratio </th> <th> average_depth </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.79 </td> <td align="right">   1 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.81 </td> <td align="right">   2 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.82 </td> <td align="right">   3 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.85 </td> <td align="right">   4 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.87 </td> <td align="right">   5 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.86 </td> <td align="right">   6 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.79 </td> <td align="right"> 1.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.81 </td> <td align="right"> 2.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.82 </td> <td align="right"> 3.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.85 </td> <td align="right"> 4.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.87 </td> <td align="right"> 5.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.86 </td> <td align="right"> 6.00 </td> </tr>
    </table>
 
 
@@ -334,7 +334,7 @@ Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:28 2016 -->
+<!-- Wed Feb  3 13:48:24 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
@@ -459,7 +459,7 @@ Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:31 2016 -->
+<!-- Wed Feb  3 13:48:27 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -470,7 +470,7 @@ Displaying the first few rows of the dataframe of results:
   <tr> <td> chr1 </td> <td align="right"> 110191193 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
    </table>
 
-See also [a version of this query](./sql/hardy-weinberg-udf.sql) that uses the new BigQuery feature of user-defined javascript functions which is currently in Alpha.  For more info, see https://www.youtube.com/watch?v=GrD7ymUPt3M#t=1377.
+See also [a version of this query](./sql/hardy-weinberg-udf.sql) that uses BigQuery [user-defined javascript functions](https://cloud.google.com/bigquery/user-defined-functions).
 
 ## Heterozygous Haplotype
 For each variant within the X and Y chromosome, identify heterozygous variants in male genomes.
@@ -520,7 +520,7 @@ Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
 <!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:33 2016 -->
+<!-- Wed Feb  3 13:48:29 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> not displayed </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> </tr>
@@ -535,7 +535,7 @@ Displaying the first few rows of the dataframe of results:
 
 To mark a variant as problematic so that downstream analyses can filter it out:
 
-* See the [variant update](https://cloud.google.com/genomics/v1beta2/reference/variants/update) method.
+* See the [variants patch](https://cloud.google.com/genomics/reference/rest/v1/variants/patch) method.
 
 To remove variants from BigQuery only:
 
@@ -544,6 +544,5 @@ To remove variants from BigQuery only:
 
 To entirely remove a variant from a variant set in the Genomics API:
 
-* See the [variant delete](https://cloud.google.com/genomics/v1beta2/reference/variants/delete) method.
+* See the [variants delete](https://cloud.google.com/genomics/reference/rest/v1/variants/delete) method.
 * *Note:* deletion cannot be undone.
-* If you wish to copy a variant to a different variantSet prior to deleting it, see the [variantSet mergeVariants](https://cloud.google.com/genomics/v1beta2/reference/variantsets/mergeVariants) method.
