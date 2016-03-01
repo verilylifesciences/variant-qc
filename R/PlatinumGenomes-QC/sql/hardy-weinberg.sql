@@ -76,9 +76,9 @@ FROM (
         start,
         END,
         reference_bases,
-        GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-        COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-        SUM(EVERY(0 = call.genotype)) WITHIN call AS HOM_REF,
+        GROUP_CONCAT(alt.alternate_bases) WITHIN RECORD AS alternate_bases,
+        COUNT(alt.alternate_bases) WITHIN RECORD AS num_alts,
+        COUNT(refMatchCallsets) WITHIN RECORD AS HOM_REF,
         SUM(EVERY(1 = call.genotype)) WITHIN call AS HOM_ALT,
         SUM(SOME(0 = call.genotype)
           AND SOME(1 = call.genotype)) WITHIN call AS HET,

@@ -14,18 +14,14 @@ FROM (
     start,
     END,
     reference_bases,
-    GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+    GROUP_CONCAT(alt.alternate_bases) WITHIN RECORD AS alternate_bases,
     SUM(call.genotype == -1) WITHIN RECORD AS no_calls,
-    COUNT(call.genotype) WITHIN RECORD AS all_calls,
+    COUNT(call.genotype) + COUNT(refMatchCallsets) WITHIN RECORD AS all_calls,
   FROM
       [_MULTISAMPLE_VARIANT_TABLE_]
-  # Optionally add clause here to limit the query to a particular
-  # region of the genome.
-  #_WHERE_
-  HAVING
-    # Only use SNPs since non-variant segments are only included for SNPs.
-    reference_bases IN ('A','C','G','T')
-    AND alternate_bases IN ('A','C','G','T')
+    # Optionally add clause here to limit the query to a particular
+    # region of the genome.
+    #_WHERE_
   )
 # Optionally add a clause here to sort and limit the results.
 #_ORDER_BY_

@@ -1,48 +1,86 @@
 # Compute the expected and observed homozygosity rate for each individual.
+# FROM DOCUMENTATION IN VCFTOOLS
+# P(Homo) = F + (1-F)P(Homo by chance)
+# P(Homo by chance) = p^2+q^2 for a biallelic locus.
+# For an individual with N genotyped loci, we
+#   1. count the total observed number of loci which are homozygous (O),
+#   2. calculate the total expected number of loci homozygous by chance (E)
+# Then, using the method of moments, we have
+#    O = NF + (1-F)E
+# Which rearranges to give
+#    F = (O-E)/(N-E)
+
 SELECT
-  call.call_set_name,
+  call_call_set_name,
   O_HOM,
-  ROUND(E_HOM, 2) as E_HOM,
+  ROUND(E_HOM, 2) AS E_HOM,
   N_SITES,
   ROUND((O_HOM - E_HOM) / (N_SITES - E_HOM), 5) AS F
 FROM (
   SELECT
-    call.call_set_name,
-    SUM(first_allele = second_allele) AS O_HOM,
-    SUM(1.0 - (2.0 * freq * (1.0 - freq) * (called_allele_count / (called_allele_count - 1.0)))) AS E_HOM,
-    COUNT(call.call_set_name) AS N_SITES,
-  FROM (
-    SELECT
-      reference_name,
-      start,
+    call_call_set_name,
+    SUM(O_HOM) AS O_HOM,
+    SUM(E_HOM) AS E_HOM,
+    COUNT(call_call_set_name) AS N_SITES,
+  FROM js(
+  // Input Table
+  (SELECT
       reference_bases,
-      GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+      alt.alternate_bases,
+      AN,
+      alt.AF,
+      refMatchCallsets,
       call.call_set_name,
-      NTH(1, call.genotype) WITHIN call AS first_allele,
-      NTH(2, call.genotype) WITHIN call AS second_allele,
-      COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-      SUM(call.genotype >= 0) WITHIN RECORD AS called_allele_count,
-      IF((SUM(1 = call.genotype) > 0),
-        SUM(call.genotype = 1)/SUM(call.genotype >= 0),
-        -1)  WITHIN RECORD AS freq
+      call.genotype,
     FROM
       [_MULTISAMPLE_VARIANT_TABLE_]
     # Optionally add a clause here to limit the query to a particular
     # region of the genome.
     #_WHERE_
-    # Skip no calls and haploid sites
-    OMIT call IF SOME(call.genotype < 0) OR (2 != COUNT(call.genotype))
-    HAVING
-      # Skip 1/2 genotypes.
-      num_alts = 1
-      # Only use SNPs since non-variant segments are only included for SNPs.
-      AND reference_bases IN ('A','C','G','T')
-      AND alternate_bases IN ('A','C','G','T')
-      # Skip records where all samples have the same allele.
-      AND freq > 0 AND freq < 1 
-      )
+   ),
+  // Input Columns
+  reference_bases, alt.alternate_bases, AN, alt.AF, refMatchCallsets, call.call_set_name, call.genotype,
+  // Output Schema
+  "[{name: 'call_call_set_name', type: 'string'},
+    {name: 'O_HOM', type: 'boolean'},
+    {name: 'E_HOM', type: 'float'}]",
+  // Function
+  "function(row, emit) {
+    // Only operate on bi-allelic variants.
+    if (1 != row.alt.length) return;
+
+    // Skip records where all samples have the same allele.
+    if (row.alt[0].AF == 0 || row.alt[0].AF == 1) return;
+
+    // Only operate on SNPs
+    if (!['A', 'C', 'G', 'T'].includes(row.reference_bases)) return;
+    if (!['A', 'C', 'G', 'T'].includes(row.alt[0].alternate_bases)) return;
+
+    // Compute the expected homozygosity at this site.
+    var expectedHom =
+          1.0 - (2.0 * row.alt[0].AF * (1.0 - row.alt[0].AF) * (row.AN / (row.AN - 1.0)));
+
+    // Emit the observed homozygosity for each variant call.
+    for(var i = 0; i < row.call.length; i++) {
+      // Skip genotypes with anything other than two values.
+      if (2 != row.call[i].genotype.length) continue;
+      // Skip genotypes with no-calls.
+      if (row.call[i].genotype.includes(-1)) continue;
+
+      emit({call_call_set_name: row.call[i].call_set_name,
+            O_HOM: (row.call[i].genotype[0] == 1 && row.call[i].genotype[1] == 1),
+            E_HOM: expectedHom});
+    }
+
+    // Emit the observed homozygosity for each reference-match call.
+    for(var i = 0; i < row.refMatchCallsets.length; i++) {
+      emit({call_call_set_name: row.refMatchCallsets[i],
+            O_HOM: true,
+            E_HOM: expectedHom});
+    }
+  }")
   GROUP BY
-    call.call_set_name
-    )
+    call_call_set_name
+  )
 ORDER BY
-  call.call_set_name
+  call_call_set_name
