@@ -44,28 +44,28 @@ If you are running this codelab against data that does not contain non-variant s
 
 ## Running the Cluster Compute Job
 
-We will use either data from variant set [3049512673186936334](https://cloud.google.com/genomics/data/platinum-genomes) or BigQuery table genomics-public-data:platinum_genomes.variants as the data source for this job.
+We use data from variant set [3049512673186936334](https://cloud.google.com/genomics/data/platinum-genomes) as the data source for this job.
 
 * **Java** [Use Cloud Dataflow to transform data with Non-Variant Segments](../../Java/PlatinumGenomes-variant-transformation)
-* **Python** [Use Hadoop Streaming to transform data with Non-Variant Segments](../../Python/PlatinumGenomes-variant-transformation)
 
 ## Results
 
-We have now created table [google.com:biggene:platinum_genomes.expanded_variants](https://bigquery.cloud.google.com/table/google.com:biggene:platinum_genomes.expanded_variants?pli=1)
+We have now created table [google.com:biggene:platinum_genomes.multisample_variants](https://bigquery.cloud.google.com/table/google.com:biggene:platinum_genomes.multisample_variants?pli=1)
 
 In the analyses that follow in this codelab, sometimes we work with the original data and sometimes we work with the transformed variant-only data.
 
 ## Optional: modify the Cluster Compute Job
 
 Some ideas:
-* Note that for a large cohort with many, many more rare variants we may wish to instead modify the logic here to summarize the number of calls that match the reference for each variant instead of adding those individual calls to the record.
+
+* Add additional fields from the variant to the BigQuery schema.
 * merge calls in records with 1/2 genotypes with the same variant found in records with 0/1 genotypes
 
 Reference Name | Start     | End       | Reference Bases | Alternate Bases
 ---------------|-----------|-----------|-----------------|-----------------
 chr6           | 120458771 | 120458773 |TA               |TAA
 chr6           | 120458771 | 120458773 |TA               |TAA,T
- 
+
 --------------------------------------------------------
 _Next_: [Part 3: Sample-Level QC](./Sample-Level-QC.md)
 

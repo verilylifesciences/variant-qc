@@ -33,7 +33,7 @@ By default this codelab runs upon the Illumina Platinum Genomes Variants. Update
 
 ```r
 queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.multisample_variants")
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
 sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
 
@@ -98,8 +98,8 @@ ORDER BY
 Number of rows returned by this query: **2279**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:48:15 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.7-4 package -->
+<!-- Tue Mar  1 13:56:20 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
   <tr> <td> chr1 </td> <td align="right">   0 </td> <td align="right"> 293 </td> <td align="right"> 198 </td> <td align="right"> 1.48 </td> <td align="right"> 491 </td> </tr>
@@ -173,8 +173,8 @@ ORDER BY
 Number of rows returned by this query: **35**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:48:18 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.7-4 package -->
+<!-- Tue Mar  1 13:56:23 2016 -->
 <table border=1>
 <tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> alternate_allele_count </th>  </tr>
   <tr> <td align="right"> 350843 </td> <td align="right"> 172896 </td> <td align="right"> 2.03 </td> <td align="right">  34 </td> </tr>
@@ -230,26 +230,28 @@ FROM (
       alternate_bases,
       call.call_set_name,
       CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
-      COUNT(alternate_bases) WITHIN RECORD AS num_alts,
       call.DP
     FROM (
       SELECT
         call.call_set_name,
         reference_bases,
         GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+        COUNT(alternate_bases) WITHIN RECORD AS num_alts,
         call.genotype,
         call.DP,
       FROM
-        [google.com:biggene:platinum_genomes.expanded_variants]
+        [genomics-public-data:platinum_genomes.variants]
       # Optionally add clause here to limit the query to a particular
       # region of the genome.
       #_WHERE_
+      HAVING
+        # Skip 1/2 genotypes
+        num_alts = 1
     )
     OMIT call if call.DP IS NULL
     HAVING
-      # Skip 1/2 genotypes _and non-SNP variants
-      num_alts = 1
-      AND reference_bases IN ('A','C','G','T')
+      # Skip non-SNP variants
+      reference_bases IN ('A','C','G','T')
       AND alternate_bases IN ('A','C','G','T'))
   GROUP BY
     call.call_set_name,
@@ -265,16 +267,16 @@ ORDER BY
   average_depth
 ```
 
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:48:22 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.7-4 package -->
+<!-- Tue Mar  1 13:56:27 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> titv_ratio </th> <th> average_depth </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.79 </td> <td align="right"> 1.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.81 </td> <td align="right"> 2.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.82 </td> <td align="right"> 3.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.85 </td> <td align="right"> 4.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.87 </td> <td align="right"> 5.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.86 </td> <td align="right"> 6.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.66 </td> <td align="right"> 1.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.68 </td> <td align="right"> 2.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.72 </td> <td align="right"> 3.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.75 </td> <td align="right"> 4.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.77 </td> <td align="right"> 5.00 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.79 </td> <td align="right"> 6.00 </td> </tr>
    </table>
 
 
@@ -318,11 +320,11 @@ FROM (
     start,
     END,
     reference_bases,
-    GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+    GROUP_CONCAT(alt.alternate_bases) WITHIN RECORD AS alternate_bases,
     SUM(call.genotype == -1) WITHIN RECORD AS no_calls,
-    COUNT(call.genotype) WITHIN RECORD AS all_calls,
+    COUNT(call.genotype) + COUNT(refMatchCallsets) WITHIN RECORD AS all_calls,
   FROM
-      [google.com:biggene:platinum_genomes.expanded_variants]
+      [google.com:biggene:platinum_genomes.multisample_variants]
     # Optionally add clause here to limit the query to a particular
     # region of the genome.
     #_WHERE_
@@ -333,8 +335,8 @@ ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alternat
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:48:24 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.7-4 package -->
+<!-- Tue Mar  1 13:56:29 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
@@ -437,20 +439,23 @@ FROM (
         start,
         END,
         reference_bases,
-        GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-        COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-        SUM(EVERY(0 = call.genotype)) WITHIN call AS HOM_REF,
+        GROUP_CONCAT(alt.alternate_bases) WITHIN RECORD AS alternate_bases,
+        COUNT(alt.alternate_bases) WITHIN RECORD AS num_alts,
+        COUNT(refMatchCallsets) WITHIN RECORD AS HOM_REF,
         SUM(EVERY(1 = call.genotype)) WITHIN call AS HOM_ALT,
         SUM(SOME(0 = call.genotype)
           AND SOME(1 = call.genotype)) WITHIN call AS HET,
       FROM
-        [google.com:biggene:platinum_genomes.expanded_variants]
+        [google.com:biggene:platinum_genomes.multisample_variants]
       # Optionally add a clause here to limit the query to a particular
       # region of the genome.
       #_WHERE_
       HAVING
         # Skip 1/2 genotypes
         num_alts = 1
+        # Only use SNPs since non-variant segments are only included for SNPs.
+        AND reference_bases IN ('A','C','G','T')
+        AND alternate_bases IN ('A','C','G','T')
         )))
 # Optionally add a clause here to sort and limit the results.
 ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000
@@ -458,8 +463,8 @@ ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:48:27 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.7-4 package -->
+<!-- Tue Mar  1 13:56:32 2016 -->
 <table border=1>
 <tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
@@ -519,8 +524,8 @@ ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:48:29 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.7-4 package -->
+<!-- Tue Mar  1 13:56:35 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
   <tr> <td> not displayed </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> </tr>

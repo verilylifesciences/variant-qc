@@ -14,9 +14,9 @@ FROM (
     start,
     END,
     reference_bases,
-    GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+    GROUP_CONCAT(alt.alternate_bases) WITHIN RECORD AS alternate_bases,
     SUM(call.genotype == -1) WITHIN RECORD AS no_calls,
-    COUNT(call.genotype) WITHIN RECORD AS all_calls,
+    COUNT(call.genotype) + COUNT(refMatchCallsets) WITHIN RECORD AS all_calls,
   FROM
       [_MULTISAMPLE_VARIANT_TABLE_]
     # Optionally add clause here to limit the query to a particular

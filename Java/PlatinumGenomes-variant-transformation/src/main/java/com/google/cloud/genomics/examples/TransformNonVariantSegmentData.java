@@ -69,6 +69,8 @@ import com.google.protobuf.Value;
  *
  * This is currently done only for SNP variants. Indels and structural variants are left as-is.
  *
+ * This pipeline assumes the call set names in the variant set are unique.
+ *
  * The data source is the Google Genomics Variants API. The data sink is BigQuery.
  *
  * <p>
@@ -85,6 +87,8 @@ public class TransformNonVariantSegmentData {
       .getLogger(TransformNonVariantSegmentData.class.getName());
 
   public static final String HAS_AMBIGUOUS_CALLS_FIELD = "ambiguousCalls";
+  public static final String REF_MATCH_CALLSETS_FIELD = "refMatchCallsets";
+  public static final String ALT_RECORD_FIELD = "alt";
   // AC : allele count in genotypes, for each ALT allele, in the same order as listed
   public static final String ALLELE_COUNT_FIELD = "AC";
   // AF : allele frequency for each ALT allele in the same order as listed: use this when estimated from primary
@@ -92,9 +96,10 @@ public class TransformNonVariantSegmentData {
   public static final String ALLELE_FREQUENCY_FIELD = "AF";
   // AN : total number of alleles in called genotypes
   public static final String ALLELE_NUMBER_FIELD = "AN";
+  public static final String DEPTH_FIELD = "DP";
   public static final String FILTER_FIELD = "FILTER";
   public static final String PASSING_FILTER = "PASS";
-  
+
   /**
    * Options supported by {@link TransformNonVariantSegmentData}.
    * <p>
@@ -111,7 +116,12 @@ public class TransformNonVariantSegmentData {
     @Validation.Required
     String getOutputTable();
     void setOutputTable(String value);
-    
+
+    @Description("Whether to append to an existing BigQuery table.")
+    @Default.Boolean(false)
+    boolean getAppendToTable();
+    void setAppendToTable(boolean value);
+
     @Description("Omit low quality variant calls.  Specifically, exclude any variant calls where call.FILTER != \"PASS\".")
     @Default.Boolean(false)
     boolean getOmitLowQualityCalls();
@@ -131,6 +141,12 @@ public class TransformNonVariantSegmentData {
         .setMode("REPEATED"));
     callFields.add(new TableFieldSchema().setName("genotype_likelihood").setType("FLOAT")
         .setMode("REPEATED"));
+    callFields.add(new TableFieldSchema().setName(DEPTH_FIELD).setType("INTEGER"));
+
+    List<TableFieldSchema> altFields = new ArrayList<>();
+    altFields.add(new TableFieldSchema().setName("alternate_bases").setType("STRING"));
+    altFields.add(new TableFieldSchema().setName(ALLELE_COUNT_FIELD).setType("INTEGER"));
+    altFields.add(new TableFieldSchema().setName(ALLELE_FREQUENCY_FIELD).setType("FLOAT"));
 
     List<TableFieldSchema> fields = new ArrayList<>();
     fields.add(new TableFieldSchema().setName("variant_id").setType("STRING"));
@@ -138,15 +154,14 @@ public class TransformNonVariantSegmentData {
     fields.add(new TableFieldSchema().setName("start").setType("INTEGER"));
     fields.add(new TableFieldSchema().setName("end").setType("INTEGER"));
     fields.add(new TableFieldSchema().setName("reference_bases").setType("STRING"));
-    fields.add(new TableFieldSchema().setName("alternate_bases").setType("STRING")
-        .setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName("names").setType("STRING").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName("filter").setType("STRING").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName("quality").setType("FLOAT"));
     fields.add(new TableFieldSchema().setName(ALLELE_NUMBER_FIELD).setType("INTEGER"));
-    fields.add(new TableFieldSchema().setName(ALLELE_COUNT_FIELD).setType("INTEGER").setMode("REPEATED"));
-    fields.add(new TableFieldSchema().setName(ALLELE_FREQUENCY_FIELD).setType("FLOAT").setMode("REPEATED"));
     fields.add(new TableFieldSchema().setName(HAS_AMBIGUOUS_CALLS_FIELD).setType("BOOLEAN"));
+    fields.add(new TableFieldSchema().setName(REF_MATCH_CALLSETS_FIELD).setType("STRING").setMode("REPEATED"));
+    fields.add(new TableFieldSchema().setName(ALT_RECORD_FIELD).setType("RECORD").setMode("REPEATED")
+        .setFields(altFields));
     fields.add(new TableFieldSchema().setName("call").setType("RECORD").setMode("REPEATED")
         .setFields(callFields));
 
@@ -155,7 +170,7 @@ public class TransformNonVariantSegmentData {
 
   /**
    * Pipeline function to prepare the data for writing to BigQuery, including computing allelic frequency.
-   * 
+   *
    * It builds a TableRow object containing data from the variant mapped onto the schema to be used
    * for the destination table.
    */
@@ -164,37 +179,53 @@ public class TransformNonVariantSegmentData {
     public void processElement(ProcessContext c) {
       Variant v = c.element();
 
-      HashMultiset genotypeCount = HashMultiset.create();  // Typical genotypes observed are -1,0,1,2
-      
+      List<String> refMatchCallsets = new ArrayList<>();
+      HashMultiset<Integer> genotypeCount = HashMultiset.create();  // This will typically hold counts for genotypes -1,0,1,2.
+
       List<TableRow> calls = new ArrayList<>();
       for (VariantCall call : v.getCallsList()) {
-        
         genotypeCount.addAll(call.getGenotypeList());
-        
-        calls.add(new TableRow()
-            .set("call_set_name", call.getCallSetName())
-            .set("phaseset", call.getPhaseset())
-            .set("genotype", call.getGenotypeList())
-            .set("genotype_likelihood",
-                (call.getGenotypeLikelihoodList() == null) ? new ArrayList<Double>() :
-                  call.getGenotypeLikelihoodList()
-                  ));
+
+        if (Iterables.all(call.getGenotypeList(), Predicates.equalTo(0))) {
+          refMatchCallsets.add(call.getCallSetName());
+        } else {
+          String depth = null;
+          if (null != call.getInfo().get(DEPTH_FIELD)) {
+            String value = call.getInfo().get(DEPTH_FIELD).getValues(0).getStringValue();
+            if (!(null == value || value.equals("."))) {
+              depth = value;
+            }
+          }
+          calls.add(new TableRow()
+              .set("call_set_name", call.getCallSetName())
+              .set("phaseset", call.getPhaseset())
+              .set("genotype", call.getGenotypeList())
+              .set(
+                  "genotype_likelihood",
+                  (call.getGenotypeLikelihoodList() == null) ? new ArrayList<Double>() : call
+                      .getGenotypeLikelihoodList())
+              .set(DEPTH_FIELD, depth));
+        }
       }
 
-      // Compute AN/AC/AF.  Note that no-calls (genotype -1) are excluded from AN.
+      // Compute AN/AC/AF for SNPs.  Note that no-calls (genotype -1) are excluded from AN.
+      List<TableRow> alts = new ArrayList<>();
       int numAlts = v.getAlternateBasesCount();
       int alleleNumber = 0;
-      List<Integer> alleleCount = new ArrayList<Integer>(numAlts);
-      List<Double> alleleFrequency = new ArrayList<Double>(numAlts);
-      for (int i = 0; i <= numAlts; i++) {
-        alleleNumber += genotypeCount.count(i);
+      if (VariantUtils.IS_SNP.apply(v)) {
+        // This for loop iterates over both 0 (reference allele) and over the 1-based alternate allele values.
+        for (int i = 0; i <= numAlts; i++) {
+          alleleNumber += genotypeCount.count(i);
+        }
       }
-      for (int j = 1; j <= numAlts; j++) {
-        alleleCount.add(j - 1, genotypeCount.count(j));
-        alleleFrequency.add(j - 1,
-            (0 < alleleNumber) ? (genotypeCount.count(j) / (double) alleleNumber) : 0.0);
+      for (int j = 0; j < numAlts; j++) {
+        alts.add(new TableRow()
+            .set("alternate_bases", v.getAlternateBases(j))
+            .set(ALLELE_COUNT_FIELD, genotypeCount.count(j + 1))
+            .set(ALLELE_FREQUENCY_FIELD,
+                (0 < alleleNumber) ? (genotypeCount.count(j + 1) / (double) alleleNumber) : 0.0));
       }
-      
+
       TableRow row =
           new TableRow()
               .set("variant_id", v.getId())
@@ -202,15 +233,13 @@ public class TransformNonVariantSegmentData {
               .set("start", v.getStart())
               .set("end", v.getEnd())
               .set("reference_bases", v.getReferenceBases())
-              .set("alternate_bases",
-                  (v.getAlternateBasesList() == null) ? new ArrayList<String>() : v.getAlternateBasesList())
+              .set("alt", alts)
               .set("names", (v.getNamesList() == null) ? new ArrayList<String>() : v.getNamesList())
               .set("filter", (v.getFilterList() == null) ? new ArrayList<String>() : v.getFilterList())
               .set("quality", v.getQuality())
               .set(ALLELE_NUMBER_FIELD, alleleNumber)
-              .set(ALLELE_COUNT_FIELD, alleleCount)
-              .set(ALLELE_FREQUENCY_FIELD, alleleFrequency)              
               .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).getValues(0).getStringValue())
+              .set(REF_MATCH_CALLSETS_FIELD, refMatchCallsets)
               .set("call", calls);
 
       c.output(row);
@@ -231,7 +260,7 @@ public class TransformNonVariantSegmentData {
       if(VariantUtils.IS_NON_VARIANT_SEGMENT.apply(variant)) {
         context.output(variant);
       }
-      
+
       // We may have variants without calls if any callsets were deleted from the variant set.
       // Skip those.
       if (null == variant.getCallsList() || variant.getCallsList().isEmpty()) {
@@ -250,13 +279,18 @@ public class TransformNonVariantSegmentData {
             }
           }));
 
+      // After filtering, the variant may no longer have any calls.  Skip empty variants.
+      if (filteredCalls.isEmpty()) {
+        return;
+      }
+
       context.output(Variant.newBuilder(variant).clearCalls().addAllCalls(filteredCalls).build());
     }
   }
-  
+
   /**
    * Pipeline function to flag any variants with more than one call for a particular callSetName.
-   * 
+   *
    * We don't see this for the tidy test datasets such as Platinum Genomes. But in practice, we have
    * seen datasets with the same individual sequenced twice, mistakes in data conversions prior to
    * this step, etc... So this function flags the particular variants with ambiguous calls for the
@@ -267,7 +301,7 @@ public class TransformNonVariantSegmentData {
     final Aggregator<Long, Long> variantsWithAmbiguousCallsCount = createAggregator("Number of variants containing ambiguous calls", new Sum.SumLongFn());
     public static final Map HAS_AMBIGUOUS_CALLS_INFO;
     public static final Map NO_AMBIGUOUS_CALLS_INFO;
-    
+
     static {
       HAS_AMBIGUOUS_CALLS_INFO = new HashMap<String, List<String>>();
       HAS_AMBIGUOUS_CALLS_INFO.put(
@@ -340,7 +374,7 @@ public class TransformNonVariantSegmentData {
         ShardUtils.getVariantRequests(options.getVariantSetId(), ShardUtils.SexChromosomeFilter.INCLUDE_XY,
             options.getBasesPerShard(), auth) :
           ShardUtils.getVariantRequests(options.getVariantSetId(), options.getReferences(), options.getBasesPerShard());
-    
+
     Pipeline p = Pipeline.create(options);
 
     // Create a collection of data with non-variant segments omitted but calls from overlapping
@@ -351,7 +385,7 @@ public class TransformNonVariantSegmentData {
 
     PCollection<Variant> filteredVariants =
         options.getOmitLowQualityCalls() ? variants.apply(ParDo.of(new FilterCallsFn())) : variants;
-    
+
     JoinNonVariantSegmentsWithVariants
         .joinVariantsTransform(filteredVariants)
         .apply(ParDo.of(new FlagVariantsWithAmbiguousCallsFn()))
@@ -359,7 +393,8 @@ public class TransformNonVariantSegmentData {
         .apply(
             BigQueryIO.Write.to(options.getOutputTable()).withSchema(getTableSchema())
                 .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
-                .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_TRUNCATE));
+                .withWriteDisposition(options.getAppendToTable()
+                    ? BigQueryIO.Write.WriteDisposition.WRITE_APPEND : BigQueryIO.Write.WriteDisposition.WRITE_EMPTY));
 
     p.run();
   }

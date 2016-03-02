@@ -46,7 +46,7 @@ In Part 3 of the codelab, we perform some quality control analyses that could he
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 ```{r}
 queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.multisample_variants")
 
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
 sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)

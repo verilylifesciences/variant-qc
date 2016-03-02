@@ -36,7 +36,7 @@ By default this codelab runs upon the Illumina Platinum Genomes Variants. Update
 
 ```r
 queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
+                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.multisample_variants")
 
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
 sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
@@ -79,8 +79,8 @@ ORDER BY
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Mon Feb  8 16:11:30 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.7-4 package -->
+<!-- Tue Mar  1 14:03:46 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> number_of_calls </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 51612762 </td> </tr>
@@ -175,8 +175,8 @@ Warning: NAs introduced by coercion to integer range
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Mon Feb  8 16:11:33 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.7-4 package -->
+<!-- Tue Mar  1 14:03:48 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 41927032 </td> <td align="right">  </td> <td align="right"> 0.01 </td> </tr>
@@ -318,8 +318,8 @@ ORDER BY
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Mon Feb  8 16:11:36 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.7-4 package -->
+<!-- Tue Mar  1 14:03:51 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> private_variant_count </th>  </tr>
   <tr> <td> NA12890 </td> <td align="right"> 418760 </td> </tr>
@@ -414,8 +414,8 @@ ORDER BY
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Mon Feb  8 16:11:38 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.7-4 package -->
+<!-- Tue Mar  1 14:03:54 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> heterozygous_variant_count </th>  </tr>
   <tr> <td> NA12877 </td> <td align="right"> 3410507 </td> </tr>
@@ -565,67 +565,106 @@ result <- DisplayAndDispatchQuery("./sql/homozygous-variants.sql",
 
 ```
 # Compute the expected and observed homozygosity rate for each individual.
+# FROM DOCUMENTATION IN VCFTOOLS
+# P(Homo) = F + (1-F)P(Homo by chance)
+# P(Homo by chance) = p^2+q^2 for a biallelic locus.
+# For an individual with N genotyped loci, we
+#   1. count the total observed number of loci which are homozygous (O),
+#   2. calculate the total expected number of loci homozygous by chance (E)
+# Then, using the method of moments, we have
+#    O = NF + (1-F)E
+# Which rearranges to give
+#    F = (O-E)/(N-E)
+
 SELECT
-  call.call_set_name,
+  call_call_set_name,
   O_HOM,
-  ROUND(E_HOM, 2) as E_HOM,
+  ROUND(E_HOM, 2) AS E_HOM,
   N_SITES,
   ROUND((O_HOM - E_HOM) / (N_SITES - E_HOM), 5) AS F
 FROM (
   SELECT
-    call.call_set_name,
-    SUM(first_allele = second_allele) AS O_HOM,
-    SUM(1.0 - (2.0 * freq * (1.0 - freq) * (called_allele_count / (called_allele_count - 1.0)))) AS E_HOM,
-    COUNT(call.call_set_name) AS N_SITES,
-  FROM (
-    SELECT
-      reference_name,
-      start,
+    call_call_set_name,
+    SUM(O_HOM) AS O_HOM,
+    SUM(E_HOM) AS E_HOM,
+    COUNT(call_call_set_name) AS N_SITES,
+  FROM js(
+  // Input Table
+  (SELECT
       reference_bases,
-      GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+      alt.alternate_bases,
+      AN,
+      alt.AF,
+      refMatchCallsets,
       call.call_set_name,
-      NTH(1, call.genotype) WITHIN call AS first_allele,
-      NTH(2, call.genotype) WITHIN call AS second_allele,
-      COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-      SUM(call.genotype >= 0) WITHIN RECORD AS called_allele_count,
-      IF((SUM(1 = call.genotype) > 0),
-        SUM(call.genotype = 1)/SUM(call.genotype >= 0),
-        -1)  WITHIN RECORD AS freq
+      call.genotype,
     FROM
-      [google.com:biggene:platinum_genomes.expanded_variants]
+      [google.com:biggene:platinum_genomes.multisample_variants]
     # Optionally add a clause here to limit the query to a particular
     # region of the genome.
     #_WHERE_
-    # Skip no calls and haploid sites
-    OMIT call IF SOME(call.genotype < 0) OR (2 != COUNT(call.genotype))
-    HAVING
-      # Skip 1/2 genotypes.
-      num_alts = 1
-      # Only use SNPs since non-variant segments are only included for SNPs.
-      AND reference_bases IN ('A','C','G','T')
-      AND alternate_bases IN ('A','C','G','T')
-      # Skip records where all samples have the same allele.
-      AND freq > 0 AND freq < 1 
-      )
+   ),
+  // Input Columns
+  reference_bases, alt.alternate_bases, AN, alt.AF, refMatchCallsets, call.call_set_name, call.genotype,
+  // Output Schema
+  "[{name: 'call_call_set_name', type: 'string'},
+    {name: 'O_HOM', type: 'boolean'},
+    {name: 'E_HOM', type: 'float'}]",
+  // Function
+  "function(row, emit) {
+    // Only operate on bi-allelic variants.
+    if (1 != row.alt.length) return;
+
+    // Skip records where all samples have the same allele.
+    if (row.alt[0].AF == 0 || row.alt[0].AF == 1) return;
+
+    // Only operate on SNPs
+    if (!['A', 'C', 'G', 'T'].includes(row.reference_bases)) return;
+    if (!['A', 'C', 'G', 'T'].includes(row.alt[0].alternate_bases)) return;
+
+    // Compute the expected homozygosity at this site.
+    var expectedHom =
+          1.0 - (2.0 * row.alt[0].AF * (1.0 - row.alt[0].AF) * (row.AN / (row.AN - 1.0)));
+
+    // Emit the observed homozygosity for each variant call.
+    for(var i = 0; i < row.call.length; i++) {
+      // Skip genotypes with anything other than two values.
+      if (2 != row.call[i].genotype.length) continue;
+      // Skip genotypes with no-calls.
+      if (row.call[i].genotype.includes(-1)) continue;
+
+      emit({call_call_set_name: row.call[i].call_set_name,
+            O_HOM: (row.call[i].genotype[0] == 1 && row.call[i].genotype[1] == 1),
+            E_HOM: expectedHom});
+    }
+
+    // Emit the observed homozygosity for each reference-match call.
+    for(var i = 0; i < row.refMatchCallsets.length; i++) {
+      emit({call_call_set_name: row.refMatchCallsets[i],
+            O_HOM: true,
+            E_HOM: expectedHom});
+    }
+  }")
   GROUP BY
-    call.call_set_name
-    )
+    call_call_set_name
+  )
 ORDER BY
-  call.call_set_name
+  call_call_set_name
+Running query:   RUNNING  2.4sRunning query:   RUNNING  2.9sRunning query:   RUNNING  3.6sRunning query:   RUNNING  4.2sRunning query:   RUNNING  4.8sRunning query:   RUNNING  5.3sRunning query:   RUNNING  5.9sRunning query:   RUNNING  6.5sRunning query:   RUNNING  7.1sRunning query:   RUNNING  7.7sRunning query:   RUNNING  8.2sRunning query:   RUNNING  9.0sRunning query:   RUNNING  9.6sRunning query:   RUNNING 10.2sRunning query:   RUNNING 10.8sRunning query:   RUNNING 11.4sRunning query:   RUNNING 12.0sRunning query:   RUNNING 12.6sRunning query:   RUNNING 13.2sRunning query:   RUNNING 13.7sRunning query:   RUNNING 14.3sRunning query:   RUNNING 14.9sRunning query:   RUNNING 15.5sRunning query:   RUNNING 16.1sRunning query:   RUNNING 16.7sRunning query:   RUNNING 17.3sRunning query:   RUNNING 17.9sRunning query:   RUNNING 18.5sRunning query:   RUNNING 19.1sRunning query:   RUNNING 19.6sRunning query:   RUNNING 20.2sRunning query:   RUNNING 20.8sRunning query:   RUNNING 21.4sRunning query:   RUNNING 22.0sRunning query:   RUNNING 22.6sRunning query:   RUNNING 23.1sRunning query:   RUNNING 23.8sRunning query:   RUNNING 24.4sRunning query:   RUNNING 25.0sRunning query:   RUNNING 25.6sRunning query:   RUNNING 26.2sRunning query:   RUNNING 26.8sRunning query:   RUNNING 27.4sRunning query:   RUNNING 27.9sRunning query:   RUNNING 28.5sRunning query:   RUNNING 29.1sRunning query:   RUNNING 29.7sRunning query:   RUNNING 30.3sRunning query:   RUNNING 30.9sRunning query:   RUNNING 31.4sRunning query:   RUNNING 32.0sRunning query:   RUNNING 32.6sRunning query:   RUNNING 33.2sRunning query:   RUNNING 33.8sRunning query:   RUNNING 34.4sRunning query:   RUNNING 34.9sRunning query:   RUNNING 35.5sRunning query:   RUNNING 36.1sRunning query:   RUNNING 36.7sRunning query:   RUNNING 37.3sRunning query:   RUNNING 37.9sRunning query:   RUNNING 38.4sRunning query:   RUNNING 39.0sRunning query:   RUNNING 39.6sRunning query:   RUNNING 40.2s
 ```
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Mon Feb  8 16:11:46 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.7-4 package -->
+<!-- Tue Mar  1 14:04:41 2016 -->
 <table border=1>
 <tr> <th> call_call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 6135459 </td> <td align="right"> 6770355.20 </td> <td align="right"> 9546033 </td> <td align="right"> -0.23 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 6044715 </td> <td align="right"> 6748644.58 </td> <td align="right"> 9515963 </td> <td align="right"> -0.25 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 5962198 </td> <td align="right"> 6729953.98 </td> <td align="right"> 9489139 </td> <td align="right"> -0.28 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 5932991 </td> <td align="right"> 6732824.08 </td> <td align="right"> 9493300 </td> <td align="right"> -0.29 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 5909067 </td> <td align="right"> 6734507.42 </td> <td align="right"> 9495760 </td> <td align="right"> -0.30 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 6147961 </td> <td align="right"> 6769854.25 </td> <td align="right"> 9544771 </td> <td align="right"> -0.22 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 6149558 </td> <td align="right"> 6782778.42 </td> <td align="right"> 9560014 </td> <td align="right"> -0.23 </td> </tr>
+  <tr> <td> NA12878 </td> <td align="right"> 6058425 </td> <td align="right"> 6760782.14 </td> <td align="right"> 9529553 </td> <td align="right"> -0.25 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 5975847 </td> <td align="right"> 6741975.54 </td> <td align="right"> 9502693 </td> <td align="right"> -0.28 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 5947078 </td> <td align="right"> 6745197.19 </td> <td align="right"> 9507295 </td> <td align="right"> -0.29 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 5922897 </td> <td align="right"> 6746734.18 </td> <td align="right"> 9509500 </td> <td align="right"> -0.30 </td> </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 6162542 </td> <td align="right"> 6782649.92 </td> <td align="right"> 9559260 </td> <td align="right"> -0.22 </td> </tr>
    </table>
 
 And visualizing the results:
@@ -693,24 +732,22 @@ SELECT
   ROUND(SUM(hom_AA)/(SUM(hom_AA) + SUM(het_RA)), 3) AS perct_hom_alt_in_snvs,
   SUM(hom_AA) AS hom_AA_count,
   SUM(het_RA) AS het_RA_count,
-  SUM(hom_RR) AS hom_RR_count,
 FROM (
   SELECT
     reference_bases,
     GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
     COUNT(alternate_bases) WITHIN RECORD AS num_alts,
     call.call_set_name,
-    SOME(call.genotype = 0) AND NOT SOME(call.genotype > 0) WITHIN call AS hom_RR,
     SOME(call.genotype > 0) AND NOT SOME(call.genotype = 0) WITHIN call AS hom_AA,
     SOME(call.genotype > 0) AND SOME(call.genotype = 0) WITHIN call AS het_RA
   FROM
-    [google.com:biggene:platinum_genomes.expanded_variants]
+    [genomics-public-data:platinum_genomes.variants]
   WHERE
     (reference_name = 'chrX' OR reference_name = 'X')
     AND start NOT BETWEEN 59999 AND 2699519
     AND start NOT BETWEEN 154931042 AND 155260559
   HAVING
-    # Skip 1/2 genotypes _and non-SNP variants
+    # Skip 1/2 genotypes and non-SNP variants.
     num_alts = 1
     AND reference_bases IN ('A','C','G','T')
     AND alternate_bases IN ('A','C','G','T')
@@ -723,16 +760,16 @@ ORDER BY
 Number of rows returned by this query: **17**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Mon Feb  8 16:11:49 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.7-4 package -->
+<!-- Tue Mar  1 14:04:44 2016 -->
 <table border=1>
-<tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th> <th> hom_RR_count </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> <td align="right"> 212773 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 0.71 </td> <td align="right"> 0.29 </td> <td align="right"> 43666 </td> <td align="right"> 106358 </td> <td align="right"> 183525 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 0.70 </td> <td align="right"> 0.30 </td> <td align="right"> 45655 </td> <td align="right"> 105692 </td> <td align="right"> 180162 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> <td align="right"> 47261 </td> <td align="right"> 105744 </td> <td align="right"> 178206 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> <td align="right"> 47446 </td> <td align="right"> 105364 </td> <td align="right"> 178591 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 0.31 </td> <td align="right"> 0.69 </td> <td align="right"> 78815 </td> <td align="right"> 34893 </td> <td align="right"> 214852 </td> </tr>
+<tr> <th> call_call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th>  </tr>
+  <tr> <td> NA12877 </td> <td align="right"> 0.32 </td> <td align="right"> 0.68 </td> <td align="right"> 79739 </td> <td align="right"> 37299 </td> </tr>
+  <tr> <td> NA12878 </td> <td align="right"> 0.71 </td> <td align="right"> 0.29 </td> <td align="right"> 43666 </td> <td align="right"> 106358 </td> </tr>
+  <tr> <td> NA12879 </td> <td align="right"> 0.70 </td> <td align="right"> 0.30 </td> <td align="right"> 45655 </td> <td align="right"> 105692 </td> </tr>
+  <tr> <td> NA12880 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> <td align="right"> 47261 </td> <td align="right"> 105744 </td> </tr>
+  <tr> <td> NA12881 </td> <td align="right"> 0.69 </td> <td align="right"> 0.31 </td> <td align="right"> 47446 </td> <td align="right"> 105364 </td> </tr>
+  <tr> <td> NA12882 </td> <td align="right"> 0.31 </td> <td align="right"> 0.69 </td> <td align="right"> 78815 </td> <td align="right"> 34893 </td> </tr>
    </table>
 
 Let's join this with the sample information:
