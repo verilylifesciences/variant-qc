@@ -56,7 +56,7 @@ This job retrieves variants from the Genomics API, transforms them and writes th
 cd codelabs/Java/PlatinumGenomes-variant-transformation
 mvn clean package
 ```
-(3) Create a BigQuery dataset in the web UI to hold the data.
+(3) If you do not already have one, create a BigQuery dataset in the web UI to hold the data.
 
 * Open the [BigQuery web UI](https://bigquery.cloud.google.com/).
 * Click the down arrow icon <img src=https://cloud.google.com/bigquery/images/icon-down-arrow.png> next to your project name in the navigation
@@ -88,9 +88,9 @@ java -cp target/non-variant-segment-transformer-*runnable.jar \
 
 ## Results
 
-You have now created a table like [google.com:biggene:platinum_genomes.transformed_variants](https://bigquery.cloud.google.com/table/google.com:biggene:platinum_genomes.multisample_variants?pli=1)
+You have now created a table like [google.com:biggene:platinum_genomes.multisample_variants](https://bigquery.cloud.google.com/table/google.com:biggene:platinum_genomes.multisample_variants?pli=1)
 
-Note that this schema is optimized for a large cohort which would have many, many more rare variants. We summarize the of callsets that match the reference for each variant instead of adding those individual genotypes for those callsets to the record.
+Note that this schema is optimized for large cohorts which would have many, many more rare variants. Specifically, we summarize the callsets that match the reference for each variant into a separate column ``refMatchCallsets`` instead of adding those individual calls to the repeated field ``call`` within the variant's BigQuery record.
 
 # Appendix
 
