@@ -23,7 +23,7 @@ queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:1000_genom
                           "chr"="")
 
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
-sampleInfo <- select(sampleData, call_call_set_name=Sample, gender=Gender)
+sampleInfo <- select(sampleData, call_call_set_name=Sample, sex=Gender)
 
 # TODO: Identity By State results for 1,000 Genomes.
 ibs <- data.frame(col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))

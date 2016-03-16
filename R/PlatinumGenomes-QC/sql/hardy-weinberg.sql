@@ -90,6 +90,9 @@ FROM (
       HAVING
         # Skip 1/2 genotypes
         num_alts = 1
+        # Only use SNPs since non-variant segments are only included for SNPs.
+        AND reference_bases IN ('A','C','G','T')
+        AND alternate_bases IN ('A','C','G','T')
         )))
 # Optionally add a clause here to sort and limit the results.
 #_ORDER_BY_
