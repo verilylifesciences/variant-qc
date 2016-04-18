@@ -39,7 +39,7 @@ import com.google.cloud.dataflow.sdk.transforms.DoFn;
 import com.google.cloud.dataflow.sdk.transforms.ParDo;
 import com.google.cloud.dataflow.sdk.transforms.Sum;
 import com.google.cloud.dataflow.sdk.values.PCollection;
-import com.google.cloud.genomics.dataflow.functions.grpc.JoinNonVariantSegmentsWithVariants;
+import com.google.cloud.genomics.dataflow.functions.JoinNonVariantSegmentsWithVariants;
 import com.google.cloud.genomics.dataflow.readers.VariantStreamer;
 import com.google.cloud.genomics.dataflow.utils.GenomicsOptions;
 import com.google.cloud.genomics.dataflow.utils.ShardOptions;
@@ -50,11 +50,11 @@ import com.google.cloud.genomics.utils.grpc.VariantUtils;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
-import com.google.common.collect.HashMultiset;
 import com.google.genomics.v1.StreamVariantsRequest;
 import com.google.genomics.v1.Variant;
 import com.google.genomics.v1.VariantCall;
@@ -386,8 +386,7 @@ public class TransformNonVariantSegmentData {
     PCollection<Variant> filteredVariants =
         options.getOmitLowQualityCalls() ? variants.apply(ParDo.of(new FilterCallsFn())) : variants;
 
-    JoinNonVariantSegmentsWithVariants
-        .joinVariantsTransform(filteredVariants)
+    filteredVariants.apply(new JoinNonVariantSegmentsWithVariants.BinShuffleAndCombineTransform())
         .apply(ParDo.of(new FlagVariantsWithAmbiguousCallsFn()))
         .apply(ParDo.of(new FormatVariantsFn()))
         .apply(
