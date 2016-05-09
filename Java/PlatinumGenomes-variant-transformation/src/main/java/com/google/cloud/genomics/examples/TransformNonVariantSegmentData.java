@@ -13,16 +13,6 @@
  */
 package com.google.cloud.genomics.examples;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.logging.Logger;
-
 import com.google.api.client.util.Preconditions;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableRow;
@@ -39,7 +29,7 @@ import com.google.cloud.dataflow.sdk.transforms.DoFn;
 import com.google.cloud.dataflow.sdk.transforms.ParDo;
 import com.google.cloud.dataflow.sdk.transforms.Sum;
 import com.google.cloud.dataflow.sdk.values.PCollection;
-import com.google.cloud.genomics.dataflow.functions.grpc.JoinNonVariantSegmentsWithVariants;
+import com.google.cloud.genomics.dataflow.functions.JoinNonVariantSegmentsWithVariants;
 import com.google.cloud.genomics.dataflow.readers.VariantStreamer;
 import com.google.cloud.genomics.dataflow.utils.GenomicsOptions;
 import com.google.cloud.genomics.dataflow.utils.ShardOptions;
@@ -50,16 +40,26 @@ import com.google.cloud.genomics.utils.grpc.VariantUtils;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
-import com.google.common.collect.HashMultiset;
 import com.google.genomics.v1.StreamVariantsRequest;
 import com.google.genomics.v1.Variant;
 import com.google.genomics.v1.VariantCall;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 /**
  * Sample pipeline that transforms data with non-variant segments (such as data that was in source
@@ -94,7 +94,7 @@ public class TransformNonVariantSegmentData {
   public static final String ALLELE_NUMBER_FIELD = "AN";
   public static final String FILTER_FIELD = "FILTER";
   public static final String PASSING_FILTER = "PASS";
-  
+
   /**
    * Options supported by {@link TransformNonVariantSegmentData}.
    * <p>
@@ -111,7 +111,7 @@ public class TransformNonVariantSegmentData {
     @Validation.Required
     String getOutputTable();
     void setOutputTable(String value);
-    
+
     @Description("Omit low quality variant calls.  Specifically, exclude any variant calls where call.FILTER != \"PASS\".")
     @Default.Boolean(false)
     boolean getOmitLowQualityCalls();
@@ -155,7 +155,7 @@ public class TransformNonVariantSegmentData {
 
   /**
    * Pipeline function to prepare the data for writing to BigQuery, including computing allelic frequency.
-   * 
+   *
    * It builds a TableRow object containing data from the variant mapped onto the schema to be used
    * for the destination table.
    */
@@ -165,12 +165,12 @@ public class TransformNonVariantSegmentData {
       Variant v = c.element();
 
       HashMultiset genotypeCount = HashMultiset.create();  // Typical genotypes observed are -1,0,1,2
-      
+
       List<TableRow> calls = new ArrayList<>();
       for (VariantCall call : v.getCallsList()) {
-        
+
         genotypeCount.addAll(call.getGenotypeList());
-        
+
         calls.add(new TableRow()
             .set("call_set_name", call.getCallSetName())
             .set("phaseset", call.getPhaseset())
@@ -194,7 +194,7 @@ public class TransformNonVariantSegmentData {
         alleleFrequency.add(j - 1,
             (0 < alleleNumber) ? (genotypeCount.count(j) / (double) alleleNumber) : 0.0);
       }
-      
+
       TableRow row =
           new TableRow()
               .set("variant_id", v.getId())
@@ -209,7 +209,7 @@ public class TransformNonVariantSegmentData {
               .set("quality", v.getQuality())
               .set(ALLELE_NUMBER_FIELD, alleleNumber)
               .set(ALLELE_COUNT_FIELD, alleleCount)
-              .set(ALLELE_FREQUENCY_FIELD, alleleFrequency)              
+              .set(ALLELE_FREQUENCY_FIELD, alleleFrequency)
               .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).getValues(0).getStringValue())
               .set("call", calls);
 
@@ -231,7 +231,7 @@ public class TransformNonVariantSegmentData {
       if(VariantUtils.IS_NON_VARIANT_SEGMENT.apply(variant)) {
         context.output(variant);
       }
-      
+
       // We may have variants without calls if any callsets were deleted from the variant set.
       // Skip those.
       if (null == variant.getCallsList() || variant.getCallsList().isEmpty()) {
@@ -253,10 +253,10 @@ public class TransformNonVariantSegmentData {
       context.output(Variant.newBuilder(variant).clearCalls().addAllCalls(filteredCalls).build());
     }
   }
-  
+
   /**
    * Pipeline function to flag any variants with more than one call for a particular callSetName.
-   * 
+   *
    * We don't see this for the tidy test datasets such as Platinum Genomes. But in practice, we have
    * seen datasets with the same individual sequenced twice, mistakes in data conversions prior to
    * this step, etc... So this function flags the particular variants with ambiguous calls for the
@@ -267,7 +267,7 @@ public class TransformNonVariantSegmentData {
     final Aggregator<Long, Long> variantsWithAmbiguousCallsCount = createAggregator("Number of variants containing ambiguous calls", new Sum.SumLongFn());
     public static final Map HAS_AMBIGUOUS_CALLS_INFO;
     public static final Map NO_AMBIGUOUS_CALLS_INFO;
-    
+
     static {
       HAS_AMBIGUOUS_CALLS_INFO = new HashMap<String, List<String>>();
       HAS_AMBIGUOUS_CALLS_INFO.put(
@@ -340,7 +340,7 @@ public class TransformNonVariantSegmentData {
         ShardUtils.getVariantRequests(options.getVariantSetId(), ShardUtils.SexChromosomeFilter.INCLUDE_XY,
             options.getBasesPerShard(), auth) :
           ShardUtils.getVariantRequests(options.getVariantSetId(), options.getReferences(), options.getBasesPerShard());
-    
+
     Pipeline p = Pipeline.create(options);
 
     // Create a collection of data with non-variant segments omitted but calls from overlapping
@@ -351,9 +351,8 @@ public class TransformNonVariantSegmentData {
 
     PCollection<Variant> filteredVariants =
         options.getOmitLowQualityCalls() ? variants.apply(ParDo.of(new FilterCallsFn())) : variants;
-    
-    JoinNonVariantSegmentsWithVariants
-        .joinVariantsTransform(filteredVariants)
+
+    filteredVariants.apply(new JoinNonVariantSegmentsWithVariants.BinShuffleAndCombineTransform())
         .apply(ParDo.of(new FlagVariantsWithAmbiguousCallsFn()))
         .apply(ParDo.of(new FormatVariantsFn()))
         .apply(
