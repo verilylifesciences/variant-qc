@@ -15,17 +15,6 @@ package com.google.cloud.genomics.examples;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.hamcrest.CoreMatchers;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.cloud.dataflow.sdk.transforms.DoFnTester;
 import com.google.cloud.genomics.examples.TransformNonVariantSegmentData.FilterCallsFn;
@@ -34,6 +23,17 @@ import com.google.genomics.v1.Variant;
 import com.google.genomics.v1.VariantCall;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
+
+import org.hamcrest.CoreMatchers;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RunWith(JUnit4.class)
 public class TransformNonVariantSegmentDataTest {
@@ -48,7 +48,7 @@ public class TransformNonVariantSegmentDataTest {
             .addValues(Value.newBuilder().setStringValue(TransformNonVariantSegmentData.PASSING_FILTER).build())
             .build());
     VariantCall call1 = VariantCall.newBuilder().putAllInfo(passingFilter).build();
-    
+
     Map<String, ListValue> failingFilter = new HashMap<String, ListValue>();
     failingFilter.put(
         TransformNonVariantSegmentData.FILTER_FIELD,
@@ -63,12 +63,12 @@ public class TransformNonVariantSegmentDataTest {
         ListValue.newBuilder()
             .addValues(Value.newBuilder().setStringValue("VQSRTrancheSNP99.90to100.00").build())
             .addValues(Value.newBuilder().setStringValue(TransformNonVariantSegmentData.PASSING_FILTER).build())
-            .build());    
+            .build());
     VariantCall call3 = VariantCall.newBuilder().putAllInfo(ambiguousFilter).build();
-    
+
     Variant inputVariant =
         Variant.newBuilder().addAllCalls(Arrays.asList(call1, call2, call3)).build();
-    
+
     Variant expectedVariant = Variant.newBuilder().addAllCalls(Arrays.asList(call1, call3)).build();
 
     DoFnTester<Variant, Variant> filterCallsFn = DoFnTester.of(new FilterCallsFn());
@@ -86,7 +86,7 @@ public class TransformNonVariantSegmentDataTest {
             .addValues(Value.newBuilder().setStringValue(TransformNonVariantSegmentData.PASSING_FILTER).build())
             .build());
     VariantCall passingCall = VariantCall.newBuilder().putAllInfo(passingFilter).build();
-    
+
     Map<String, ListValue> failingFilter = new HashMap<String, ListValue>();
     failingFilter.put(
         TransformNonVariantSegmentData.FILTER_FIELD,
@@ -94,14 +94,14 @@ public class TransformNonVariantSegmentDataTest {
             .addValues(Value.newBuilder().setStringValue("VQSRTrancheSNP99.90to100.00").build())
             .build());
     VariantCall failingCall = VariantCall.newBuilder().putAllInfo(failingFilter).build();
-        
+
     DoFnTester<Variant, Variant> filterCallsFn = DoFnTester.of(new FilterCallsFn());
     List filteredVariants = filterCallsFn.processBatch(
         Variant.newBuilder().addAllCalls(Arrays.asList(failingCall)).build(),
         Variant.newBuilder().addAllCalls(Arrays.asList(passingCall)).build());
     assertEquals(1, filteredVariants.size());
   }
-  
+
   @Test
   public void testAmbiguousVariantCallsFn() {
 
@@ -131,8 +131,8 @@ public class TransformNonVariantSegmentDataTest {
 
     Assert.assertThat(flagVariantsFn.processBatch(inputVariant, ambiguousInputVariant),
         CoreMatchers.allOf(CoreMatchers.hasItems(expectedVariant, ambiguousExpectedVariant)));
-        
-    DoFnTester<Variant, TableRow> formatVariantsFn = DoFnTester.of(new TransformNonVariantSegmentData.FormatVariantsFn());
+
+    DoFnTester<Variant, TableRow> formatVariantsFn = DoFnTester.of(new TransformNonVariantSegmentData.FormatVariantsFn(true, false));
     List<TableRow> rows = formatVariantsFn.processBatch(expectedVariant, ambiguousExpectedVariant);
     assertEquals(2, rows.size());
     assertEquals("false", rows.get(0).get(TransformNonVariantSegmentData.HAS_AMBIGUOUS_CALLS_FIELD).toString());
@@ -156,54 +156,54 @@ public class TransformNonVariantSegmentDataTest {
         .putAllInfo(FlagVariantsWithAmbiguousCallsFn.NO_AMBIGUOUS_CALLS_INFO)
         .addAllCalls(Arrays.asList(noCall, noCallRef, noCallAlt, refMatch, hetAlt, homAlt, multiAllelic))
         .build();
-    
+
     // This should have been weeded out earlier in the pipeline, but just checking correctness of calculations here.
-    Variant allNoCallsVariant = Variant.newBuilder()  
+    Variant allNoCallsVariant = Variant.newBuilder()
         .setReferenceBases("T")
         .addAllAlternateBases(Arrays.asList("A", "C"))
         .putAllInfo(FlagVariantsWithAmbiguousCallsFn.NO_AMBIGUOUS_CALLS_INFO)
         .addAllCalls(Arrays.asList(noCall, noCall, noCall, noCall, noCall))
         .build();
-    
+
     Variant noAltGenotypesVariant = Variant.newBuilder()
         .setReferenceBases("T")
         .addAllAlternateBases(Arrays.asList("A", "C"))
         .putAllInfo(FlagVariantsWithAmbiguousCallsFn.NO_AMBIGUOUS_CALLS_INFO)
         .addAllCalls(Arrays.asList(noCall, noCallRef, refMatch))
         .build();
-    
+
     Variant deletionVariant = Variant.newBuilder()
         .setReferenceBases("AA")
         .addAllAlternateBases(Arrays.asList("A", "C"))
         .putAllInfo(FlagVariantsWithAmbiguousCallsFn.NO_AMBIGUOUS_CALLS_INFO)
         .addAllCalls(Arrays.asList(noCall, noCallRef, noCallAlt, refMatch, hetAlt, homAlt, multiAllelic))
         .build();
-    
-    DoFnTester<Variant, TableRow> formatVariantsFn = DoFnTester.of(new TransformNonVariantSegmentData.FormatVariantsFn());
+
+    DoFnTester<Variant, TableRow> formatVariantsFn = DoFnTester.of(new TransformNonVariantSegmentData.FormatVariantsFn(true, false));
     List<TableRow> rows = formatVariantsFn.processBatch(snpVariant, allNoCallsVariant, noAltGenotypesVariant, deletionVariant);
     assertEquals(4, rows.size());
-    
+
     assertEquals(10, rows.get(0).get(TransformNonVariantSegmentData.ALLELE_NUMBER_FIELD));
     assertEquals("[{alternate_bases=A, AC=5, AF=0.5}, {alternate_bases=C, AC=1, AF=0.1}]",
         rows.get(0).get("alt").toString());
     assertEquals(Arrays.asList("refMatch"), rows.get(0).get(TransformNonVariantSegmentData.REF_MATCH_CALLSETS_FIELD));
-    
+
     assertEquals(0, rows.get(1).get(TransformNonVariantSegmentData.ALLELE_NUMBER_FIELD));
     assertEquals("[{alternate_bases=A, AC=0, AF=0.0}, {alternate_bases=C, AC=0, AF=0.0}]",
         rows.get(1).get("alt").toString());
     assertEquals(Arrays.asList(), rows.get(1).get(TransformNonVariantSegmentData.REF_MATCH_CALLSETS_FIELD));
-    
+
     assertEquals(3, rows.get(2).get(TransformNonVariantSegmentData.ALLELE_NUMBER_FIELD));
     assertEquals("[{alternate_bases=A, AC=0, AF=0.0}, {alternate_bases=C, AC=0, AF=0.0}]",
         rows.get(2).get("alt").toString());
     assertEquals(Arrays.asList("refMatch"), rows.get(2).get(TransformNonVariantSegmentData.REF_MATCH_CALLSETS_FIELD));
-    
+
     assertEquals(0, rows.get(3).get(TransformNonVariantSegmentData.ALLELE_NUMBER_FIELD));
     assertEquals("[{alternate_bases=A, AC=5, AF=0.0}, {alternate_bases=C, AC=1, AF=0.0}]",
         rows.get(3).get("alt").toString());
     assertEquals(Arrays.asList("refMatch"), rows.get(3).get(TransformNonVariantSegmentData.REF_MATCH_CALLSETS_FIELD));
   }
-  
+
   @Test
   public void testFormatCalls() {
 
@@ -225,23 +225,23 @@ public class TransformNonVariantSegmentDataTest {
         .setCallSetName("hetAlt").addAllGenotype(Arrays.asList(0, 1))
         .putAllInfo(depthInfo)
         .build();
-    
+
     VariantCall callWithDotDepth = VariantCall.newBuilder()
         .setCallSetName("homAlt").addAllGenotype(Arrays.asList(1, 1))
         .putAllInfo(dotDepthInfo)
         .build();
-    
+
     Variant variant = Variant.newBuilder()
         .putAllInfo(FlagVariantsWithAmbiguousCallsFn.NO_AMBIGUOUS_CALLS_INFO)
         .addAllCalls(Arrays.asList(callWithValidDepth, callWithDotDepth))
         .build();
-    
-    DoFnTester<Variant, TableRow> formatVariantsFn = DoFnTester.of(new TransformNonVariantSegmentData.FormatVariantsFn());
+
+    DoFnTester<Variant, TableRow> formatVariantsFn = DoFnTester.of(new TransformNonVariantSegmentData.FormatVariantsFn(true, false));
     List<TableRow> rows = formatVariantsFn.processBatch(variant);
     assertEquals(1, rows.size());
-    
+
     assertEquals("[{call_set_name=hetAlt, phaseset=, genotype=[0, 1], genotype_likelihood=[], DP=30},"
         + " {call_set_name=homAlt, phaseset=, genotype=[1, 1], genotype_likelihood=[], DP=null}]",
-        rows.get(0).get("call").toString()); 
+        rows.get(0).get("call").toString());
   }
 }
