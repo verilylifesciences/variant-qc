@@ -13,16 +13,6 @@
  */
 package com.google.cloud.genomics.examples;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.logging.Logger;
-
 import com.google.api.client.util.Preconditions;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableRow;
@@ -39,27 +29,39 @@ import com.google.cloud.dataflow.sdk.transforms.DoFn;
 import com.google.cloud.dataflow.sdk.transforms.ParDo;
 import com.google.cloud.dataflow.sdk.transforms.Sum;
 import com.google.cloud.dataflow.sdk.values.PCollection;
-import com.google.cloud.genomics.dataflow.functions.grpc.JoinNonVariantSegmentsWithVariants;
+import com.google.cloud.genomics.dataflow.functions.JoinNonVariantSegmentsWithVariants;
 import com.google.cloud.genomics.dataflow.readers.VariantStreamer;
+import com.google.cloud.genomics.dataflow.utils.CallSetNamesOptions;
 import com.google.cloud.genomics.dataflow.utils.GenomicsOptions;
 import com.google.cloud.genomics.dataflow.utils.ShardOptions;
 import com.google.cloud.genomics.utils.OfflineAuth;
 import com.google.cloud.genomics.utils.ShardBoundary;
 import com.google.cloud.genomics.utils.ShardUtils;
+import com.google.cloud.genomics.utils.grpc.MergeNonVariantSegmentsWithSnps;
 import com.google.cloud.genomics.utils.grpc.VariantUtils;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
-import com.google.common.collect.HashMultiset;
 import com.google.genomics.v1.StreamVariantsRequest;
 import com.google.genomics.v1.Variant;
 import com.google.genomics.v1.VariantCall;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 /**
  * Sample pipeline that transforms data with non-variant segments (such as data that was in source
@@ -67,7 +69,7 @@ import com.google.protobuf.Value;
  * non-variant-segments merged into the variants with which they overlap. The resultant data is
  * emitted to a BigQuery table.
  *
- * This is currently done only for SNP variants. Indels and structural variants are left as-is.
+ * The specific details of the merge logic depend upon option --variantMergeStrategy=<Class>
  *
  * This pipeline assumes the call set names in the variant set are unique.
  *
@@ -86,6 +88,7 @@ public class TransformNonVariantSegmentData {
   private static final Logger LOG = Logger
       .getLogger(TransformNonVariantSegmentData.class.getName());
 
+  public static final String VARIANT_API_FIELDS = "variants(alternateBases,calls,end,filter,id,names,quality,referenceBases,referenceName,start)";
   public static final String HAS_AMBIGUOUS_CALLS_FIELD = "ambiguousCalls";
   public static final String REF_MATCH_CALLSETS_FIELD = "refMatchCallsets";
   public static final String ALT_RECORD_FIELD = "alt";
@@ -105,14 +108,18 @@ public class TransformNonVariantSegmentData {
    * <p>
    * Inherits standard configuration options for pipelines operating on shards of genomic data.
    */
-  private static interface Options extends ShardOptions, JoinNonVariantSegmentsWithVariants.Options {
-    @Description("The ID of the Google Genomics variant set this pipeline is accessing.")
-    @Validation.Required
-    String getVariantSetId();
-    void setVariantSetId(String variantSetId);
+  private static interface Options extends
+    // Options for call set names.
+    CallSetNamesOptions,
+    // Options for calculating over regions, chromosomes, or whole genomes.
+    ShardOptions,
+    // Options for special handling of data with non-variant segment records.  This
+    // is needed since IBS must take into account reference-matches in addition
+    // to the variants (unlike other analyses such as PCA).
+    JoinNonVariantSegmentsWithVariants.Options {
 
     @Description("BigQuery table to write to, specified as "
-        + "<project_id>:<dataset_id>.<table_id>. The dataset must already exist.")
+        + "<project_id>:<dataset_id>.<table_id>. The BigQuery dataset must already exist.")
     @Validation.Required
     String getOutputTable();
     void setOutputTable(String value);
@@ -126,6 +133,12 @@ public class TransformNonVariantSegmentData {
     @Default.Boolean(false)
     boolean getOmitLowQualityCalls();
     void setOmitLowQualityCalls(boolean value);
+
+    @Description("Whether to reduce the size of the final output by only listing the call set names that match the reference"
+        + "for each variant.")
+    @Default.Boolean(true)
+    boolean getSummarizeRefMatchCallSets();
+    void setSummarizeRefMatchCallSets(boolean value);
   }
 
   /**
@@ -133,7 +146,7 @@ public class TransformNonVariantSegmentData {
    *
    * @return The schema for the destination table.
    */
-  private static TableSchema getTableSchema() {
+  private static TableSchema getTableSchema(boolean summarizeRefMatches) {
     List<TableFieldSchema> callFields = new ArrayList<>();
     callFields.add(new TableFieldSchema().setName("call_set_name").setType("STRING"));
     callFields.add(new TableFieldSchema().setName("phaseset").setType("STRING"));
@@ -159,7 +172,9 @@ public class TransformNonVariantSegmentData {
     fields.add(new TableFieldSchema().setName("quality").setType("FLOAT"));
     fields.add(new TableFieldSchema().setName(ALLELE_NUMBER_FIELD).setType("INTEGER"));
     fields.add(new TableFieldSchema().setName(HAS_AMBIGUOUS_CALLS_FIELD).setType("BOOLEAN"));
-    fields.add(new TableFieldSchema().setName(REF_MATCH_CALLSETS_FIELD).setType("STRING").setMode("REPEATED"));
+    if (summarizeRefMatches) {
+      fields.add(new TableFieldSchema().setName(REF_MATCH_CALLSETS_FIELD).setType("STRING").setMode("REPEATED"));
+    }
     fields.add(new TableFieldSchema().setName(ALT_RECORD_FIELD).setType("RECORD").setMode("REPEATED")
         .setFields(altFields));
     fields.add(new TableFieldSchema().setName("call").setType("RECORD").setMode("REPEATED")
@@ -175,6 +190,14 @@ public class TransformNonVariantSegmentData {
    * for the destination table.
    */
   static class FormatVariantsFn extends DoFn<Variant, TableRow> {
+    final boolean summarizeRefMatches;
+    final boolean computeFrequencyForNonSnps;
+
+    public FormatVariantsFn(boolean summarizeRefMatches, boolean computeFrequencyForNonSnps) {
+      this.summarizeRefMatches = summarizeRefMatches;
+      this.computeFrequencyForNonSnps = computeFrequencyForNonSnps;
+    }
+
     @Override
     public void processElement(ProcessContext c) {
       Variant v = c.element();
@@ -186,7 +209,7 @@ public class TransformNonVariantSegmentData {
       for (VariantCall call : v.getCallsList()) {
         genotypeCount.addAll(call.getGenotypeList());
 
-        if (Iterables.all(call.getGenotypeList(), Predicates.equalTo(0))) {
+        if (summarizeRefMatches && Iterables.all(call.getGenotypeList(), Predicates.equalTo(0))) {
           refMatchCallsets.add(call.getCallSetName());
         } else {
           String depth = null;
@@ -212,7 +235,7 @@ public class TransformNonVariantSegmentData {
       List<TableRow> alts = new ArrayList<>();
       int numAlts = v.getAlternateBasesCount();
       int alleleNumber = 0;
-      if (VariantUtils.IS_SNP.apply(v)) {
+      if (computeFrequencyForNonSnps || VariantUtils.IS_SNP.apply(v)) {
         // This for loop iterates over both 0 (reference allele) and over the 1-based alternate allele values.
         for (int i = 0; i <= numAlts; i++) {
           alleleNumber += genotypeCount.count(i);
@@ -239,8 +262,10 @@ public class TransformNonVariantSegmentData {
               .set("quality", v.getQuality())
               .set(ALLELE_NUMBER_FIELD, alleleNumber)
               .set(HAS_AMBIGUOUS_CALLS_FIELD, v.getInfo().get(HAS_AMBIGUOUS_CALLS_FIELD).getValues(0).getStringValue())
-              .set(REF_MATCH_CALLSETS_FIELD, refMatchCallsets)
               .set("call", calls);
+      if (summarizeRefMatches) {
+        row.set(REF_MATCH_CALLSETS_FIELD, refMatchCallsets);
+      }
 
       c.output(row);
     }
@@ -369,11 +394,14 @@ public class TransformNonVariantSegmentData {
         "This job is only valid for data containing non-variant segments. "
             + "Set the --hasNonVariantSegments command line option accordingly.");
 
-    OfflineAuth auth = GenomicsOptions.Methods.getGenomicsAuth(options);
+    // Set up the prototype request and auth.
+    StreamVariantsRequest prototype = CallSetNamesOptions.Methods.getRequestPrototype(options);
+    final OfflineAuth auth = GenomicsOptions.Methods.getGenomicsAuth(options);
+
     List<StreamVariantsRequest> requests = options.isAllReferences() ?
-        ShardUtils.getVariantRequests(options.getVariantSetId(), ShardUtils.SexChromosomeFilter.INCLUDE_XY,
+        ShardUtils.getVariantRequests(prototype, ShardUtils.SexChromosomeFilter.INCLUDE_XY,
             options.getBasesPerShard(), auth) :
-          ShardUtils.getVariantRequests(options.getVariantSetId(), options.getReferences(), options.getBasesPerShard());
+          ShardUtils.getVariantRequests(prototype, options.getBasesPerShard(), options.getReferences());
 
     Pipeline p = Pipeline.create(options);
 
@@ -381,17 +409,17 @@ public class TransformNonVariantSegmentData {
     // non-variant segments added to SNPs and write them to BigQuery.
     PCollection<Variant> variants = p.begin()
         .apply(Create.of(requests))
-        .apply(new VariantStreamer(auth, ShardBoundary.Requirement.STRICT, null));
+        .apply(new VariantStreamer(auth, ShardBoundary.Requirement.STRICT, VARIANT_API_FIELDS));
 
     PCollection<Variant> filteredVariants =
         options.getOmitLowQualityCalls() ? variants.apply(ParDo.of(new FilterCallsFn())) : variants;
 
-    JoinNonVariantSegmentsWithVariants
-        .joinVariantsTransform(filteredVariants)
+    filteredVariants.apply(new JoinNonVariantSegmentsWithVariants.BinShuffleAndCombineTransform())
         .apply(ParDo.of(new FlagVariantsWithAmbiguousCallsFn()))
-        .apply(ParDo.of(new FormatVariantsFn()))
+        .apply(ParDo.of(new FormatVariantsFn(options.getSummarizeRefMatchCallSets(),
+            !options.getVariantMergeStrategy().equals(MergeNonVariantSegmentsWithSnps.class))))
         .apply(
-            BigQueryIO.Write.to(options.getOutputTable()).withSchema(getTableSchema())
+            BigQueryIO.Write.to(options.getOutputTable()).withSchema(getTableSchema(options.getSummarizeRefMatchCallSets()))
                 .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
                 .withWriteDisposition(options.getAppendToTable()
                     ? BigQueryIO.Write.WriteDisposition.WRITE_APPEND : BigQueryIO.Write.WriteDisposition.WRITE_EMPTY));
