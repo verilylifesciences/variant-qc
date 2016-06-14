@@ -14,6 +14,7 @@
 package com.google.cloud.genomics.examples;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.cloud.dataflow.sdk.transforms.DoFnTester;
@@ -32,6 +33,7 @@ import org.junit.runners.JUnit4;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +42,7 @@ public class TransformNonVariantSegmentDataTest {
 
   @Test
   public void testFilterVariantCallsFn() {
+    DoFnTester<Variant, Variant> filterCallsFn = DoFnTester.of(new FilterCallsFn());
 
     Map<String, ListValue> passingFilter = new HashMap<String, ListValue>();
     passingFilter.put(
@@ -66,14 +69,37 @@ public class TransformNonVariantSegmentDataTest {
             .build());
     VariantCall call3 = VariantCall.newBuilder().putAllInfo(ambiguousFilter).build();
 
-    Variant inputVariant =
-        Variant.newBuilder().addAllCalls(Arrays.asList(call1, call2, call3)).build();
+    // Test a variant.
+    Variant inputVariant = Variant.newBuilder()
+        .setReferenceBases("A")
+        .addAlternateBases("T")
+        .addAllCalls(Arrays.asList(call1, call2, call3))
+        .build();
 
-    Variant expectedVariant = Variant.newBuilder().addAllCalls(Arrays.asList(call1, call3)).build();
+    Variant expectedVariant = Variant.newBuilder()
+        .setReferenceBases("A")
+        .addAlternateBases("T")
+        .addAllCalls(Arrays.asList(call1, call3))
+        .build();
 
-    DoFnTester<Variant, Variant> filterCallsFn = DoFnTester.of(new FilterCallsFn());
-    Assert.assertThat(filterCallsFn.processBatch(inputVariant),
-        CoreMatchers.allOf(CoreMatchers.hasItems(expectedVariant)));
+    Iterator<Variant> filtered1 = filterCallsFn.processBatch(inputVariant).iterator();
+    assertEquals(filtered1.next(), expectedVariant);
+    assertFalse(filtered1.hasNext());
+
+    // Also test a non-variant segment.  These are not filtered.
+    Variant inputBlockRecord = Variant.newBuilder()
+        .setReferenceBases("A")
+        .addAllCalls(Arrays.asList(call1, call2, call3))
+        .build();
+
+    Variant expectedBlockRecord = Variant.newBuilder()
+        .setReferenceBases("A")
+        .addAllCalls(Arrays.asList(call1, call2, call3))
+        .build();
+
+    Iterator<Variant> filtered2 = filterCallsFn.processBatch(inputBlockRecord).iterator();
+    assertEquals(filtered2.next(), expectedBlockRecord);
+    assertFalse(filtered2.hasNext());
   }
 
   @Test

@@ -284,6 +284,7 @@ public class TransformNonVariantSegmentData {
       // Don't filter non-variant segments.
       if(VariantUtils.IS_NON_VARIANT_SEGMENT.apply(variant)) {
         context.output(variant);
+        return;
       }
 
       // We may have variants without calls if any callsets were deleted from the variant set.
