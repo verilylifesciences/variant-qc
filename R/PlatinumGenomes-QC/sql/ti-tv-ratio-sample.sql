@@ -1,3 +1,4 @@
+# Calculate transition/transversion ratio per sample by reference.
 SELECT
   reference_name,
   call_call_set_name,
@@ -26,10 +27,9 @@ FROM (
         reference_bases,
         GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
         COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-        
       FROM
         [_GENOME_CALL_TABLE_]
-        OMIT call IF EVERY(call.genotype <= 0) OR SOME(call.FILTER NOT IN ('PASS'))
+        OMIT call IF EVERY(call.genotype <= 0)
       # Optionally add clause here to limit the query to a particular
       # region of the genome.
       #_WHERE_
@@ -37,8 +37,7 @@ FROM (
         # Skip 1/2 genotypes
         num_alts = 1
         AND reference_bases IN ('A','C','G','T')
-      AND alternate_bases IN ('A','C','G','T')))
-     
+        AND alternate_bases IN ('A','C','G','T')))
   GROUP BY
     call_call_set_name, reference_name)
 ORDER BY
