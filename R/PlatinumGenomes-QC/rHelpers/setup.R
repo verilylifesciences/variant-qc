@@ -83,7 +83,8 @@ DisplayAndDispatchQuery <- function(queryUri, project, replacements=list(), ...)
 #' @return an HTML table of results.
 #'
 DisplayQueryResults <- function(result, n=6) {
-  if(is.null(result)) {
+  # This accommodates the empty result handling of both recent and old versions of bigrquery.
+  if (is.null(result) || nrow(result) == 0) {
     cat("**None**")
   } else {
     # Suppress the printing of sample identifiers when the data contains allele
