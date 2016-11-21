@@ -24,6 +24,11 @@ setwd("/YOUR/PATH/TO/codelabs/R/PlatinumGenomes-QC")
 # Set the Google Cloud Platform project id under which these queries will run.
 project <- "YOUR-PROJECT-ID"
 #####################################################################
+
+### To install the bigrquery package.  The currently released version 0.3.0 does not yet
+### have the parameter to use Standard SQL instead of Legacy SQL, so we install from github.
+library(devtools)
+install_github('rstats-db/bigrquery')
 ```
 
 ```{r echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
@@ -33,41 +38,31 @@ source("./rHelpers/setup.R")
 
 In Part 3 of the codelab, we perform some quality control analyses that could help to identify any problematic genomes that should be removed from the cohort before proceeding with further analysis.  The appropriate cut off thresholds will depend upon the input dataset and/or other factors.
 
-* [Genome Call Rate](#genome-call-rate)
+* [Genome Variant Call Rate](#genome-variant-call-rate)
 * [Missingness Rate](#missingness-rate)
 * [Singleton Rate](#singleton-rate)
 * [Heterozygosity Rate](#heterozygosity-rate)
 * [Homozygosity Rate](#homozygosity-rate)
 * [Inbreeding Coefficient](#inbreeding-coefficient)
+* [Ti/Tv Ratio per Chromosome](#titv-ratio-per-chromosome)
 * [Sex Inference](#sex-inference)
 * [Ethnicity Inference](#ethnicity-inference)
 * [Genome Similarity](#genome-similarity)
 
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 ```{r}
-queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
-
-sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
-
-ibs <- read.table("./data/platinum-genomes-ibs.tsv",
-                  col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
-
-# Read in the results of the 2-way PCA over BRCA1.
-pca <- read.table("./data/platinum-genomes-X-1kg-brca1-pca.tsv",
-                  col.names=c("call_call_set_name", "PC1", "PC2", "count"))
+source("./rHelpers/platinumGenomesDataset.R")
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpDataset.R")
 ```
 
-## Genome Call Rate
+## Genome Variant Call Rate
 
-For each genome, count the number of calls (both variants and non-variant calls, if applicable).  Any genomes whose count is far away from the mean may indicate a problem such as sample quality or identical data loaded multiple times.
+For each genome, count the number of variant calls.  Any genomes whose count is far away from the mean may indicate a problem such as sample quality or identical data loaded multiple times.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/genome-calls.sql",
+result <- DisplayAndDispatchQuery("./sql/genome-variant-calls.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
@@ -78,19 +73,25 @@ Displaying the first few rows of the dataframe of results:
 DisplayQueryResults(result)
 ```
 
-And visualizing the results:
+Let's join this with the sample information and visualize the results:
+```{r message=FALSE, warning=FALSE, comment=NA}
+joinedResult <- inner_join(result, sampleInfo)
+```
+
 ```{r genomeCallsSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-ggplot(result, aes(x=number_of_calls)) +
-  geom_histogram(color="black", fill="#FF6666") +
-  scale_x_continuous(labels=comma) +
-  xlab("Number of Calls") +
-  ylab("Sample Count") +
-  ggtitle("Histogram: Count of Calls Per Genome")
+ggplot(joinedResult, aes(y=number_of_calls, x=ethnicity, fill=ethnicity)) +
+  geom_boxplot() +
+  scale_y_continuous(expand = c(0.3, 0)) +
+  stat_summary(fun.data=get_boxplot_fun_data, geom="text", position=position_dodge(width=0.9), vjust=-0.5) +
+  ylab("Number of Variant Calls") +
+  xlab("Ethnicity") +
+  ggtitle("Box plot: Count of variant calls per genome by ethnicity") +
+  theme(axis.text.x=element_text(angle=50, hjust=1))
 ```
 
 ```{r genomeCalls, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-p <- ggplot(result) +
-  geom_point(aes(x=call_call_set_name, y=number_of_calls)) +
+p <- ggplot(joinedResult) +
+  geom_point(aes(x=call_set_name, y=number_of_calls, color=sex)) +
   scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(labels=comma) +
   xlab("Sample") +
@@ -104,15 +105,15 @@ if(nrow(result) <= 20) {
 ```
 
 Let's accumulate our sample-specific results for later use.
-```{r}
-allResults <- result
+```{r message=FALSE, warning=FALSE, comment=NA}
+sampleResults <- result
 ```
 
 ## Missingness Rate
 
 For each genome, determine the percentage of sites explicitly called as a no-call.  If this percentage is too high, the genome may be problematic.
 
-```{r message=FALSE, comment=NA}
+```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/sample-level-missingness.sql",
                                   project=project,
                                   replacements=queryReplacements)
@@ -124,25 +125,31 @@ Displaying the first few rows of the dataframe of results:
 DisplayQueryResults(result)
 ```
 
-For some datasets, we see numeric overflow when bigrquery converts 64-bit integer results from BigQuery to 32-bit R integers in the dataframe. For this query, the particular column with the overflow is not used in our downstream analysis in R, so we can omit it.
+Note that for some datasets, we see message "NAs introduced by coercion to integer range" when [bigrquery](https://github.com/rstats-db/bigrquery) converts 64-bit integer results from BigQuery to 32-bit R integers in the dataframe. For this query, the particular column with the issue is not used in our downstream analysis in R, so we can omit it.
 ```{r}
 .Machine$integer.max
 result <- dplyr::select(result, -all_calls)
 ```
 
-And visualizing the results:
+Let's join this with the sample information and visualize the results:
+```{r message=FALSE, warning=FALSE, comment=NA}
+joinedResult <- inner_join(result, sampleInfo)
+```
+
 ```{r sampleMissingnessSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-ggplot(result, aes(x=missingness_rate)) +
-  geom_histogram(color="black", fill="#FF6666") +
-  scale_x_continuous(limits=c(0, NA), labels=percent_format()) +
-  xlab("Missingness Rate") +
-  ylab("Sample Count") +
-  ggtitle("Histogram: Genome-Specific Missingness")
+ggplot(joinedResult, aes(y=missingness_rate, x=ethnicity)) +
+  geom_boxplot() +
+  stat_summary(fun.data=get_boxplot_fun_data, geom="text", position=position_dodge(width=0.9), vjust=-0.5) +
+  scale_y_continuous(limits=c(0, NA), labels=percent_format()) +
+  ylab("Missingness Rate") +
+  xlab("Sequencing Platform") +
+  ggtitle("Genome-Specific Missingness") +
+  theme(axis.text.x=element_text(angle=50, hjust=1))
 ```
 
 ```{r sampleMissingness, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-p <- ggplot(result) +
-  geom_point(aes(x=call_call_set_name, y=missingness_rate)) +
+p <- ggplot(joinedResult) +
+  geom_point(aes(x=call_set_name, y=missingness_rate, color=sex)) +
   scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(limits=c(0, NA), labels=percent_format()) +
   xlab("Sample") +
@@ -156,8 +163,8 @@ if(nrow(result) <= 20) {
 ```
 
 Let's accumulate our sample-specific results for later use.
-```{r}
-allResults <- full_join(allResults, result)
+```{r message=FALSE, warning=FALSE, comment=NA}
+sampleResults <- full_join(sampleResults, result)
 ```
 
 ## Singleton Rate
@@ -176,19 +183,25 @@ Displaying the first few rows of the dataframe of results:
 DisplayQueryResults(result)
 ```
 
-And visualizing the results:
+Let's join this with the sample information and visualize the results:
+```{r message=FALSE, warning=FALSE, comment=NA}
+joinedResult <- inner_join(result, sampleInfo)
+```
+
 ```{r singletonsSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-ggplot(result, aes(x=private_variant_count)) +
-  geom_histogram(color="black", fill="#FF6666") +
-  scale_x_continuous(labels=comma) +
-  xlab("Number of Singletons") +
-  ylab("Sample Count") +
-  ggtitle("Histogram: Count of Singletons Per Genome")
+ggplot(joinedResult, aes(y=private_variant_count, x=ethnicity, fill=ethnicity)) +
+  geom_boxplot() +
+  stat_summary(fun.data=get_boxplot_fun_data, geom="text", position=position_dodge(width=0.9), vjust=-0.5) +
+  scale_y_continuous(labels=comma, expand = c(0.3, 0)) +
+  ylab("Number of Singletons") +
+  xlab("Ethnicity") +
+  ggtitle("Box plot: Count of singletons per genome by ethnicity") +
+  theme(axis.text.x=element_text(angle=50, hjust=1))
 ```
 
 ```{r singletons, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-p <- ggplot(result) +
-  geom_point(aes(x=call_call_set_name, y=private_variant_count)) +
+p <- ggplot(joinedResult) +
+  geom_point(aes(x=call_set_name, y=private_variant_count, color=sex)) +
   scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(labels=comma) +
   xlab("Sample") +
@@ -202,8 +215,8 @@ if(nrow(result) <= 20) {
 ```
 
 Let's accumulate our sample-specific results for later use.
-```{r}
-allResults <- full_join(allResults, result)
+```{r message=FALSE, warning=FALSE, comment=NA}
+sampleResults <- full_join(sampleResults, result)
 ```
 
 ## Heterozygosity Rate
@@ -211,7 +224,7 @@ allResults <- full_join(allResults, result)
 For each genome, determine the number of heterozygous variants.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/heterozygous-calls-count.sql",
+result <- DisplayAndDispatchQuery("./sql/heterozygous-calls-by-sample.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
@@ -222,19 +235,25 @@ Displaying the first few rows of the dataframe of results:
 DisplayQueryResults(result)
 ```
 
-And visualizing the results:
+Let's join this with the sample information and visualize the results:
+```{r message=FALSE, warning=FALSE, comment=NA}
+joinedResult <- inner_join(result, sampleInfo)
+```
+
 ```{r heterozygousSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-ggplot(result, aes(x=heterozygous_variant_count)) +
-  geom_histogram(color="black", fill="#FF6666") +
-  scale_x_continuous(labels=comma) +
-  xlab("Number of Heterozygous Variants") +
-  ylab("Sample Count") +
-  ggtitle("Histogram: Count of Heterozygous Variants Per Genome")
+ggplot(joinedResult, aes(y=heterozygous_variant_count, x=ethnicity, fill=ethnicity)) +
+  geom_boxplot() +
+  stat_summary(fun.data=get_boxplot_fun_data, geom="text", position=position_dodge(width=0.9), vjust=-0.5) +
+  scale_y_continuous(labels=comma, expand = c(0.3, 0)) +
+  ylab("Number of Heterozyous Variants") +
+  xlab("Ethnicity") +
+  ggtitle("Box plot: Count of heterozygous variants per genome by ethnicity") +
+  theme(axis.text.x=element_text(angle=50, hjust=1))
 ```
 
 ```{r heterozygous, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-p <- ggplot(result) +
-  geom_point(aes(x=call_call_set_name, y=heterozygous_variant_count)) +
+p <- ggplot(joinedResult) +
+  geom_point(aes(x=call_set_name, y=heterozygous_variant_count, color=sex)) +
   scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(labels=comma) +
   xlab("Sample") +
@@ -248,8 +267,8 @@ if(nrow(result) <= 20) {
 ```
 
 Let's accumulate our sample-specific results for later use.
-```{r}
-allResults <- full_join(allResults, result)
+```{r message=FALSE, warning=FALSE, comment=NA}
+sampleResults <- full_join(sampleResults, result)
 ```
 
 ## Homozygosity Rate
@@ -257,20 +276,23 @@ allResults <- full_join(allResults, result)
 For each genome, calculate the fraction of homozygous positions per chromosome.  This is useful to identify uniparental disomy (UPD) or large stretches of homozygosity.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/homozygous-variants-alt.sql",
+result <- DisplayAndDispatchQuery("./sql/homozygous-variant-rate-by-sample-and-reference.sql",
                                   project=project,
-                                  replacements=queryReplacements)
+                                  replacements=queryReplacements,
+                                  max_pages=Inf)
 ```
 Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
-Let's join this with the sample information:
-
+Displaying the first few rows of the dataframe of results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+DisplayQueryResults(result)
+```
+Let's join this with the sample information and visualize the results:
 ```{r message=FALSE, warning=FALSE, comment=NA}
 joinedResult <- inner_join(result, sampleInfo)
 ```
 
-And visualizing the results:
-```{r homozygosityAltSummary, fig.align="center", fig.width=12, message=FALSE, comment=NA}
+```{r homozygositySummary, fig.align="center", fig.width=12, message=FALSE, comment=NA}
   ggplot(joinedResult, aes(y=F, x=reference_name, color=sex)) +
   geom_boxplot() +
   facet_grid(sex ~ .) +
@@ -281,12 +303,16 @@ And visualizing the results:
   theme(axis.text.x=element_text(angle=50, hjust=1))
 ```
 
+```{r message=FALSE, warning=FALSE, comment=NA}
+sampleReferenceResults <- result
+```
+
 ## Inbreeding Coefficient
 
 For each genome, compare the expected and observed rates of homozygosity.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/homozygous-variants.sql",
+result <- DisplayAndDispatchQuery("./sql/homozygosity-coefficient.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
@@ -297,12 +323,16 @@ Displaying the first few rows of the dataframe of results:
 DisplayQueryResults(result)
 ```
 
-And visualizing the results:
-```{r homozygosity, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+Let's join this with the sample information and visualize the results:
+```{r message=FALSE, warning=FALSE, comment=NA}
+joinedResult <- inner_join(result, sampleInfo)
+```
+
+```{r homozygosityCoeff, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 limits <- c(min(result$O_HOM, result$E_HOM),
             max(result$O_HOM, result$E_HOM))
 ggplot(result) +
-  geom_point(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), alpha=1/1.5) +
+  geom_point(aes(x=O_HOM, y=E_HOM, label=call_set_name), alpha=1/1.5) +
   geom_abline(color="darkslateblue") +
   scale_x_continuous(limits=limits, labels=comma) +
   scale_y_continuous(limits=limits, labels=comma) +
@@ -312,9 +342,9 @@ ggplot(result) +
 ```
 
 And with labels:
-```{r homozygosityLabelled, fig.align="center", fig.width=10, message=FALSE, comment=NA}
+```{r homozygosityCoeffLabelled, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(result) +
-  geom_text(aes(x=O_HOM, y=E_HOM, label=call_call_set_name), alpha=1/1.5) +
+  geom_text(aes(x=O_HOM, y=E_HOM, label=call_set_name), alpha=1/1.5) +
   geom_abline(color="darkslateblue") +
   scale_x_continuous(limits=limits, labels=comma, expand=c(0.05, 5)) +
   scale_y_continuous(limits=limits, labels=comma) +
@@ -324,8 +354,44 @@ ggplot(result) +
 ```
 
 Let's accumulate our sample-specific results for later use.
-```{r}
-allResults <- full_join(allResults, result)
+```{r message=FALSE, warning=FALSE, comment=NA}
+sampleResults <- full_join(sampleResults, result)
+```
+
+## Ti/Tv Ratio per Chromosome
+
+For each genome, determine the Ti/Tv ratio per chromosome.
+```{r message=FALSE, warning=FALSE, comment=NA}
+result <- DisplayAndDispatchQuery("./sql/ti-tv-by-sample-and-reference.sql",
+                                  project=project,
+                                  replacements=queryReplacements,
+                                  max_pages=Inf)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
+DisplayQueryResults(result)
+```
+
+Let's join this with the sample information and visualize the results:
+```{r message=FALSE, warning=FALSE, comment=NA}
+joinedResult <- inner_join(result, sampleInfo)
+```
+
+```{r titvSummary, fig.align="center", fig.width=12, warning=FALSE, message=FALSE, comment=NA}
+ggplot(joinedResult, aes(y=titv, x=reference_name, color=sex)) +
+  geom_boxplot() +
+  facet_grid(~ ethnicity)+
+  scale_y_continuous(labels=comma) +
+  ylab("Ti/Tv ratio") +
+  xlab("Chromosome") +
+  ggtitle("Ti/Tv ratio per genome") +
+  theme(axis.text.x=element_text(angle=50, hjust=1))
+```
+
+```{r message=FALSE, warning=FALSE, comment=NA}
+sampleReferenceResults <- full_join(sampleReferenceResults, result)
 ```
 
 ## Sex Inference
@@ -346,12 +412,11 @@ Displaying the first few rows of the dataframe of results:
 DisplayQueryResults(result)
 ```
 
-Let's join this with the sample information:
+Let's join this with the sample information and visualize the results:
 ```{r message=FALSE, warning=FALSE, comment=NA}
 joinedResult <- inner_join(result, sampleInfo)
 ```
 
-And visualize the results:
 ```{r sexCheckSummary, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 ggplot(joinedResult) +
   geom_boxplot(aes(x=sex, y=perct_het_alt_in_snvs, fill=sex)) +
@@ -363,7 +428,7 @@ ggplot(joinedResult) +
 
 ```{r sexCheck, fig.align="center", fig.width=10, message=FALSE, comment=NA}
 p <- ggplot(joinedResult) +
-  geom_point(aes(x=call_call_set_name, y=perct_het_alt_in_snvs, color=sex)) +
+  geom_point(aes(x=call_set_name, y=perct_het_alt_in_snvs, color=sex)) +
   scale_x_discrete(expand=c(0.05, 1)) +
   scale_y_continuous(labels = percent_format()) +
   xlab("Sample") +
@@ -377,8 +442,8 @@ if(nrow(result) <= 20) {
 ```
 
 Let's accumulate our sample-specific results for later use.
-```{r message=FALSE, warning=FALSE}
-allResults <- full_join(allResults, result)
+```{r message=FALSE, warning=FALSE, comment=NA}
+sampleResults <- full_join(sampleResults, result)
 ```
 
 ## Ethnicity Inference
@@ -397,16 +462,16 @@ Note that this `n^2` analysis is a cluster compute job instead of a BigQuery que
 
 ### Results
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, comment=NA}
 # Read in the demographic information for 1,000 Genomes.
 sampleData1kg <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
-sampleInfo1kg <- dplyr::select(sampleData1kg, call_call_set_name=Sample, sex=Gender, ethnicity=Super_Population)
+sampleInfo1kg <- dplyr::select(sampleData1kg, call_set_name=Sample, sex=Gender, ethnicity=Super_Population)
 
 # Update our sample information for Platinum Genomes as "Unknown" since this is what we are trying to check.
 sampleInfoToCheck <- mutate(sampleInfo, ethnicity="Unknown")
 
 # Note that 5 samples are in both datasets, so those will be plotted twice with different symbols.
-pcaPlatinumX1kg <- inner_join(pca, rbind(sampleInfoToCheck, sampleInfo1kg))
+pcaPlatinumX1kg <- inner_join(pca, rbind(sampleInfoToCheck, sampleInfo1kg), by=c("call_call_set_name" = "call_set_name"))
 pcaPlatinumX1kg <- mutate(pcaPlatinumX1kg, unknown=(ethnicity == "Unknown"))
 ```
 
@@ -445,7 +510,7 @@ ggplot(ibs) +
 
 # Removing Genomes from the Cohort
 
-To only remove a genome from BigQuery only:
+To remove a genome from BigQuery only:
 
 * Re-export the table to BigQuery using the `--call-set-ids` flag on the `gcloud alpha genomics variantsets export` command.
 
@@ -461,13 +526,22 @@ To entirely remove a genome from a variant set in the Genomics API:
 
 # Summary
 
-Let's wrap up with a quick comparison using the variables we've collected for each sample.
-```{r summary, fig.align="center", fig.width=12, fig.height=12, message=FALSE, comment=NA}
-plot(dplyr::select(allResults, number_of_calls, missingness_rate,
-                   private_variant_count, heterozygous_variant_count, O_HOM))
+Accumulated results for per sample analyses:
+```{r message=FALSE, warning=FALSE, comment=NA}
+dim(sampleResults)
+summary(sampleResults)
+write.csv(sampleResults, file=file.path(kResultsDir, "sampleResults.csv"))
 ```
 
-If we see any relationships that we do not expect, it may be worth a closer look.  We could also compare additional columns (only a few were included to keep this plot scrutable).
+Accumulated results for per sample, reference analyses:
+```{r message=FALSE, warning=FALSE, comment=NA}
+dim(sampleReferenceResults)
+summary(sampleReferenceResults)
+write.csv(sampleReferenceResults, file=file.path(kResultsDir, "sampleReferenceResults.csv"))
+```
 
+```{r sessionInfo}
+sessionInfo()
+```
 --------------------------------------------------------
 _Next_: [Part 4: Variant-Level QC](./Variant-Level-QC.md)

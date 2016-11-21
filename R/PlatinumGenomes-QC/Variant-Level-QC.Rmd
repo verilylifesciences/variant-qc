@@ -24,6 +24,11 @@ setwd("/YOUR/PATH/TO/codelabs/R/PlatinumGenomes-QC")
 # Set the Google Cloud Platform project id under which these queries will run.
 project <- "YOUR-PROJECT-ID"
 #####################################################################
+
+### To install the bigrquery package.  The currently released version 0.3.0 does not yet
+### have the parameter to use Standard SQL instead of Legacy SQL, so we install from github.
+library(devtools)
+install_github('rstats-db/bigrquery')
 ```
 
 ```{r echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
@@ -42,10 +47,7 @@ In Part 4 of the codelab, we perform some quality control analyses that could he
 
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 ```{r}
-queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
-sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
+source("./rHelpers/platinumGenomesDataset.R")
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpDataset.R")
@@ -56,10 +58,9 @@ sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, sex=Gende
 Check whether the ratio of transitions vs. transversions in SNPs appears to be reasonable in each window of genomic positions.  This query may help identify problematic regions.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
+result <- DisplayAndDispatchQuery("./sql/ti-tv-by-genomic-window.sql",
                                   project=project,
-                                  replacements=c("#_WHERE_"="WHERE reference_name = 'chr1'",
-                                                 "_WINDOW_SIZE_"="100000",
+                                  replacements=c("@WINDOW_SIZE"="100000",
                                                  queryReplacements))
 ```
 Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
@@ -71,13 +72,13 @@ DisplayQueryResults(result)
 
 Visualizing the results:
 ```{r titvByWindow, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-ggplot(result, aes(x=window_start, y=titv)) +
+ggplot(filter(result, reference_name %in% c("1", "chr1")), aes(x=window_start, y=titv)) +
   geom_point() +
   stat_smooth() +
   scale_x_continuous(labels=comma) +
   xlab("Genomic Position") +
   ylab("Ti/Tv") +
-  ggtitle("Ti/Tv by 100,000 base pair windows on Chromosome 1")
+  ggtitle("Ti/Tv by 100,000 base pair windows")
 ```
 
 ## Ti/Tv by Alternate Allele Counts
@@ -87,7 +88,7 @@ Check whether the ratio of transitions vs. transversions in SNPs appears to be r
 ```{r message=FALSE, warning=FALSE, comment=NA}
 result <- DisplayAndDispatchQuery("./sql/ti-tv-by-alternate-allele-count.sql",
                                   project=project,
-                                  replacements=c(queryReplacements))
+                                  replacements=queryReplacements)
 ```
 Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
@@ -98,7 +99,7 @@ DisplayQueryResults(result)
 
 Visualizing the results:
 ```{r titvByAlt, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-ggplot(result, aes(x=alternate_allele_count, y=titv)) +
+ggplot(result, aes(x=AC, y=titv)) +
   geom_point() +
   stat_smooth() +
   scale_x_continuous(labels=comma) +
@@ -115,7 +116,7 @@ Visualize the ratio of transitions vs. transversions by depth of coverage.
 query <- "./sql/ti-tv-by-depth.sql"
 result <- DisplayAndDispatchQuery(query,
                                   project=project,
-                                  replacements=c(queryReplacements))
+                                  replacements=queryReplacements)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
@@ -123,7 +124,7 @@ DisplayQueryResults(result)
 ```
 
 ```{r titv-by-depth, fig.align="center", fig.width=10, message=FALSE, comment=NA, warning=FALSE}
-ggplot(result, aes(x=average_depth, y=titv_ratio, color=call_call_set_name)) + 
+ggplot(result, aes(x=average_depth, y=titv, color=call_set_name)) + 
   geom_point() +
   ggtitle("Ti/Tv Ratio By Depth") +
   xlab("Coverage Depth") + 
@@ -135,10 +136,11 @@ ggplot(result, aes(x=average_depth, y=titv_ratio, color=call_call_set_name)) +
 For each variant, compute the missingness rate.  This query can be used to identify variants with a poor call rate.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-sortAndLimit <- "ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alternate_bases LIMIT 1000"
+sortAndLimit <- "ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alt_concat LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/variant-level-missingness.sql",
                                   project=project,
-                                  replacements=c("#_ORDER_BY_"=sortAndLimit,
+                                  replacements=c(
+                                    "-- Optionally add a clause here to constrain the results."=sortAndLimit,
                                                  queryReplacements))
 ```
 Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
@@ -153,10 +155,10 @@ DisplayQueryResults(result)
 For each variant, compute the expected versus observed relationship between allele frequencies and genotype frequencies per the Hardy-Weinberg Equilibrium.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-sortAndLimit <- "ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000"
+sortAndLimit <- "ORDER BY ChiSq DESC, reference_name, start, alt LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/hardy-weinberg.sql",
                                   project=project,
-                                  replacements=c("#_ORDER_BY_"=sortAndLimit,
+                                  replacements=c("-- Optionally add a clause here to constrain the results."=sortAndLimit,
                                                  queryReplacements))
 ```
 Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
@@ -175,16 +177,16 @@ First we use our sample information to determine which genomes are male.
 ```{r message=FALSE, warning=FALSE, comment=NA}
 maleSampleIds <- paste("'",
                        filter(sampleInfo,
-                              sex %in% c("MALE", "Male", "male", "M", "m"))$call_call_set_name,
+                              sex %in% c("MALE", "Male", "male", "M", "m"))$call_set_name,
                        "'", sep="", collapse=",")
 ```
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-sortAndLimit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000"
+sortAndLimit <- "ORDER BY reference_name, start, alt_concat, call_set_name LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.sql",
                                   project=project,
-                                  replacements=c("_MALE_SAMPLE_IDS_"=maleSampleIds,
-                                                 "#_ORDER_BY_"=sortAndLimit,
+                                  replacements=c("@MALE_SAMPLE_IDS"=maleSampleIds,
+                                                 "-- Optionally add a clause here to constrain the results."=sortAndLimit,
                                                  queryReplacements))
 ```
 Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.

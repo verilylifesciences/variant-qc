@@ -1,8 +1,8 @@
-# Transition/Transversion Ratio by Depth of Coverage.
+# Compute the transition/transversion ratio per sample and reference name.
 WITH filtered_snp_calls AS (
   SELECT
+    reference_name,
     call.call_set_name,
-    call.DP,
     CONCAT(reference_bases, '->', alternate_bases[ORDINAL(1)]) AS mutation
   FROM
     `@GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE` v, v.call call
@@ -19,30 +19,26 @@ WITH filtered_snp_calls AS (
 
 mutation_type_counts AS (
   SELECT
+    reference_name,
     call_set_name,
-    DP,
     SUM(CAST(mutation IN ('A->G', 'G->A', 'C->T', 'T->C') AS INT64)) AS transitions,
     SUM(CAST(mutation IN ('A->C', 'C->A', 'G->T', 'T->G',
-                          'A->T', 'T->A', 'C->G', 'G->C') AS INT64)) AS transversions,
-    COUNT(mutation) AS num_variants_in_group
+                          'A->T', 'T->A', 'C->G', 'G->C') AS INT64)) AS transversions
   FROM filtered_snp_calls
-  WHERE
-    DP IS NOT NULL
   GROUP BY
-    call_set_name,
-    DP
+    reference_name,
+    call_set_name
 )
 
 SELECT
+  reference_name,
   call_set_name,
-  DP AS average_depth,
   transitions,
   transversions,
-  transitions/transversions AS titv,
-  num_variants_in_group
+  transitions/transversions AS titv
 FROM mutation_type_counts
 WHERE
   transversions > 0
 ORDER BY
-  call_set_name,
-  average_depth
+  titv DESC,
+  call_set_name

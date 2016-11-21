@@ -1,45 +1,44 @@
-# Compute the Ti/Tv ratio for variants binned by alternate allele count.
+# Compute the Ti/Tv ratio for variants within genomic windows.
 WITH filtered_snp_calls AS (
   SELECT
-    ( -- Compute the allele count for this site of variation.
-      SELECT COUNTIF(gt = 1)
-      FROM UNNEST(v.call) AS call, UNNEST(call.genotype) AS gt
-      WHERE
-        # Skip homozygous reference calls, no-calls, and non-passing variants.
-        EXISTS (SELECT gt FROM UNNEST(call.genotype) gt WHERE gt > 0)
-        AND NOT EXISTS (SELECT gt FROM UNNEST(call.genotype) gt WHERE gt < 0)
-        AND NOT EXISTS (SELECT ft FROM UNNEST(call.FILTER) ft WHERE ft NOT IN ('PASS', '.'))
-    ) AS AC,
+    reference_name,
+    CAST(FLOOR(start / @WINDOW_SIZE) AS INT64) AS genomic_window,
     CONCAT(reference_bases, '->', alternate_bases[ORDINAL(1)]) AS mutation
   FROM
     `@GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE` v
   WHERE
-    # Only include biallelic snps.
+    # Only include biallelic snps with at least one passing variant call.
     reference_bases IN ('A','C','G','T')
     AND ARRAY_LENGTH(alternate_bases) = 1
     AND alternate_bases[ORDINAL(1)] IN ('A','C','G','T')
+    AND EXISTS (SELECT gt FROM UNNEST(v.call) AS call, UNNEST(call.genotype) AS gt WHERE gt > 0
+      AND EXISTS (SELECT ft FROM UNNEST(call.FILTER) ft WHERE ft IN ('PASS', '.')))
 ),
 
 mutation_type_counts AS (
   SELECT
-    AC,
+    reference_name,
+    genomic_window,
     SUM(CAST(mutation IN ('A->G', 'G->A', 'C->T', 'T->C') AS INT64)) AS transitions,
     SUM(CAST(mutation IN ('A->C', 'C->A', 'G->T', 'T->G',
                           'A->T', 'T->A', 'C->G', 'G->C') AS INT64)) AS transversions,
     COUNT(mutation) AS num_variants_in_group
   FROM filtered_snp_calls
   GROUP BY
-    AC
+    reference_name,
+    genomic_window
 )
 
 SELECT
-  AC,
+  reference_name,
+  genomic_window * @WINDOW_SIZE AS window_start,
   transitions,
   transversions,
   transitions/transversions AS titv,
   num_variants_in_group
 FROM mutation_type_counts
 WHERE
-  transversions > 0 AND AC > 0
+  transversions > 0
 ORDER BY
-  AC DESC
+  reference_name,
+  window_start

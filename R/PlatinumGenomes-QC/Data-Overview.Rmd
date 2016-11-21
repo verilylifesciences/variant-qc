@@ -33,6 +33,11 @@ setwd("/YOUR/PATH/TO/codelabs/R/PlatinumGenomes-QC")
 # Set the Google Cloud Platform project id under which these queries will run.
 project <- "YOUR-PROJECT-ID"
 #####################################################################
+
+### To install the bigrquery package.  The currently released version 0.3.0 does not yet
+### have the parameter to use Standard SQL instead of Legacy SQL, so we install from github.
+library(devtools)
+install_github('rstats-db/bigrquery')
 ```
 
 ```{r echo=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
@@ -40,10 +45,9 @@ project <- "YOUR-PROJECT-ID"
 source("./rHelpers/setup.R")
 ```
 
+By default this codelab runs on the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 ```{r}
-# By default this codelab runs upon the Illumina Platinum Genomes Variants.  
-# Change the table here if you wish to run these queries against your own data.
-queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants")
+source("./rHelpers/platinumGenomesDataset.R")
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpDataset.R")
@@ -72,7 +76,7 @@ These are the variant-level fields common to all variant sets exported to BigQue
 
 Let's take a look at a few non-variant segments within BRCA1:
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/non-variant-segments.sql",
+result <- DisplayAndDispatchQuery("./sql/non-variant-segments-brca1.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
@@ -89,7 +93,7 @@ When the data contains non-variant segments, for any analyses that require us to
 
 Note that Complete Genomics data also includes non-variant segments and requires the same consideration.
 
-If this query was run on a different dataset and returned no rows, then the data only contains variant records.
+If this query were run on a different dataset and returned no rows, then the data only contains variant records.
 
 ## Alternative Allele Field
 
@@ -114,7 +118,7 @@ If this query was run on a different dataset, you may wish to run additional que
 
 And finally let's take a look at the domain and range of values for genotype:
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/genotypes-brca1.sql",
+result <- DisplayAndDispatchQuery("./sql/characterize-genotypes.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
@@ -126,13 +130,11 @@ DisplayQueryResults(result, 10)
 ```
 
 
-> In the case of Platinum Genomes we see from the query results the variety of genotypes just within BRCA1:
+> In the case of Platinum Genomes we see from the query results the variety of genotypes:
 >
 > * no-calls (the -1 values)
 > * genotypes higher than 1 indicating that the data is not strictly bi-allelic
-> * genotypes consisting of just a single allele on an autosome
-
-Remove the WHERE clause to run this query over the entire dataset.
+> * genotypes consisting of just a single allele
 
 # Summary
 

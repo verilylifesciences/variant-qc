@@ -1,20 +1,16 @@
 # Retrieve heterozygous haplotype calls on chromosomes X and Y.
 SELECT
-  call.call_set_name,
-  GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
   reference_name,
   start,
-  end,
+  `end`,
   reference_bases,
-  GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+  ARRAY_TO_STRING(v.alternate_bases, ',') AS alt_concat,
+  call.call_set_name,
+  (SELECT STRING_AGG(CAST(gt AS STRING)) from UNNEST(call.genotype) gt) AS genotype
 FROM
-  [_GENOME_CALL_TABLE_]
+  `@GENOME_CALL_TABLE` v, v.call call
 WHERE
-  reference_name CONTAINS 'X' OR reference_name CONTAINS 'Y'
-OMIT
-  call if (2 > COUNT(call.genotype))
-  OR EVERY(call.genotype <= 0)
-  OR EVERY(call.genotype = 1)
-HAVING call.call_set_name IN (_MALE_SAMPLE_IDS_)
-# Optionally add a clause here to sort and limit the results.
-#_ORDER_BY_
+  reference_name IN ('chrX', 'X', 'chrY', 'Y')
+  AND call_set_name IN (@MALE_SAMPLE_IDS)
+  AND (SELECT LOGICAL_OR(gt = 0) AND LOGICAL_OR(gt = 1) FROM UNNEST(call.genotype) gt)
+-- Optionally add a clause here to constrain the results.
