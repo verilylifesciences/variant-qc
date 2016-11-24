@@ -113,8 +113,7 @@ ggplot(result, aes(x=AC, y=titv)) +
 Visualize the ratio of transitions vs. transversions by depth of coverage.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-query <- "./sql/ti-tv-by-depth.sql"
-result <- DisplayAndDispatchQuery(query,
+result <- DisplayAndDispatchQuery("./sql/ti-tv-by-depth.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
@@ -123,8 +122,13 @@ result <- DisplayAndDispatchQuery(query,
 DisplayQueryResults(result)
 ```
 
+Let's join this with the sample information and visualize the results:
+```{r message=FALSE, warning=FALSE, comment=NA}
+joinedResult <- inner_join(result, sampleInfo)
+```
+
 ```{r titv-by-depth, fig.align="center", fig.width=10, message=FALSE, comment=NA, warning=FALSE}
-ggplot(result, aes(x=average_depth, y=titv, color=call_set_name)) + 
+ggplot(joinedResult, aes(x=average_depth, y=titv, color=ethnicity)) + 
   geom_point() +
   ggtitle("Ti/Tv Ratio By Depth") +
   xlab("Coverage Depth") + 

@@ -287,6 +287,7 @@ Displaying the first few rows of the dataframe of results:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment=NA, results="asis"}
 DisplayQueryResults(result)
 ```
+
 Let's join this with the sample information and visualize the results:
 ```{r message=FALSE, warning=FALSE, comment=NA}
 joinedResult <- inner_join(result, sampleInfo)
@@ -382,7 +383,7 @@ joinedResult <- inner_join(result, sampleInfo)
 ```{r titvSummary, fig.align="center", fig.width=12, warning=FALSE, message=FALSE, comment=NA}
 ggplot(joinedResult, aes(y=titv, x=reference_name, color=sex)) +
   geom_boxplot() +
-  facet_grid(~ ethnicity)+
+  facet_wrap(~ ethnicity) +
   scale_y_continuous(labels=comma) +
   ylab("Ti/Tv ratio") +
   xlab("Chromosome") +
