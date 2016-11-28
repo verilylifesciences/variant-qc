@@ -12,49 +12,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require(RCurl)
-require(dplyr)
+kResultsDir = "./pgp"
+kGenomeCallTableName = "google.com:biggene.pgp_20150205.genome_calls"
+kMultiSampleTableName = "google.com:biggene.pgp_20150205.multisample_variants"
 
-# These tables contain the Complete Genomics PGP genomes.
-queryReplacements <- list("_GENOME_CALL_TABLE_"="google.com:biggene:pgp_20150205.genome_calls",
-                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:pgp_20150205.multisample_variants",
-                          "DP"="totalReadCount" # for Ti/Tv by depth
-                          )
+queryReplacements <- list(
+  "@GENOME_CALL_TABLE" = kGenomeCallTableName,
+  "@GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE" = kGenomeCallTableName,
+  "@MULTISAMPLE_VARIANT_TABLE" = kMultiSampleTableName,
+  #  Use correct Complete Genomics field for Ti/Tv by depth.
+  "DP" = "totalReadCount",
+  # Complete Genomics male samples have a second genotype of -1 on the X chromosome.
+  "CAST((SELECT LOGICAL_AND(gt > 0) FROM UNNEST(call.genotype) gt) AS INT64) AS hom_AA" =
+    "CAST(call.genotype[ORDINAL(1)] > 0 AND (call.genotype[ORDINAL(2)] = -1 OR call.genotype[ORDINAL(2)] = call.genotype[ORDINAL(1)]) AS INT64) AS hom_AA",
+  # Use the correct field to identify low quality variant calls from Complete Genomics data.
+  "EXISTS (SELECT ft FROM UNNEST(call.FILTER) ft WHERE ft NOT IN ('PASS', '.'))" =
+    "(call.allele1VariantQuality != 'VQHIGH' OR IFNULL(call.allele2VariantQuality != 'VQHIGH', FALSE))",
+  "EXISTS (SELECT ft FROM UNNEST(call.FILTER) ft WHERE ft IN ('PASS', '.'))" =
+    "(call.allele1VariantQuality = 'VQHIGH' OR IFNULL(call.allele2VariantQuality = 'VQHIGH', TRUE))"
+)
 
 sampleData <- read.csv(textConnection(getURL("https://my.pgp-hms.org/google_surveys/1/download")))
-sampleInfo <- select(sampleData, call_call_set_name=Participant, sex=Sex.Gender)
 
-# Google Genomics variant set id for dataset 'pgp_20150205'
-variantSetId <- 9170389916365079788
+# Add newlines to long levels.
+levels(sampleData$Race.ethnicity) <- gsub("American Indian / Alaska Native,",
+                                          "American Indian / Alaska Native,\n",
+                                          levels(sampleData$Race.ethnicity))
 
-# Show only a subset of PGP ids in the Identity By State results to keep the
-# heatmap to a reasonable size.
-sampleIds <- c("hu040C0A",
-               "hu04DF3C",
-               "hu04F220",
-               "hu050E9C",
-               "hu05FD49",
-               "hu34D5B9-1",
-               "hu34D5B9-2",
-               "hu089792",
-               "huA49E22",
-               "huFFAD87",
-               "huC14AE1",
-               "hu627574",
-               "hu5FA322",
-               "huE58004",
-               "hu2843C9",
-               "hu7B594C",
-               "hu67EBB3",
-               "hu7852C5",
-               "hu2D6140",
-               "huA02824",
-               "hu82E689",
-               "huD52556")
-# TODO: IBS
-ibs <- data.frame(col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
-#ibs <- filter(ibs, sample1 %in% sampleIds & sample2 %in% sampleIds)
+# Combine the empty string and "No response" into a single level.
+levels(sampleData$Race.ethnicity) <- gsub("^$",
+                                          "No response",
+                                          levels(sampleData$Race.ethnicity))
 
-# TODO: 2-way PCA against 1,000 Genomes
-pca <- data.frame(col.names=c("call_call_set_name", "PC1", "PC2", "count"))
+sampleInfo <- dplyr::select(sampleData,
+                            call_set_name=Participant,
+                            sex=Sex.Gender,
+                            ethnicity=Race.ethnicity)
 
+# Use a specific directory for the figures from this dataset.
+knitr::opts_chunk$set(fig.path=file.path(kResultsDir, "figure/"))
+# When knitting, DON'T stop if any failures occur.
+knitr::opts_chunk$set(error=TRUE)

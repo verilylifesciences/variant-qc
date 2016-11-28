@@ -1,33 +1,35 @@
-# Compute the the homozygous and heterozygous variant counts for each individual
+# Compute the homozygous and heterozygous variant counts for each individual
 # within chromosome X to help determine whether the sex phenotype value is
 # correct for each individual.
+WITH filtered_snp_calls AS (
+  SELECT
+    call.call_set_name,
+    CAST((SELECT LOGICAL_AND(gt > 0) FROM UNNEST(call.genotype) gt) AS INT64) AS hom_AA,
+    CAST(EXISTS (SELECT gt FROM UNNEST(call.genotype) gt WHERE gt > 0)
+      AND EXISTS (SELECT gt FROM UNNEST(call.genotype) gt WHERE gt = 0) AS INT64) AS het_RA
+  FROM
+    `@GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE` v, v.call call
+  WHERE
+    reference_name IN ('chrX', 'X')
+    # Locations of PAR1 and PAR2 on GRCh37.
+    AND start NOT BETWEEN 59999 AND 2699519
+    AND start NOT BETWEEN 154931042 AND 155260559
+    # Only include biallelic snps.
+    AND reference_bases IN ('A','C','G','T')
+    AND ARRAY_LENGTH(alternate_bases) = 1
+    AND alternate_bases[ORDINAL(1)] IN ('A','C','G','T')
+    # Skip non-passing calls.
+    AND NOT EXISTS (SELECT ft FROM UNNEST(call.FILTER) ft WHERE ft NOT IN ('PASS', '.'))
+)
+
 SELECT
-  call.call_set_name,
+  call_set_name,
   ROUND(SUM(het_RA)/(SUM(hom_AA) + SUM(het_RA)), 3) AS perct_het_alt_in_snvs,
   ROUND(SUM(hom_AA)/(SUM(hom_AA) + SUM(het_RA)), 3) AS perct_hom_alt_in_snvs,
   SUM(hom_AA) AS hom_AA_count,
-  SUM(het_RA) AS het_RA_count,
-FROM (
-  SELECT
-    reference_bases,
-    GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-    COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-    call.call_set_name,
-    SOME(call.genotype > 0) AND NOT SOME(call.genotype = 0) WITHIN call AS hom_AA,
-    SOME(call.genotype > 0) AND SOME(call.genotype = 0) WITHIN call AS het_RA
-  FROM
-    [_GENOME_CALL_TABLE_]
-  WHERE
-    (reference_name = 'chrX' OR reference_name = 'X')
-    AND start NOT BETWEEN 59999 AND 2699519
-    AND start NOT BETWEEN 154931042 AND 155260559
-  HAVING
-    # Skip 1/2 genotypes and non-SNP variants.
-    num_alts = 1
-    AND reference_bases IN ('A','C','G','T')
-    AND alternate_bases IN ('A','C','G','T')
-  )
+  SUM(het_RA) AS het_RA_count
+FROM filtered_snp_calls
 GROUP BY
-  call.call_set_name
+  call_set_name
 ORDER BY
-  call.call_set_name
+  call_set_name

@@ -29,11 +29,10 @@ The following example makes use of [Illumina Platinum Genomes](http://www.illumi
 
 
 
+By default this codelab runs on the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 
 ```r
-# By default this codelab runs upon the Illumina Platinum Genomes Variants.  
-# Change the table here if you wish to run these queries against your own data.
-queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants")
+source("./rHelpers/platinumGenomesDataset.R")
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpDataset.R")
@@ -54,33 +53,31 @@ result <- DisplayAndDispatchQuery("./sql/variant-level-data-for-brca1.sql",
 SELECT
   reference_name,
   start,
-  end,
-  reference_bases,
-  GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+  `end`,
+  reference_bases AS ref,
+  ARRAY_TO_STRING(v.alternate_bases, ',') AS alt_concat,
   quality,
-  GROUP_CONCAT(filter) WITHIN RECORD AS filter,
-  GROUP_CONCAT(names) WITHIN RECORD AS names,
-  COUNT(call.call_set_name) WITHIN RECORD AS num_samples,
+  ARRAY_TO_STRING(v.filter, ',') AS filters,
+  ARRAY_TO_STRING(v.names, ',') AS names,
+  ARRAY_LENGTH(v.call) AS num_samples
 FROM
-  [genomics-public-data:platinum_genomes.variants]
+  `genomics-public-data.platinum_genomes.variants` v
 WHERE
-  reference_name CONTAINS '17' # To match both 'chr17' and '17'
-  AND start BETWEEN 41196311
-  AND 41277499
-# In some datasets, alternate_bases will be empty (therefore NULL) for non-variant segments.
-# In other datasets, alternate_bases will have the value "<NON_REF>" for non-variant segments.
-OMIT RECORD IF EVERY(alternate_bases IS NULL) OR EVERY(alternate_bases = "<NON_REF>")
+  reference_name IN ('17', 'chr17')
+  AND start BETWEEN 41196311 AND 41277499 # per GRCh37
+  # Skip non-variant segments.
+  AND EXISTS (SELECT alt FROM UNNEST(v.alternate_bases) alt WHERE alt NOT IN ("<NON_REF>", "<*>"))
 ORDER BY
   start,
-  alternate_bases
+  alt_concat
 ```
 Number of rows returned by this query: **335**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:35 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Wed Nov 23 11:34:46 2016 -->
 <table border=1>
-<tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th> <th> quality </th> <th> filter </th> <th> names </th> <th> num_samples </th>  </tr>
+<tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> ref </th> <th> alt_concat </th> <th> quality </th> <th> filters </th> <th> names </th> <th> num_samples </th>  </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td align="right"> 41196822 </td> <td> CT </td> <td> C </td> <td align="right"> 63.74 </td> <td> LowQD </td> <td>  </td> <td align="right">   1 </td> </tr>
   <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td align="right"> 41196823 </td> <td> CTT </td> <td> C,CT </td> <td align="right"> 314.59 </td> <td> PASS </td> <td>  </td> <td align="right">   3 </td> </tr>
@@ -98,30 +95,28 @@ These are the variant-level fields common to all variant sets exported to BigQue
 Let's take a look at a few non-variant segments within BRCA1:
 
 ```r
-result <- DisplayAndDispatchQuery("./sql/non-variant-segments.sql",
+result <- DisplayAndDispatchQuery("./sql/non-variant-segments-brca1.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
 
 ```
-# Retrieve non-variant segments for BRCA1, implicitly flattening by sample.
+# Retrieve non-variant segments for BRCA1.
 SELECT
   call.call_set_name,
-  GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
+  (SELECT STRING_AGG(CAST(gt AS STRING)) from UNNEST(call.genotype) gt) AS genotype,
   reference_name,
   start,
-  end,
-  reference_bases,
-  GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+  `end`,
+  reference_bases AS ref,
+  ARRAY_TO_STRING(v.alternate_bases, ',') AS alt_concat
 FROM
-  [genomics-public-data:platinum_genomes.variants]
+  `genomics-public-data.platinum_genomes.variants` v, v.call call
 WHERE
-  reference_name CONTAINS '17' # To match both 'chr17' and '17'
-  AND start BETWEEN 41196311
-  AND 41277499
-# In some datasets, alternate_bases will be empty (therefore NULL) for non-variant segments.
-# In other datasets, alternate_bases will have the value "<NON_REF>" for non-variant segments.
-OMIT RECORD IF (SOME(alternate_bases IS NOT NULL) AND SOME(alternate_bases != "<NON_REF>"))
+  reference_name IN ('17', 'chr17')
+  AND start BETWEEN 41196311 AND 41277499 # per GRCh37
+  # Skip all variant sites.
+  AND NOT EXISTS (SELECT alt FROM UNNEST(v.alternate_bases) alt WHERE alt NOT IN ("<NON_REF>", "<*>"))
 ORDER BY
   start,
   call.call_set_name
@@ -131,10 +126,10 @@ LIMIT
 Number of rows returned by this query: **10000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:39 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Wed Nov 23 11:34:53 2016 -->
 <table border=1>
-<tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
+<tr> <th> call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> ref </th> <th> alt_concat </th>  </tr>
   <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> </tr>
   <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196321 </td> <td align="right"> 41196381 </td> <td> T </td> <td>  </td> </tr>
   <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196322 </td> <td align="right"> 41196356 </td> <td> G </td> <td>  </td> </tr>
@@ -149,7 +144,7 @@ When the data contains non-variant segments, for any analyses that require us to
 
 Note that Complete Genomics data also includes non-variant segments and requires the same consideration.
 
-If this query was run on a different dataset and returned no rows, then the data only contains variant records.
+If this query were run on a different dataset and returned no rows, then the data only contains variant records.
 
 ## Alternative Allele Field
 
@@ -165,23 +160,23 @@ result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
 # Check whether variants are only SNPs and INDELs, with no special characters.
 SELECT
   COUNT(1) AS number_of_variant_records,
-  REGEXP_MATCH(alternate_bases,
-    r'^[A,C,G,T]+$') AS alt_contains_no_special_characters,
+  REGEXP_CONTAINS(alt,
+             r'^[ACGT]+$') AS alt_contains_no_special_characters,
   MAX(LENGTH(reference_bases)) AS max_ref_len,
-  MAX(LENGTH(alternate_bases)) AS max_alt_len
+  MAX(LENGTH(alt)) AS max_alt_len
 FROM
-  [genomics-public-data:platinum_genomes.variants]
-# In some datasets, alternate_bases will be empty (therefore NULL) for non-variant segments.
-# In other datasets, alternate_bases will have the value "<NON_REF>" for non-variant segments.
-OMIT RECORD IF EVERY(alternate_bases IS NULL) OR EVERY(alternate_bases = "<NON_REF>")
+  `genomics-public-data.platinum_genomes.variants` v, v.alternate_bases alt
+WHERE
+  # Skip non-variant segments.
+  EXISTS (SELECT alt FROM UNNEST(v.alternate_bases) alt WHERE alt NOT IN ("<NON_REF>", "<*>"))
 GROUP BY
   alt_contains_no_special_characters
 ```
 Number of rows returned by this query: **1**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:40 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Wed Nov 23 11:34:56 2016 -->
 <table border=1>
 <tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
   <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
@@ -196,56 +191,50 @@ If this query was run on a different dataset, you may wish to run additional que
 And finally let's take a look at the domain and range of values for genotype:
 
 ```r
-result <- DisplayAndDispatchQuery("./sql/genotypes-brca1.sql",
+result <- DisplayAndDispatchQuery("./sql/characterize-genotypes.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
 
 ```
-# Query to show the variety of genotypes within BRCA1, such as
-# single allele genotypes.
+# Query to show the variety of genotypes.
 SELECT
   genotype,
   COUNT(genotype) AS genotype_count
 FROM (
   SELECT
-    GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
+  (SELECT STRING_AGG(CAST(gt AS STRING)) from UNNEST(call.genotype) gt) AS genotype
   FROM
-  [genomics-public-data:platinum_genomes.variants]
-  WHERE
-    reference_name CONTAINS '17' # To match both 'chr17' and '17'
-    AND start BETWEEN 41196311
-    AND 41277499
-    )
+  `genomics-public-data.platinum_genomes.variants` v, v.call call)
 GROUP BY
   genotype
 ORDER BY
-  genotype_count DESC
+  genotype_count DESC,
+  genotype
 ```
-Number of rows returned by this query: **7**.
+Number of rows returned by this query: **8**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Fri Jan 22 10:11:41 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Wed Nov 23 11:34:58 2016 -->
 <table border=1>
 <tr> <th> genotype </th> <th> genotype_count </th>  </tr>
-  <tr> <td> 0,0 </td> <td align="right"> 22519 </td> </tr>
-  <tr> <td> 0,1 </td> <td align="right"> 1677 </td> </tr>
-  <tr> <td> 0 </td> <td align="right"> 226 </td> </tr>
-  <tr> <td> 1,1 </td> <td align="right">  73 </td> </tr>
-  <tr> <td> -1 </td> <td align="right">  50 </td> </tr>
-  <tr> <td> -1,-1 </td> <td align="right">   5 </td> </tr>
-  <tr> <td> 1,2 </td> <td align="right">   4 </td> </tr>
+  <tr> <td> 0,0 </td> <td align="right"> 771631170 </td> </tr>
+  <tr> <td> 0,1 </td> <td align="right"> 65193851 </td> </tr>
+  <tr> <td> 1,1 </td> <td align="right"> 30576582 </td> </tr>
+  <tr> <td> -1 </td> <td align="right"> 8617093 </td> </tr>
+  <tr> <td> 0 </td> <td align="right"> 7824166 </td> </tr>
+  <tr> <td> -1,-1 </td> <td align="right"> 2935215 </td> </tr>
+  <tr> <td> 1,2 </td> <td align="right"> 657906 </td> </tr>
+  <tr> <td> 1 </td> <td align="right"> 21613 </td> </tr>
    </table>
 
 
-> In the case of Platinum Genomes we see from the query results the variety of genotypes just within BRCA1:
+> In the case of Platinum Genomes we see from the query results the variety of genotypes:
 >
 > * no-calls (the -1 values)
 > * genotypes higher than 1 indicating that the data is not strictly bi-allelic
-> * genotypes consisting of just a single allele on an autosome
-
-Remove the WHERE clause to run this query over the entire dataset.
+> * genotypes consisting of just a single allele
 
 # Summary
 

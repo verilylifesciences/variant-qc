@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require(xtable)
-require(RCurl)
-require(dplyr)
-require(scales)
-require(bigrquery)
-require(ggplot2)
+library(xtable)
+library(RCurl)
+library(dplyr)
+library(scales)
+library(bigrquery)
+library(ggplot2)
 
 #' This is a helper method to perform common tasks when dispatching SQL from external files
 #' to BigQuery.
@@ -69,7 +69,7 @@ DisplayAndDispatchQuery <- function(queryUri, project, replacements=list(), ...)
   cat(querySql)
 
   # Dispatch the query to BigQuery.
-  query_exec(querySql, project, ...)
+  query_exec(querySql, project, useLegacySql=FALSE, ...)
 }
 
 #' This is a helper method to display the first few rows of the query results.
@@ -90,10 +90,26 @@ DisplayQueryResults <- function(result, n=6) {
     # Suppress the printing of sample identifiers when the data contains allele
     # values.  This is brittle since the query could use a different name for the columns
     # containing the identifier or allele.
-    if(2 == length(intersect(c("call_call_set_name", "alternate_bases", "alt.alternate_bases"),
+    if(2 <= length(intersect(c("call_call_set_name", "call_set_name",
+                               "alternate_bases", "alt.alternate_bases", "alt_concat"),
                              colnames(result)))) {
-      result <- mutate(result, call_call_set_name = "not displayed")
+      if("call_call_set_name" %in% colnames(result)) {
+        result <- mutate(result,
+                         call_call_set_name = "not displayed")
+      } else {
+        result <- mutate(result,
+                         call_set_name = "not displayed")
+      }
     }
     print(xtable(head(result, n=n)), type="html", include.rownames=F)
   }
+}
+
+#' Returns a data frame with a y position and a label, for use annotating ggplot boxplots.
+#'
+#' @param d A data frame.
+#' @return A data frame with column y as max and column label as length.
+#'
+get_boxplot_fun_data <- function(d) {
+  return(data.frame(y=max(d), label=paste0("N = ", length(d))))
 }

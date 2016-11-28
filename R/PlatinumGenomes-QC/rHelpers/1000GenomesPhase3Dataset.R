@@ -12,21 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require(RCurl)
-require(dplyr)
+kResultsDir = "./1000genomes"
+kGenomeCallTableName = "genomics-public-data.1000_genomes_phase_3.variants_20150220_release"
+kMultiSampleTableName = kGenomeCallTableName
 
-# Notice that both tables are the same since 1,000 Genomes already has non-variant
-# calls within the variant records.
-queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:1000_genomes_phase_3.variants_20150220_release",
-                          "_MULTISAMPLE_VARIANT_TABLE_"="genomics-public-data:1000_genomes_phase_3.variants_20150220_release",
-                          # Chromosomes do not start with the 'chr' prefix in this dataset
-                          "chr"="")
+queryReplacements <- list(
+  "@GENOME_CALL_TABLE" = kGenomeCallTableName,
+  "@GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE" = kGenomeCallTableName,
+  "@MULTISAMPLE_VARIANT_TABLE" = kMultiSampleTableName,
+  # Work around numeric overflow in R since 1000 genomes has so many calls.
+  "COUNT(genotype) AS genotype_count" = "CAST(COUNT(genotype) AS FLOAT64) AS genotype_count",
+  #  1000 Genomes does not have depth.  Just hardcode a value.
+  "call.DP" = "'not applicable' AS DP",
+  # There is no field identifying low quality variant calls because all calls are high quality.
+  "EXISTS (SELECT ft FROM UNNEST(call.FILTER) ft WHERE ft NOT IN ('PASS', '.'))" = "FALSE",
+  "EXISTS (SELECT ft FROM UNNEST(call.FILTER) ft WHERE ft IN ('PASS', '.'))" = "TRUE",
+  # Use precomputed fields to speed up homozygosity query.
+  "(SELECT SUM((SELECT COUNT(gt) FROM UNNEST(call.genotype) gt WHERE gt >= 0)) FROM v.call) AS AN" = "AN",
+  "(SELECT SUM((SELECT COUNT(gt) FROM UNNEST(call.genotype) gt WHERE gt = 1)) FROM v.call) AS AC" = "v.AC[ORDINAL(1)] AS AC"
+)
 
 sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
-sampleInfo <- select(sampleData, call_call_set_name=Sample, sex=Gender)
+sampleInfo <- dplyr::select(sampleData,
+                            call_set_name=Sample,
+                            sex=Gender,
+                            ethnicity=Super_Population)
 
-# TODO: Identity By State results for 1,000 Genomes.
-ibs <- data.frame(col.names=c("sample1", "sample2", "ibsScore", "similar", "observed"))
-
-# TODO: 2-way PCA, perhaps ExAc and 1,000 Genomes
-pca <- data.frame(col.names=c("call_call_set_name", "PC1", "PC2", "count"))
+# Use a specific directory for the figures from this dataset.
+knitr::opts_chunk$set(fig.path=file.path(kResultsDir, "figure/"))
+# When knitting, DON'T stop if any failures occur.
+knitr::opts_chunk$set(error=TRUE)

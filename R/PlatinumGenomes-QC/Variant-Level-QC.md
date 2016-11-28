@@ -32,10 +32,7 @@ In Part 4 of the codelab, we perform some quality control analyses that could he
 By default this codelab runs upon the Illumina Platinum Genomes Variants. Update the table and change the source of sample information here if you wish to run the queries against a different dataset.
 
 ```r
-queryReplacements <- list("_GENOME_CALL_TABLE_"="genomics-public-data:platinum_genomes.variants",
-                          "_MULTISAMPLE_VARIANT_TABLE_"="google.com:biggene:platinum_genomes.expanded_variants")
-sampleData <- read.csv("http://storage.googleapis.com/genomics-public-data/platinum-genomes/other/platinum_genomes_sample_info.csv")
-sampleInfo <- dplyr::select(sampleData, call_call_set_name=Catalog.ID, sex=Gender)
+source("./rHelpers/platinumGenomesDataset.R")
 
 # To run this against other public data, source in one of the dataset helpers.  For example:
 # source("./rHelpers/pgpDataset.R")
@@ -47,82 +44,89 @@ Check whether the ratio of transitions vs. transversions in SNPs appears to be r
 
 
 ```r
-result <- DisplayAndDispatchQuery("./sql/ti-tv-ratio.sql",
+result <- DisplayAndDispatchQuery("./sql/ti-tv-by-genomic-window.sql",
                                   project=project,
-                                  replacements=c("#_WHERE_"="WHERE reference_name = 'chr1'",
-                                                 "_WINDOW_SIZE_"="100000",
+                                  replacements=c("@WINDOW_SIZE"="100000",
                                                  queryReplacements))
 ```
 
 ```
-# Compute the Ti/Tv ratio for variants within genomic region windows.
+# Compute the Ti/Tv ratio for variants within genomic windows.
+WITH filtered_snp_calls AS (
+  SELECT
+    reference_name,
+    CAST(FLOOR(start / 100000) AS INT64) AS genomic_window,
+    CONCAT(reference_bases, '->', alternate_bases[ORDINAL(1)]) AS mutation
+  FROM
+    `genomics-public-data.platinum_genomes.variants` v
+  WHERE
+    # Only include biallelic snps with at least one passing variant call.
+    reference_bases IN ('A','C','G','T')
+    AND ARRAY_LENGTH(alternate_bases) = 1
+    AND alternate_bases[ORDINAL(1)] IN ('A','C','G','T')
+    AND EXISTS (SELECT gt FROM UNNEST(v.call) AS call, UNNEST(call.genotype) AS gt WHERE gt > 0
+      AND EXISTS (SELECT ft FROM UNNEST(call.FILTER) ft WHERE ft IN ('PASS', '.')))
+),
+
+mutation_type_counts AS (
+  SELECT
+    reference_name,
+    genomic_window,
+    SUM(CAST(mutation IN ('A->G', 'G->A', 'C->T', 'T->C') AS INT64)) AS transitions,
+    SUM(CAST(mutation IN ('A->C', 'C->A', 'G->T', 'T->G',
+                          'A->T', 'T->A', 'C->G', 'G->C') AS INT64)) AS transversions,
+    COUNT(mutation) AS num_variants_in_group
+  FROM filtered_snp_calls
+  GROUP BY
+    reference_name,
+    genomic_window
+)
+
 SELECT
   reference_name,
-  window * 100000 AS window_start,
+  genomic_window * 100000 AS window_start,
   transitions,
   transversions,
   transitions/transversions AS titv,
-  num_variants_in_window,
-FROM (
-  SELECT
-    reference_name,
-    window,
-    SUM(mutation IN ('A->G', 'G->A', 'C->T', 'T->C')) AS transitions,
-    SUM(mutation IN ('A->C', 'C->A', 'G->T', 'T->G',
-                     'A->T', 'T->A', 'C->G', 'G->C')) AS transversions,
-    COUNT(mutation) AS num_variants_in_window
-  FROM (
-    SELECT
-      reference_name,
-      reference_bases,
-      alternate_bases,
-      INTEGER(FLOOR(start / 100000)) AS window,
-      CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
-      COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-    FROM
-      [genomics-public-data:platinum_genomes.variants]
-    # Optionally add clause here to limit the query to a particular
-    # region of the genome.
-    WHERE reference_name = 'chr1'
-    HAVING
-      # Skip 1/2 genotypes _and non-SNP variants
-      num_alts = 1
-      AND reference_bases IN ('A','C','G','T')
-      AND alternate_bases IN ('A','C','G','T'))
-  GROUP BY
-    reference_name,
-    window)
+  num_variants_in_group
+FROM mutation_type_counts
+WHERE
+  transversions > 0
 ORDER BY
+  reference_name,
   window_start
+
+Retrieving data:  9.4s
+Retrieving data: 19.5s
 ```
-Number of rows returned by this query: **2279**.
+Number of rows returned by this query: **28354**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:48:15 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Wed Nov 23 13:51:43 2016 -->
 <table border=1>
-<tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_window </th>  </tr>
-  <tr> <td> chr1 </td> <td align="right">   0 </td> <td align="right"> 293 </td> <td align="right"> 198 </td> <td align="right"> 1.48 </td> <td align="right"> 491 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 100000 </td> <td align="right"> 147 </td> <td align="right">  76 </td> <td align="right"> 1.93 </td> <td align="right"> 223 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 200000 </td> <td align="right">  64 </td> <td align="right">  61 </td> <td align="right"> 1.05 </td> <td align="right"> 125 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 300000 </td> <td align="right">   2 </td> <td align="right">  11 </td> <td align="right"> 0.18 </td> <td align="right">  13 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 400000 </td> <td align="right">  30 </td> <td align="right">  14 </td> <td align="right"> 2.14 </td> <td align="right">  44 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 500000 </td> <td align="right"> 207 </td> <td align="right">  76 </td> <td align="right"> 2.72 </td> <td align="right"> 283 </td> </tr>
+<tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_group </th>  </tr>
+  <tr> <td> chr1 </td> <td align="right"> 500000 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right"> 1.00 </td> <td align="right">   2 </td> </tr>
+  <tr> <td> chr1 </td> <td align="right"> 700000 </td> <td align="right">  51 </td> <td align="right">  31 </td> <td align="right"> 1.65 </td> <td align="right">  82 </td> </tr>
+  <tr> <td> chr1 </td> <td align="right"> 800000 </td> <td align="right"> 162 </td> <td align="right">  67 </td> <td align="right"> 2.42 </td> <td align="right"> 229 </td> </tr>
+  <tr> <td> chr1 </td> <td align="right"> 900000 </td> <td align="right"> 212 </td> <td align="right">  73 </td> <td align="right"> 2.90 </td> <td align="right"> 285 </td> </tr>
+  <tr> <td> chr1 </td> <td align="right"> 1000000 </td> <td align="right"> 106 </td> <td align="right">  45 </td> <td align="right"> 2.36 </td> <td align="right"> 151 </td> </tr>
+  <tr> <td> chr1 </td> <td align="right"> 1100000 </td> <td align="right"> 151 </td> <td align="right">  38 </td> <td align="right"> 3.97 </td> <td align="right"> 189 </td> </tr>
    </table>
 
 Visualizing the results:
 
 ```r
-ggplot(result, aes(x=window_start, y=titv)) +
+ggplot(filter(result, reference_name %in% c("1", "chr1")), aes(x=window_start, y=titv)) +
   geom_point() +
   stat_smooth() +
   scale_x_continuous(labels=comma) +
   xlab("Genomic Position") +
   ylab("Ti/Tv") +
-  ggtitle("Ti/Tv by 100,000 base pair windows on Chromosome 1")
+  ggtitle("Ti/Tv by 100,000 base pair windows")
 ```
 
-<img src="figure/titvByWindow-1.png" title="plot of chunk titvByWindow" alt="plot of chunk titvByWindow" style="display: block; margin: auto;" />
+<img src="./platinum_genomes/figure/titvByWindow-1.png" title="plot of chunk titvByWindow" alt="plot of chunk titvByWindow" style="display: block; margin: auto;" />
 
 ## Ti/Tv by Alternate Allele Counts
 
@@ -132,63 +136,75 @@ Check whether the ratio of transitions vs. transversions in SNPs appears to be r
 ```r
 result <- DisplayAndDispatchQuery("./sql/ti-tv-by-alternate-allele-count.sql",
                                   project=project,
-                                  replacements=c(queryReplacements))
+                                  replacements=queryReplacements)
 ```
 
 ```
 # Compute the Ti/Tv ratio for variants binned by alternate allele count.
+WITH filtered_snp_calls AS (
+  SELECT
+    ( -- Compute the allele count for this site of variation.
+      SELECT COUNTIF(gt = 1)
+      FROM UNNEST(v.call) AS call, UNNEST(call.genotype) AS gt
+      WHERE
+        # Skip homozygous reference calls, no-calls, and non-passing variants.
+        EXISTS (SELECT gt FROM UNNEST(call.genotype) gt WHERE gt > 0)
+        AND NOT EXISTS (SELECT gt FROM UNNEST(call.genotype) gt WHERE gt < 0)
+        AND NOT EXISTS (SELECT ft FROM UNNEST(call.FILTER) ft WHERE ft NOT IN ('PASS', '.'))
+    ) AS AC,
+    CONCAT(reference_bases, '->', alternate_bases[ORDINAL(1)]) AS mutation
+  FROM
+    `genomics-public-data.platinum_genomes.variants` v
+  WHERE
+    # Only include biallelic snps.
+    reference_bases IN ('A','C','G','T')
+    AND ARRAY_LENGTH(alternate_bases) = 1
+    AND alternate_bases[ORDINAL(1)] IN ('A','C','G','T')
+),
+
+mutation_type_counts AS (
+  SELECT
+    AC,
+    SUM(CAST(mutation IN ('A->G', 'G->A', 'C->T', 'T->C') AS INT64)) AS transitions,
+    SUM(CAST(mutation IN ('A->C', 'C->A', 'G->T', 'T->G',
+                          'A->T', 'T->A', 'C->G', 'G->C') AS INT64)) AS transversions,
+    COUNT(mutation) AS num_variants_in_group
+  FROM filtered_snp_calls
+  GROUP BY
+    AC
+)
+
 SELECT
+  AC,
   transitions,
   transversions,
   transitions/transversions AS titv,
-  alternate_allele_count
-FROM (
-  SELECT
-    SUM(mutation IN ('A->G', 'G->A', 'C->T', 'T->C')) AS transitions,
-    SUM(mutation IN ('A->C', 'C->A', 'G->T', 'T->G',
-                     'A->T', 'T->A', 'C->G', 'G->C')) AS transversions,
-    alternate_allele_count
-  FROM (
-    SELECT
-      reference_bases,
-      alternate_bases,
-      CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
-      COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-      SUM(call.genotype = 1) WITHIN RECORD AS alternate_allele_count,
-    FROM
-      [genomics-public-data:platinum_genomes.variants]
-    # Optionally add clause here to limit the query to a particular
-    # region of the genome.
-    #_WHERE_
-    HAVING
-      # Skip 1/2 genotypes _and non-SNP variants
-      num_alts = 1
-      AND reference_bases IN ('A','C','G','T')
-      AND alternate_bases IN ('A','C','G','T'))
-  GROUP BY
-    alternate_allele_count)
+  num_variants_in_group
+FROM mutation_type_counts
+WHERE
+  transversions > 0 AND AC > 0
 ORDER BY
-  alternate_allele_count DESC
+  AC DESC
 ```
-Number of rows returned by this query: **35**.
+Number of rows returned by this query: **34**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:48:18 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Wed Nov 23 13:51:49 2016 -->
 <table border=1>
-<tr> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> alternate_allele_count </th>  </tr>
-  <tr> <td align="right"> 350843 </td> <td align="right"> 172896 </td> <td align="right"> 2.03 </td> <td align="right">  34 </td> </tr>
-  <tr> <td align="right"> 114418 </td> <td align="right"> 55115 </td> <td align="right"> 2.08 </td> <td align="right">  33 </td> </tr>
-  <tr> <td align="right"> 64546 </td> <td align="right"> 32250 </td> <td align="right"> 2.00 </td> <td align="right">  32 </td> </tr>
-  <tr> <td align="right"> 29966 </td> <td align="right"> 14981 </td> <td align="right"> 2.00 </td> <td align="right">  31 </td> </tr>
-  <tr> <td align="right"> 13566 </td> <td align="right"> 7243 </td> <td align="right"> 1.87 </td> <td align="right">  30 </td> </tr>
-  <tr> <td align="right"> 15330 </td> <td align="right"> 7712 </td> <td align="right"> 1.99 </td> <td align="right">  29 </td> </tr>
+<tr> <th> AC </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_group </th>  </tr>
+  <tr> <td align="right">  34 </td> <td align="right"> 300985 </td> <td align="right"> 142987 </td> <td align="right"> 2.10 </td> <td align="right"> 443972 </td> </tr>
+  <tr> <td align="right">  33 </td> <td align="right"> 96846 </td> <td align="right"> 45222 </td> <td align="right"> 2.14 </td> <td align="right"> 142068 </td> </tr>
+  <tr> <td align="right">  32 </td> <td align="right"> 60764 </td> <td align="right"> 29492 </td> <td align="right"> 2.06 </td> <td align="right"> 90256 </td> </tr>
+  <tr> <td align="right">  31 </td> <td align="right"> 26838 </td> <td align="right"> 12751 </td> <td align="right"> 2.10 </td> <td align="right"> 39589 </td> </tr>
+  <tr> <td align="right">  30 </td> <td align="right"> 15224 </td> <td align="right"> 7442 </td> <td align="right"> 2.05 </td> <td align="right"> 22666 </td> </tr>
+  <tr> <td align="right">  29 </td> <td align="right"> 13632 </td> <td align="right"> 6442 </td> <td align="right"> 2.12 </td> <td align="right"> 20074 </td> </tr>
    </table>
 
 Visualizing the results:
 
 ```r
-ggplot(result, aes(x=alternate_allele_count, y=titv)) +
+ggplot(result, aes(x=AC, y=titv)) +
   geom_point() +
   stat_smooth() +
   scale_x_continuous(labels=comma) +
@@ -197,7 +213,7 @@ ggplot(result, aes(x=alternate_allele_count, y=titv)) +
   ggtitle("Ti/Tv by Alternate Allele Count")
 ```
 
-<img src="figure/titvByAlt-1.png" title="plot of chunk titvByAlt" alt="plot of chunk titvByAlt" style="display: block; margin: auto;" />
+<img src="./platinum_genomes/figure/titvByAlt-1.png" title="plot of chunk titvByAlt" alt="plot of chunk titvByAlt" style="display: block; margin: auto;" />
 
 ## Ti/Tv by Depth
 
@@ -208,85 +224,82 @@ Visualize the ratio of transitions vs. transversions by depth of coverage.
 query <- "./sql/ti-tv-by-depth.sql"
 result <- DisplayAndDispatchQuery(query,
                                   project=project,
-                                  replacements=c(queryReplacements))
+                                  replacements=queryReplacements)
 ```
 
 ```
 # Transition/Transversion Ratio by Depth of Coverage.
-SELECT
-  call.call_set_name,
-  (transitions/transversions) AS titv_ratio,
-  FLOAT(call.DP) AS average_depth,
-FROM (
+WITH filtered_snp_calls AS (
   SELECT
     call.call_set_name,
-    SUM(mutation IN ('A->G', 'G->A', 'C->T', 'T->C')) AS transitions,
-    SUM(mutation IN ('A->C', 'C->A', 'G->T', 'T->G',
-                     'A->T', 'T->A', 'C->G', 'G->C')) AS transversions,
-    call.DP
-  FROM (
-    SELECT
-      reference_bases,
-      alternate_bases,
-      call.call_set_name,
-      CONCAT(reference_bases, CONCAT(STRING('->'), alternate_bases)) AS mutation,
-      COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-      call.DP
-    FROM (
-      SELECT
-        call.call_set_name,
-        reference_bases,
-        GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-        call.genotype,
-        call.DP,
-      FROM
-        [google.com:biggene:platinum_genomes.expanded_variants]
-      # Optionally add clause here to limit the query to a particular
-      # region of the genome.
-      #_WHERE_
-    )
-    OMIT call if call.DP IS NULL
-    HAVING
-      # Skip 1/2 genotypes _and non-SNP variants
-      num_alts = 1
-      AND reference_bases IN ('A','C','G','T')
-      AND alternate_bases IN ('A','C','G','T'))
+    call.DP,
+    CONCAT(reference_bases, '->', alternate_bases[ORDINAL(1)]) AS mutation
+  FROM
+    `genomics-public-data.platinum_genomes.variants` v, v.call call
+  WHERE
+    # Only include biallelic snps.
+    reference_bases IN ('A','C','G','T')
+    AND ARRAY_LENGTH(alternate_bases) = 1
+    AND alternate_bases[ORDINAL(1)] IN ('A','C','G','T')
+    # Skip homozygous reference calls, no-calls, and non-passing variants.
+    AND EXISTS (SELECT gt FROM UNNEST(call.genotype) gt WHERE gt > 0)
+    AND NOT EXISTS (SELECT gt FROM UNNEST(call.genotype) gt WHERE gt < 0)
+    AND NOT EXISTS (SELECT ft FROM UNNEST(call.FILTER) ft WHERE ft NOT IN ('PASS', '.'))
+),
+
+mutation_type_counts AS (
+  SELECT
+    call_set_name,
+    DP,
+    SUM(CAST(mutation IN ('A->G', 'G->A', 'C->T', 'T->C') AS INT64)) AS transitions,
+    SUM(CAST(mutation IN ('A->C', 'C->A', 'G->T', 'T->G',
+                          'A->T', 'T->A', 'C->G', 'G->C') AS INT64)) AS transversions,
+    COUNT(mutation) AS num_variants_in_group
+  FROM filtered_snp_calls
+  WHERE
+    DP IS NOT NULL
   GROUP BY
-    call.call_set_name,
-    call.DP)
+    call_set_name,
+    DP
+)
+
+SELECT
+  call_set_name,
+  DP AS average_depth,
+  transitions,
+  transversions,
+  transitions/transversions AS titv,
+  num_variants_in_group
+FROM mutation_type_counts
 WHERE
   transversions > 0
-GROUP BY
-  call.call_set_name,
-  titv_ratio,
-  average_depth
 ORDER BY
-  call.call_set_name,
+  call_set_name,
   average_depth
 ```
 
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:48:22 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Wed Nov 23 13:51:55 2016 -->
 <table border=1>
-<tr> <th> call_call_set_name </th> <th> titv_ratio </th> <th> average_depth </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.79 </td> <td align="right"> 1.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.81 </td> <td align="right"> 2.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.82 </td> <td align="right"> 3.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.85 </td> <td align="right"> 4.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.87 </td> <td align="right"> 5.00 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.86 </td> <td align="right"> 6.00 </td> </tr>
+<tr> <th> call_set_name </th> <th> average_depth </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_group </th>  </tr>
+  <tr> <td> NA12877 </td> <td align="right">   3 </td> <td align="right">   4 </td> <td align="right">   8 </td> <td align="right"> 0.50 </td> <td align="right">  12 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right">   4 </td> <td align="right">   7 </td> <td align="right">  10 </td> <td align="right"> 0.70 </td> <td align="right">  17 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right">   5 </td> <td align="right">  12 </td> <td align="right">  10 </td> <td align="right"> 1.20 </td> <td align="right">  22 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right">   6 </td> <td align="right">   8 </td> <td align="right">  11 </td> <td align="right"> 0.73 </td> <td align="right">  19 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right">   7 </td> <td align="right">   8 </td> <td align="right">  11 </td> <td align="right"> 0.73 </td> <td align="right">  19 </td> </tr>
+  <tr> <td> NA12877 </td> <td align="right">   8 </td> <td align="right">  11 </td> <td align="right">   6 </td> <td align="right"> 1.83 </td> <td align="right">  17 </td> </tr>
    </table>
 
 
 ```r
-ggplot(result, aes(x=average_depth, y=titv_ratio, color=call_call_set_name)) + 
+ggplot(result, aes(x=average_depth, y=titv, color=call_set_name)) + 
   geom_point() +
   ggtitle("Ti/Tv Ratio By Depth") +
   xlab("Coverage Depth") + 
   ylab("Ti/Tv")
 ```
 
-<img src="figure/titv-by-depth-1.png" title="plot of chunk titv-by-depth" alt="plot of chunk titv-by-depth" style="display: block; margin: auto;" />
+<img src="./platinum_genomes/figure/titv-by-depth-1.png" title="plot of chunk titv-by-depth" alt="plot of chunk titv-by-depth" style="display: block; margin: auto;" />
 
 ## Missingness Rate
 
@@ -294,49 +307,50 @@ For each variant, compute the missingness rate.  This query can be used to ident
 
 
 ```r
-sortAndLimit <- "ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alternate_bases LIMIT 1000"
+sortAndLimit <- "ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alt_concat LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/variant-level-missingness.sql",
                                   project=project,
-                                  replacements=c("#_ORDER_BY_"=sortAndLimit,
+                                  replacements=c(
+                                    "-- Optionally add a clause here to constrain the results."=sortAndLimit,
                                                  queryReplacements))
 ```
 
 ```
-# Compute the ratio no-calls for each variant.
-SELECT
-  reference_name,
-  start,
-  END,
-  reference_bases,
-  alternate_bases,
-  no_calls,
-  all_calls,
-  (no_calls/all_calls) AS missingness_rate
-FROM (
+# Compute the ratio of no-calls for each variant.
+WITH variant_missingness AS (
   SELECT
     reference_name,
     start,
-    END,
+    `end`,
     reference_bases,
-    GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-    SUM(call.genotype == -1) WITHIN RECORD AS no_calls,
-    COUNT(call.genotype) WITHIN RECORD AS all_calls,
+    ARRAY_TO_STRING(v.alternate_bases, ',') AS alt_concat,
+    (SELECT SUM((SELECT COUNT(gt) FROM UNNEST(call.genotype) gt)) FROM v.call) AS all_calls,
+    (SELECT SUM((SELECT COUNT(gt) FROM UNNEST(call.genotype) gt WHERE gt < 0)) FROM v.call) AS no_calls
   FROM
-      [google.com:biggene:platinum_genomes.expanded_variants]
-    # Optionally add clause here to limit the query to a particular
-    # region of the genome.
-    #_WHERE_
-  )
-# Optionally add a clause here to sort and limit the results.
-ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alternate_bases LIMIT 1000
+    `google.com:biggene.platinum_genomes.expanded_variants` v
+)
+
+SELECT
+  reference_name,
+  start,
+  `end`,
+  reference_bases,
+  alt_concat,
+  no_calls,
+  all_calls,
+  no_calls/all_calls AS missingness_rate
+FROM variant_missingness
+WHERE
+  all_calls > 0
+ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alt_concat LIMIT 1000
 ```
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:48:24 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Wed Nov 23 13:52:02 2016 -->
 <table border=1>
-<tr> <th> reference_name </th> <th> start </th> <th> END </th> <th> reference_bases </th> <th> alternate_bases </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
+<tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alt_concat </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
   <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
   <tr> <td> chr1 </td> <td align="right"> 823721 </td> <td align="right"> 823722 </td> <td> C </td> <td> A </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
   <tr> <td> chr1 </td> <td align="right"> 825391 </td> <td align="right"> 825392 </td> <td> C </td> <td> T </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
@@ -351,20 +365,96 @@ For each variant, compute the expected versus observed relationship between alle
 
 
 ```r
-sortAndLimit <- "ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000"
+sortAndLimit <- "ORDER BY ChiSq DESC, reference_name, start, alt LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/hardy-weinberg.sql",
                                   project=project,
-                                  replacements=c("#_ORDER_BY_"=sortAndLimit,
+                                  replacements=c("-- Optionally add a clause here to constrain the results."=sortAndLimit,
                                                  queryReplacements))
 ```
 
 ```
 # The following query computes the Hardy-Weinberg equilibrium for variants.
+WITH variants AS (
+  SELECT
+    reference_name,
+    start,
+    `end`,
+    reference_bases,
+    v.alternate_bases[ORDINAL(1)] AS alt,
+    -- Within each variant count the number of HOM_REF/HOM_ALT/HET samples.
+    (SELECT SUM(CAST((SELECT LOGICAL_AND(gt = 0)
+      FROM UNNEST(call.genotype) gt) AS INT64)) FROM v.call) AS HOM_REF,
+    (SELECT SUM(CAST((SELECT LOGICAL_AND(gt = 1)
+      FROM UNNEST(call.genotype) gt) AS INT64)) FROM v.call) AS HOM_ALT,
+    (SELECT SUM(CAST((SELECT LOGICAL_OR(gt = 0) AND LOGICAL_OR(gt = 1)
+      FROM UNNEST(call.genotype) gt) AS INT64)) FROM v.call) AS HET
+  FROM
+    `google.com:biggene.platinum_genomes.expanded_variants` v
+  WHERE
+    # Only include biallelic snps.
+    reference_bases IN ('A','C','G','T')
+    AND ARRAY_LENGTH(alternate_bases) = 1
+    AND alternate_bases[ORDINAL(1)] IN ('A','C','G','T')
+),
+
+observations AS (
+  SELECT
+    reference_name,
+    start,
+    reference_bases,
+    alt,
+    HOM_REF AS OBS_HOM1,
+    HET AS OBS_HET,
+    HOM_ALT AS OBS_HOM2,
+    HOM_REF + HET + HOM_ALT AS SAMPLE_COUNT
+  FROM variants
+),
+
+expectations AS (
+  SELECT
+    reference_name,
+    start,
+    reference_bases,
+    alt,
+    OBS_HOM1,
+    OBS_HET,
+    OBS_HOM2,
+
+    # Expected AA
+    # p^2
+    # ((COUNT(AA) + (COUNT(Aa)/2) /
+    #  SAMPLE_COUNT) ^ 2) * SAMPLE_COUNT
+    POW((OBS_HOM1 + (OBS_HET/2)) /
+      SAMPLE_COUNT, 2) * SAMPLE_COUNT
+      AS E_HOM1,
+
+    # Expected Aa
+    # 2pq
+    # 2 * (COUNT(AA) + (COUNT(Aa)/2) / SAMPLE_COUNT) *
+    # (COUNT(aa) + (COUNT(Aa)/2) / SAMPLE_COUNT)
+    # * SAMPLE_COUNT
+    2 * ((OBS_HOM1 + (OBS_HET/2)) / SAMPLE_COUNT) *
+      ((OBS_HOM2 + (OBS_HET/2)) / SAMPLE_COUNT)
+      * SAMPLE_COUNT
+      AS E_HET,
+
+    # Expected aa
+    # q^2
+    # (COUNT(aa) + (COUNT(Aa)/2) /
+    #  SAMPLE_COUNT) ^ 2 * SAMPLE_COUNT
+    POW((OBS_HOM2 + (OBS_HET/2)) /
+      SAMPLE_COUNT, 2) * SAMPLE_COUNT
+      AS E_HOM2
+
+  FROM observations
+  WHERE SAMPLE_COUNT > 0
+)
+
 SELECT
   reference_name,
   start,
   reference_bases,
-  alternate_bases,
+  alt,
   OBS_HOM1,
   OBS_HET,
   OBS_HOM2,
@@ -380,94 +470,31 @@ SELECT
   AS ChiSq,
 
   # Determine if Chi Sq value is significant
+  # The chi-squared score corresponding to a nominal P-value of 0.05
+  # for a table with 2 degrees of freedom is 5.991.
   IF((POW(OBS_HOM1 - E_HOM1, 2) / E_HOM1)
   + (POW(OBS_HET - E_HET, 2) / E_HET)
   + (POW(OBS_HOM2 - E_HOM2, 2) / E_HOM2)
   > 5.991, "TRUE", "FALSE") AS PVALUE_SIG
 
-FROM (
-    SELECT
-      reference_name,
-      start,
-      reference_bases,
-      alternate_bases,
-      OBS_HOM1,
-      OBS_HET,
-      OBS_HOM2,
-
-      # Expected AA
-      # p^2
-      # ((COUNT(AA) + (COUNT(Aa)/2) /
-      #  SAMPLE_COUNT) ^ 2) * SAMPLE_COUNT
-      ROUND(POW((OBS_HOM1 + (OBS_HET/2)) /
-        SAMPLE_COUNT, 2) * SAMPLE_COUNT, 2)
-        AS E_HOM1,
-
-      # Expected Aa
-      # 2pq
-      # 2 * (COUNT(AA) + (COUNT(Aa)/2) / SAMPLE_COUNT) *
-      # (COUNT(aa) + (COUNT(Aa)/2) / SAMPLE_COUNT)
-      # * SAMPLE_COUNT
-      ROUND(2 * ((OBS_HOM1 + (OBS_HET/2)) / SAMPLE_COUNT) *
-        ((OBS_HOM2 + (OBS_HET/2)) / SAMPLE_COUNT)
-        * SAMPLE_COUNT, 2)
-        AS E_HET,
-
-      # Expected aa
-      # q^2
-      # (COUNT(aa) + (COUNT(Aa)/2) /
-      #  SAMPLE_COUNT) ^ 2 * SAMPLE_COUNT
-      ROUND(POW((OBS_HOM2 + (OBS_HET/2)) /
-        SAMPLE_COUNT, 2) * SAMPLE_COUNT, 2)
-        AS E_HOM2,
-
-  FROM (
-    SELECT
-      reference_name,
-      start,
-      reference_bases,
-      alternate_bases,
-      HOM_REF AS OBS_HOM1,
-      HET AS OBS_HET,
-      HOM_ALT AS OBS_HOM2,
-      HOM_REF + HET + HOM_ALT AS SAMPLE_COUNT,
-    FROM (
-      SELECT
-        reference_name,
-        start,
-        END,
-        reference_bases,
-        GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-        COUNT(alternate_bases) WITHIN RECORD AS num_alts,
-        SUM(EVERY(0 = call.genotype)) WITHIN call AS HOM_REF,
-        SUM(EVERY(1 = call.genotype)) WITHIN call AS HOM_ALT,
-        SUM(SOME(0 = call.genotype)
-          AND SOME(1 = call.genotype)) WITHIN call AS HET,
-      FROM
-        [google.com:biggene:platinum_genomes.expanded_variants]
-      # Optionally add a clause here to limit the query to a particular
-      # region of the genome.
-      #_WHERE_
-      HAVING
-        # Skip 1/2 genotypes
-        num_alts = 1
-        )))
-# Optionally add a clause here to sort and limit the results.
-ORDER BY ChiSq DESC, reference_name, start, alternate_bases LIMIT 1000
+FROM expectations
+WHERE
+  E_HOM1 > 0 AND E_HET > 0 AND E_HOM2 > 0
+ORDER BY ChiSq DESC, reference_name, start, alt LIMIT 1000
 ```
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:48:27 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Wed Nov 23 13:52:12 2016 -->
 <table border=1>
-<tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alternate_bases </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
-  <tr> <td> chr1 </td> <td align="right"> 4125498 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 64839482 </td> <td> G </td> <td> A </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 80603209 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 83650074 </td> <td> A </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 102019360 </td> <td> A </td> <td> G </td> <td align="right">   8 </td> <td align="right">   0 </td> <td align="right">   9 </td> <td align="right"> 3.76 </td> <td align="right"> 8.47 </td> <td align="right"> 4.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 110191193 </td> <td> T </td> <td> C </td> <td align="right">   9 </td> <td align="right">   0 </td> <td align="right">   8 </td> <td align="right"> 4.76 </td> <td align="right"> 8.47 </td> <td align="right"> 3.76 </td> <td align="right"> 17.03 </td> <td> TRUE </td> </tr>
+<tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
+  <tr> <td> chr1 </td> <td align="right"> 10176 </td> <td> A </td> <td> C </td> <td align="right">   0 </td> <td align="right">  17 </td> <td align="right">   0 </td> <td align="right"> 4.25 </td> <td align="right"> 8.50 </td> <td align="right"> 4.25 </td> <td align="right"> 17.00 </td> <td> TRUE </td> </tr>
+  <tr> <td> chr1 </td> <td align="right"> 10688 </td> <td> C </td> <td> G </td> <td align="right">  16 </td> <td align="right">   0 </td> <td align="right">   1 </td> <td align="right"> 15.06 </td> <td align="right"> 1.88 </td> <td align="right"> 0.06 </td> <td align="right"> 17.00 </td> <td> TRUE </td> </tr>
+  <tr> <td> chr1 </td> <td align="right"> 14698 </td> <td> C </td> <td> G </td> <td align="right">   0 </td> <td align="right">  17 </td> <td align="right">   0 </td> <td align="right"> 4.25 </td> <td align="right"> 8.50 </td> <td align="right"> 4.25 </td> <td align="right"> 17.00 </td> <td> TRUE </td> </tr>
+  <tr> <td> chr1 </td> <td align="right"> 15117 </td> <td> A </td> <td> G </td> <td align="right">   0 </td> <td align="right">  17 </td> <td align="right">   0 </td> <td align="right"> 4.25 </td> <td align="right"> 8.50 </td> <td align="right"> 4.25 </td> <td align="right"> 17.00 </td> <td> TRUE </td> </tr>
+  <tr> <td> chr1 </td> <td align="right"> 16377 </td> <td> T </td> <td> C </td> <td align="right">   0 </td> <td align="right">  17 </td> <td align="right">   0 </td> <td align="right"> 4.25 </td> <td align="right"> 8.50 </td> <td align="right"> 4.25 </td> <td align="right"> 17.00 </td> <td> TRUE </td> </tr>
+  <tr> <td> chr1 </td> <td align="right"> 54365 </td> <td> A </td> <td> G </td> <td align="right">  14 </td> <td align="right">   0 </td> <td align="right">   3 </td> <td align="right"> 11.53 </td> <td align="right"> 4.94 </td> <td align="right"> 0.53 </td> <td align="right"> 17.00 </td> <td> TRUE </td> </tr>
    </table>
 
 See also [a version of this query](./sql/hardy-weinberg-udf.sql) that uses BigQuery [user-defined javascript functions](https://cloud.google.com/bigquery/user-defined-functions).
@@ -480,55 +507,51 @@ First we use our sample information to determine which genomes are male.
 ```r
 maleSampleIds <- paste("'",
                        filter(sampleInfo,
-                              sex %in% c("MALE", "Male", "male", "M", "m"))$call_call_set_name,
+                              sex %in% c("MALE", "Male", "male", "M", "m"))$call_set_name,
                        "'", sep="", collapse=",")
 ```
 
 
 ```r
-sortAndLimit <- "ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000"
+sortAndLimit <- "ORDER BY reference_name, start, alt_concat, call_set_name LIMIT 1000"
 result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.sql",
                                   project=project,
-                                  replacements=c("_MALE_SAMPLE_IDS_"=maleSampleIds,
-                                                 "#_ORDER_BY_"=sortAndLimit,
+                                  replacements=c("@MALE_SAMPLE_IDS"=maleSampleIds,
+                                                 "-- Optionally add a clause here to constrain the results."=sortAndLimit,
                                                  queryReplacements))
 ```
 
 ```
 # Retrieve heterozygous haplotype calls on chromosomes X and Y.
 SELECT
-  call.call_set_name,
-  GROUP_CONCAT(STRING(call.genotype)) WITHIN call AS genotype,
   reference_name,
   start,
-  end,
+  `end`,
   reference_bases,
-  GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
+  ARRAY_TO_STRING(v.alternate_bases, ',') AS alt_concat,
+  call.call_set_name,
+  (SELECT STRING_AGG(CAST(gt AS STRING)) from UNNEST(call.genotype) gt) AS genotype
 FROM
-  [genomics-public-data:platinum_genomes.variants]
+  `genomics-public-data.platinum_genomes.variants` v, v.call call
 WHERE
-  reference_name CONTAINS 'X' OR reference_name CONTAINS 'Y'
-OMIT
-  call if (2 > COUNT(call.genotype))
-  OR EVERY(call.genotype <= 0)
-  OR EVERY(call.genotype = 1)
-HAVING call.call_set_name IN ('NA12877','NA12882','NA12883','NA12884','NA12886','NA12888','NA12889','NA12891','NA12893')
-# Optionally add a clause here to sort and limit the results.
-ORDER BY reference_name, start, alternate_bases, call.call_set_name LIMIT 1000
+  reference_name IN ('chrX', 'X', 'chrY', 'Y')
+  AND call_set_name IN ('NA12877','NA12882','NA12883','NA12884','NA12886','NA12888','NA12889','NA12891','NA12893')
+  AND (SELECT LOGICAL_OR(gt = 0) AND LOGICAL_OR(gt = 1) FROM UNNEST(call.genotype) gt)
+ORDER BY reference_name, start, alt_concat, call_set_name LIMIT 1000
 ```
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.2 by xtable 1.7-4 package -->
-<!-- Wed Feb  3 13:48:29 2016 -->
+<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Wed Nov 23 13:52:16 2016 -->
 <table border=1>
-<tr> <th> call_call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alternate_bases </th>  </tr>
-  <tr> <td> not displayed </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> </tr>
-  <tr> <td> not displayed </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2701401 </td> <td align="right"> 2701402 </td> <td> T </td> <td> G </td> </tr>
-  <tr> <td> not displayed </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2702609 </td> <td align="right"> 2702610 </td> <td> C </td> <td> A </td> </tr>
-  <tr> <td> not displayed </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2702609 </td> <td align="right"> 2702610 </td> <td> C </td> <td> A </td> </tr>
-  <tr> <td> not displayed </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2703499 </td> <td align="right"> 2703500 </td> <td> A </td> <td> T </td> </tr>
-  <tr> <td> not displayed </td> <td> 0,1 </td> <td> chrX </td> <td align="right"> 2703499 </td> <td align="right"> 2703500 </td> <td> A </td> <td> T </td> </tr>
+<tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alt_concat </th> <th> call_set_name </th> <th> genotype </th>  </tr>
+  <tr> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> <td> not displayed </td> <td> 0,1 </td> </tr>
+  <tr> <td> chrX </td> <td align="right"> 2701401 </td> <td align="right"> 2701402 </td> <td> T </td> <td> G </td> <td> not displayed </td> <td> 0,1 </td> </tr>
+  <tr> <td> chrX </td> <td align="right"> 2702609 </td> <td align="right"> 2702610 </td> <td> C </td> <td> A </td> <td> not displayed </td> <td> 0,1 </td> </tr>
+  <tr> <td> chrX </td> <td align="right"> 2702609 </td> <td align="right"> 2702610 </td> <td> C </td> <td> A </td> <td> not displayed </td> <td> 0,1 </td> </tr>
+  <tr> <td> chrX </td> <td align="right"> 2703499 </td> <td align="right"> 2703500 </td> <td> A </td> <td> T </td> <td> not displayed </td> <td> 0,1 </td> </tr>
+  <tr> <td> chrX </td> <td align="right"> 2703499 </td> <td align="right"> 2703500 </td> <td> A </td> <td> T </td> <td> not displayed </td> <td> 0,1 </td> </tr>
    </table>
 
 # Removing variants from the Cohort

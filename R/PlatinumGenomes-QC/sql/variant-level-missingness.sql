@@ -1,31 +1,27 @@
-# Compute the ratio no-calls for each variant.
-SELECT
-  reference_name,
-  start,
-  END,
-  reference_bases,
-  alternate_bases,
-  no_calls,
-  all_calls,
-  (no_calls/all_calls) AS missingness_rate
-FROM (
+# Compute the ratio of no-calls for each variant.
+WITH variant_missingness AS (
   SELECT
     reference_name,
     start,
-    END,
+    `end`,
     reference_bases,
-    GROUP_CONCAT(alternate_bases) WITHIN RECORD AS alternate_bases,
-    SUM(call.genotype == -1) WITHIN RECORD AS no_calls,
-    COUNT(call.genotype) WITHIN RECORD AS all_calls,
+    ARRAY_TO_STRING(v.alternate_bases, ',') AS alt_concat,
+    (SELECT SUM((SELECT COUNT(gt) FROM UNNEST(call.genotype) gt)) FROM v.call) AS all_calls,
+    (SELECT SUM((SELECT COUNT(gt) FROM UNNEST(call.genotype) gt WHERE gt < 0)) FROM v.call) AS no_calls
   FROM
-      [_MULTISAMPLE_VARIANT_TABLE_]
-  # Optionally add clause here to limit the query to a particular
-  # region of the genome.
-  #_WHERE_
-  HAVING
-    # Only use SNPs since non-variant segments are only included for SNPs.
-    reference_bases IN ('A','C','G','T')
-    AND alternate_bases IN ('A','C','G','T')
-  )
-# Optionally add a clause here to sort and limit the results.
-#_ORDER_BY_
+    `@MULTISAMPLE_VARIANT_TABLE` v
+)
+
+SELECT
+  reference_name,
+  start,
+  `end`,
+  reference_bases,
+  alt_concat,
+  no_calls,
+  all_calls,
+  no_calls/all_calls AS missingness_rate
+FROM variant_missingness
+WHERE
+  all_calls > 0
+-- Optionally add a clause here to constrain the results.
