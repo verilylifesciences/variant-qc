@@ -29,7 +29,7 @@ queryReplacements <- list(
   "EXISTS (SELECT ft FROM UNNEST(call.FILTER) ft WHERE ft NOT IN ('PASS', '.'))" =
     "(call.allele1VariantQuality != 'VQHIGH' OR IFNULL(call.allele2VariantQuality != 'VQHIGH', FALSE))",
   "EXISTS (SELECT ft FROM UNNEST(call.FILTER) ft WHERE ft IN ('PASS', '.'))" =
-    "(call.allele1VariantQuality = 'VQHIGH' OR IFNULL(call.allele2VariantQuality = 'VQHIGH', TRUE))"
+    "(call.allele1VariantQuality = 'VQHIGH' AND IFNULL(call.allele2VariantQuality = 'VQHIGH', TRUE))"
 )
 
 sampleData <- read.csv(textConnection(getURL("https://my.pgp-hms.org/google_surveys/1/download")))
