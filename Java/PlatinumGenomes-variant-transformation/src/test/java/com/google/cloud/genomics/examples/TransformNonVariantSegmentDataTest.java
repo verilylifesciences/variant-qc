@@ -356,8 +356,8 @@ public class TransformNonVariantSegmentDataTest {
     List<TableRow> rows = formatVariantsFn.processBatch(variant);
     assertEquals(1, rows.size());
 
-    assertEquals("[{call_set_name=hetAlt, phaseset=, genotype=[0, 1], genotype_likelihood=[], DP=30},"
-        + " {call_set_name=homAlt, phaseset=, genotype=[1, 1], genotype_likelihood=[], DP=null}]",
+    assertEquals("[{call_set_name=hetAlt, phaseset=, genotype=[0, 1], genotype_likelihood=[], FILTER=[], DP=30},"
+        + " {call_set_name=homAlt, phaseset=, genotype=[1, 1], genotype_likelihood=[], FILTER=[], DP=null}]",
         rows.get(0).get("call").toString());
   }
 }

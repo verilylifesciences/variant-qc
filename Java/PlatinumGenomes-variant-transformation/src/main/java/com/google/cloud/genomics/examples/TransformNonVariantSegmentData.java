@@ -173,6 +173,8 @@ public class TransformNonVariantSegmentData {
         .setMode("REPEATED"));
     callFields.add(new TableFieldSchema().setName("genotype_likelihood").setType("FLOAT")
         .setMode("REPEATED"));
+    callFields.add(new TableFieldSchema().setName(FILTER_FIELD).setType("STRING")
+        .setMode("REPEATED"));
     callFields.add(new TableFieldSchema().setName(DEPTH_FIELD).setType("INTEGER"));
 
     List<TableFieldSchema> altFields = new ArrayList<>();
@@ -307,6 +309,12 @@ public class TransformNonVariantSegmentData {
         if (summarizeRefMatches && Iterables.all(call.getGenotypeList(), Predicates.equalTo(0))) {
           refMatchCallsets.add(call.getCallSetName());
         } else {
+          List<String> filters = Lists.newArrayList();
+          if (null != call.getInfo().get(FILTER_FIELD)) {
+            for (Value value : call.getInfo().get(FILTER_FIELD).getValuesList()) {
+              filters.add(value.getStringValue());
+            }
+          }
           String depth = null;
           if (null != call.getInfo().get(DEPTH_FIELD)) {
             String value = call.getInfo().get(DEPTH_FIELD).getValues(0).getStringValue();
@@ -322,6 +330,7 @@ public class TransformNonVariantSegmentData {
                   "genotype_likelihood",
                   (call.getGenotypeLikelihoodList() == null) ? new ArrayList<Double>() : call
                       .getGenotypeLikelihoodList())
+              .set(FILTER_FIELD, filters)
               .set(DEPTH_FIELD, depth));
         }
       }
