@@ -313,7 +313,12 @@ sampleReferenceResults <- result
 For each genome, compare the expected and observed rates of homozygosity.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
-result <- DisplayAndDispatchQuery("./sql/homozygosity-coefficient.sql",
+if (kMultiSampleTableSchemaIsOptimized) {
+  query = "./sql/homozygosity-coefficient-optimized-schema.sql"
+} else {
+  query = "./sql/homozygosity-coefficient.sql"
+}
+result <- DisplayAndDispatchQuery(query,
                                   project=project,
                                   replacements=queryReplacements)
 ```

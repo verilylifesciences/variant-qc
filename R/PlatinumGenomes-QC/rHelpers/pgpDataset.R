@@ -15,6 +15,7 @@
 kResultsDir = "./pgp"
 kGenomeCallTableName = "google.com:biggene.pgp_20150205.genome_calls"
 kMultiSampleTableName = "google.com:biggene.pgp_20150205.multisample_variants"
+kMultiSampleTableSchemaIsOptimized = FALSE
 
 queryReplacements <- list(
   "@GENOME_CALL_TABLE" = kGenomeCallTableName,
