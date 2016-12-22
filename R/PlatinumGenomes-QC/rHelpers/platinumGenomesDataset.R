@@ -14,7 +14,21 @@
 
 kResultsDir = "./platinum_genomes"
 kGenomeCallTableName = "genomics-public-data.platinum_genomes.variants"
-kMultiSampleTableName = "google.com:biggene.platinum_genomes.expanded_variants"
+
+# For illustrative purposes, we generated the multisample variants table using two
+# different schemas.  For more detail, see:
+# https://github.com/googlegenomics/codelabs/blob/summarizeRefMatches/Java/PlatinumGenomes-variant-transformation/README.md
+kDenseMultiSampleTableName = "google.com:biggene.platinum_genomes.multisample_variants_dense_schema"
+kOptimizedMultiSampleTableName = "google.com:biggene.platinum_genomes.multisample_variants_optimized_schema"
+
+# This boolean controls which table we will use for the QC.
+kMultiSampleTableSchemaIsOptimized = FALSE
+
+if (kMultiSampleTableSchemaIsOptimized) {
+  kMultiSampleTableName = kOptimizedMultiSampleTableName
+} else {
+  kMultiSampleTableName = kDenseMultiSampleTableName
+}
 
 queryReplacements <- list(
   "@GENOME_CALL_TABLE" = kGenomeCallTableName,

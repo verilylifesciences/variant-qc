@@ -140,8 +140,13 @@ ggplot(joinedResult, aes(x=average_depth, y=titv, color=ethnicity)) +
 For each variant, compute the missingness rate.  This query can be used to identify variants with a poor call rate.
 
 ```{r message=FALSE, warning=FALSE, comment=NA}
+if (kMultiSampleTableSchemaIsOptimized) {
+  query = "./sql/variant-level-missingness-optimized-schema.sql"
+} else {
+  query = "./sql/variant-level-missingness.sql"
+}
 sortAndLimit <- "ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alt_concat LIMIT 1000"
-result <- DisplayAndDispatchQuery("./sql/variant-level-missingness.sql",
+result <- DisplayAndDispatchQuery(query,
                                   project=project,
                                   replacements=c(
                                     "-- Optionally add a clause here to constrain the results."=sortAndLimit,

@@ -15,6 +15,7 @@
 kResultsDir = "./1000genomes"
 kGenomeCallTableName = "genomics-public-data.1000_genomes_phase_3.variants_20150220_release"
 kMultiSampleTableName = kGenomeCallTableName
+kMultiSampleTableSchemaIsOptimized = FALSE
 
 queryReplacements <- list(
   "@GENOME_CALL_TABLE" = kGenomeCallTableName,
