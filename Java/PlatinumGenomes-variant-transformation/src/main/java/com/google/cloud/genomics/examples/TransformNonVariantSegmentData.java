@@ -78,7 +78,7 @@ import java.util.logging.Logger;
  * non-variant-segments merged into the variants with which they overlap. The resultant data is
  * emitted to a BigQuery table.
  *
- * The specific details of the merge logic depend upon option --variantMergeStrategy=<Class>
+ * The specific details of the merge logic depend upon option --variantMergeStrategy=&lt;Class&gt;
  *
  * This pipeline assumes the call set names in the variant set are unique.
  *
