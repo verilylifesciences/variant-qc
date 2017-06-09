@@ -1,5 +1,8 @@
-# Compute the ratio of positions corresponding to no-calls versus all positions
-# called (reference, variant, and no-calls).
+#standardSQL
+--
+-- Compute the ratio of positions corresponding to no-calls versus all positions
+-- called (reference, variant, and no-calls).
+--
 WITH deltas AS (
   SELECT
     `end` - start AS delta,

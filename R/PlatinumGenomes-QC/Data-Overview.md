@@ -49,7 +49,10 @@ result <- DisplayAndDispatchQuery("./sql/variant-level-data-for-brca1.sql",
 ```
 
 ```
-# Retrieve variant-level information for BRCA1 variants.
+#standardSQL
+--
+-- Retrieve variant-level information for BRCA1 variants.
+--
 SELECT
   reference_name,
   start,
@@ -71,20 +74,18 @@ ORDER BY
   start,
   alt_concat
 ```
-Number of rows returned by this query: **335**.
+Number of rows returned by this query: **281**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 11:34:46 2016 -->
-<table border=1>
-<tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> ref </th> <th> alt_concat </th> <th> quality </th> <th> filters </th> <th> names </th> <th> num_samples </th>  </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196407 </td> <td align="right"> 41196408 </td> <td> G </td> <td> A </td> <td align="right"> 733.47 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td align="right"> 41196822 </td> <td> CT </td> <td> C </td> <td align="right"> 63.74 </td> <td> LowQD </td> <td>  </td> <td align="right">   1 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196820 </td> <td align="right"> 41196823 </td> <td> CTT </td> <td> C,CT </td> <td align="right"> 314.59 </td> <td> PASS </td> <td>  </td> <td align="right">   3 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41196840 </td> <td align="right"> 41196841 </td> <td> G </td> <td> T </td> <td align="right"> 85.68 </td> <td> TruthSensitivityTranche99.90to100.00,LowQD </td> <td>  </td> <td align="right">   2 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41197273 </td> <td align="right"> 41197274 </td> <td> C </td> <td> A </td> <td align="right"> 1011.08 </td> <td> PASS </td> <td>  </td> <td align="right">   7 </td> </tr>
-  <tr> <td> chr17 </td> <td align="right"> 41197938 </td> <td align="right"> 41197939 </td> <td> A </td> <td> AT </td> <td align="right"> 86.95 </td> <td> LowQD </td> <td>  </td> <td align="right">   3 </td> </tr>
-   </table>
+
+|reference_name |    start|      end|ref |alt_concat | quality|filters                                           |names | num_samples|
+|:--------------|--------:|--------:|:---|:----------|-------:|:-------------------------------------------------|:-----|-----------:|
+|chr17          | 41196407| 41196408|G   |A          |  733.47|PASS                                              |      |           3|
+|chr17          | 41196820| 41196823|CTT |C,CT       |  287.18|PASS                                              |      |           1|
+|chr17          | 41197273| 41197274|C   |A          | 1011.08|PASS                                              |      |           3|
+|chr17          | 41197957| 41197958|G   |T          |  178.48|TruthSensitivityTranche99.90to100.00              |      |           4|
+|chr17          | 41198182| 41198183|A   |C          |   98.02|TruthSensitivityTranche99.00to99.90               |      |           1|
+|chr17          | 41198186| 41198187|A   |C          |    7.68|TruthSensitivityTranche99.90to100.00,LowGQX,LowQD |      |           4|
 
 These are the variant-level fields common to all variant sets exported to BigQuery from Google Genomics.  There are often dataset-specific variant-level fields as well.  For more information about additional fields, see the schema for the table being queried.  
 
@@ -101,7 +102,10 @@ result <- DisplayAndDispatchQuery("./sql/non-variant-segments-brca1.sql",
 ```
 
 ```
-# Retrieve non-variant segments for BRCA1.
+#standardSQL
+--
+-- Retrieve non-variant segments for BRCA1.
+--
 SELECT
   call.call_set_name,
   (SELECT STRING_AGG(CAST(gt AS STRING)) from UNNEST(call.genotype) gt) AS genotype,
@@ -123,20 +127,18 @@ ORDER BY
 LIMIT
   10000
 ```
-Number of rows returned by this query: **10000**.
+Number of rows returned by this query: **8123**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 11:34:53 2016 -->
-<table border=1>
-<tr> <th> call_set_name </th> <th> genotype </th> <th> reference_name </th> <th> start </th> <th> end </th> <th> ref </th> <th> alt_concat </th>  </tr>
-  <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196313 </td> <td align="right"> 41196746 </td> <td> G </td> <td>  </td> </tr>
-  <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196321 </td> <td align="right"> 41196381 </td> <td> T </td> <td>  </td> </tr>
-  <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196322 </td> <td align="right"> 41196356 </td> <td> G </td> <td>  </td> </tr>
-  <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196337 </td> <td align="right"> 41196620 </td> <td> T </td> <td>  </td> </tr>
-  <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196339 </td> <td align="right"> 41196489 </td> <td> C </td> <td>  </td> </tr>
-  <tr> <td> not displayed </td> <td> 0,0 </td> <td> chr17 </td> <td align="right"> 41196349 </td> <td align="right"> 41196417 </td> <td> A </td> <td>  </td> </tr>
-   </table>
+
+|call_set_name |genotype |reference_name |    start|      end|ref |alt_concat |
+|:-------------|:--------|:--------------|--------:|--------:|:---|:----------|
+|not displayed |0,0      |chr17          | 41196321| 41196381|T   |           |
+|not displayed |0,0      |chr17          | 41196349| 41196417|A   |           |
+|not displayed |0,0      |chr17          | 41196369| 41196407|T   |           |
+|not displayed |0,0      |chr17          | 41196376| 41196621|T   |           |
+|not displayed |0,0      |chr17          | 41196381| 41196407|T   |           |
+|not displayed |0,0      |chr17          | 41196408| 41196543|G   |           |
 
 When the data contains non-variant segments, for any analyses that require us to know for example _"how many samples do and do not have a particular SNP?"_, we'll need to make sure that the non-variant segments are considered in addition to the variants.
 
@@ -157,7 +159,10 @@ result <- DisplayAndDispatchQuery("./sql/characterize-alts.sql",
 ```
 
 ```
-# Check whether variants are only SNPs and INDELs, with no special characters.
+#standardSQL
+--
+-- Check whether variants are only SNPs and INDELs, with no special characters.
+--
 SELECT
   COUNT(1) AS number_of_variant_records,
   REGEXP_CONTAINS(alt,
@@ -175,12 +180,10 @@ GROUP BY
 Number of rows returned by this query: **1**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 11:34:56 2016 -->
-<table border=1>
-<tr> <th> number_of_variant_records </th> <th> alt_contains_no_special_characters </th> <th> max_ref_len </th> <th> max_alt_len </th>  </tr>
-  <tr> <td align="right"> 12634588 </td> <td> TRUE </td> <td align="right">  56 </td> <td align="right">  47 </td> </tr>
-   </table>
+
+| number_of_variant_records|alt_contains_no_special_characters | max_ref_len| max_alt_len|
+|-------------------------:|:----------------------------------|-----------:|-----------:|
+|                  11162053|TRUE                               |          56|          44|
 
 > In the case of Platinum Genomes we see from the query results that there are no special charaters in alternate_bases and the maximum length is ~50 base pairs, so just SNPs and small INDELs.
 
@@ -197,7 +200,10 @@ result <- DisplayAndDispatchQuery("./sql/characterize-genotypes.sql",
 ```
 
 ```
-# Query to show the variety of genotypes.
+#standardSQL
+--
+-- Query to show the variety of genotypes.
+--
 SELECT
   genotype,
   COUNT(genotype) AS genotype_count
@@ -215,19 +221,17 @@ ORDER BY
 Number of rows returned by this query: **8**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 11:34:58 2016 -->
-<table border=1>
-<tr> <th> genotype </th> <th> genotype_count </th>  </tr>
-  <tr> <td> 0,0 </td> <td align="right"> 771631170 </td> </tr>
-  <tr> <td> 0,1 </td> <td align="right"> 65193851 </td> </tr>
-  <tr> <td> 1,1 </td> <td align="right"> 30576582 </td> </tr>
-  <tr> <td> -1 </td> <td align="right"> 8617093 </td> </tr>
-  <tr> <td> 0 </td> <td align="right"> 7824166 </td> </tr>
-  <tr> <td> -1,-1 </td> <td align="right"> 2935215 </td> </tr>
-  <tr> <td> 1,2 </td> <td align="right"> 657906 </td> </tr>
-  <tr> <td> 1 </td> <td align="right"> 21613 </td> </tr>
-   </table>
+
+|genotype | genotype_count|
+|:--------|--------------:|
+|0,0      |      268837097|
+|0,1      |       22872404|
+|1,1      |       10796056|
+|-1       |        3024578|
+|0        |        2750341|
+|-1,-1    |        1033653|
+|1,2      |         230089|
+|1        |           7473|
 
 
 > In the case of Platinum Genomes we see from the query results the variety of genotypes:

@@ -54,7 +54,10 @@ result <- DisplayAndDispatchQuery("./sql/genome-variant-calls.sql",
 ```
 
 ```
-# Count the number of variant calls per genome.
+#standardSQL
+--
+-- Count the number of variant calls per genome.
+--
 SELECT
   call.call_set_name,
   COUNT(call.call_set_name) AS number_of_calls
@@ -70,20 +73,18 @@ GROUP BY
 ORDER BY
   call_set_name
 ```
-Number of rows returned by this query: **17**.
+Number of rows returned by this query: **6**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:07:53 2016 -->
-<table border=1>
-<tr> <th> call_set_name </th> <th> number_of_calls </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 3859838 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 3874126 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 3875322 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 3877931 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 3903770 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 3888561 </td> </tr>
-   </table>
+
+|call_set_name | number_of_calls|
+|:-------------|---------------:|
+|NA12877       |         3859838|
+|NA12878       |         3874126|
+|NA12889       |         3825240|
+|NA12890       |         3900336|
+|NA12891       |         3825507|
+|NA12892       |         3901539|
 
 Let's join this with the sample information and visualize the results:
 
@@ -141,8 +142,11 @@ result <- DisplayAndDispatchQuery("./sql/sample-level-missingness.sql",
 ```
 
 ```
-# Compute the ratio of positions corresponding to no-calls versus all positions
-# called (reference, variant, and no-calls).
+#standardSQL
+--
+-- Compute the ratio of positions corresponding to no-calls versus all positions
+-- called (reference, variant, and no-calls).
+--
 WITH deltas AS (
   SELECT
     `end` - start AS delta,
@@ -173,20 +177,18 @@ FROM positions_called
 ORDER BY
   call_set_name
 ```
-Number of rows returned by this query: **17**.
+Number of rows returned by this query: **6**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:07:59 2016 -->
-<table border=1>
-<tr> <th> call_set_name </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 85025808 </td> <td align="right">  </td> <td align="right"> 0.03 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 100372181 </td> <td align="right">  </td> <td align="right"> 0.04 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 101872729 </td> <td align="right">  </td> <td align="right"> 0.04 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 101488526 </td> <td align="right">  </td> <td align="right"> 0.04 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 102372220 </td> <td align="right">  </td> <td align="right"> 0.04 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 84981715 </td> <td align="right">  </td> <td align="right"> 0.03 </td> </tr>
-   </table>
+
+|call_set_name |  no_calls| all_calls| missingness_rate|
+|:-------------|---------:|---------:|----------------:|
+|NA12877       |  85025808|        NA|        0.0296975|
+|NA12878       | 100372181|        NA|        0.0350581|
+|NA12889       |  86633619|        NA|        0.0302603|
+|NA12890       | 101036492|        NA|        0.0352902|
+|NA12891       |  88847153|        NA|        0.0310334|
+|NA12892       | 100898127|        NA|        0.0352419|
 
 Note that for some datasets, we see message "NAs introduced by coercion to integer range" when [bigrquery](https://github.com/rstats-db/bigrquery) converts 64-bit integer results from BigQuery to 32-bit R integers in the dataframe. For this query, the particular column with the issue is not used in our downstream analysis in R, so we can omit it.
 
@@ -258,7 +260,10 @@ result <- DisplayAndDispatchQuery("./sql/private-variants.sql",
 ```
 
 ```
-# Compute private variants counts for each sample.
+#standardSQL
+--
+-- Compute private variants counts for each sample.
+--
 WITH filtered_called_alleles AS (
   SELECT
     reference_name,
@@ -303,20 +308,18 @@ GROUP BY
 ORDER BY
   private_variant_count DESC
 ```
-Number of rows returned by this query: **17**.
+Number of rows returned by this query: **6**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:08:05 2016 -->
-<table border=1>
-<tr> <th> call_set_name </th> <th> private_variant_count </th>  </tr>
-  <tr> <td> NA12892 </td> <td align="right"> 303216 </td> </tr>
-  <tr> <td> NA12890 </td> <td align="right"> 292892 </td> </tr>
-  <tr> <td> NA12889 </td> <td align="right"> 283839 </td> </tr>
-  <tr> <td> NA12891 </td> <td align="right"> 268484 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 24783 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 23264 </td> </tr>
-   </table>
+
+|call_set_name | private_variant_count|
+|:-------------|---------------------:|
+|NA12892       |                348480|
+|NA12890       |                334270|
+|NA12889       |                318492|
+|NA12891       |                312855|
+|NA12877       |                 82411|
+|NA12878       |                 78934|
 
 Let's join this with the sample information and visualize the results:
 
@@ -374,7 +377,10 @@ result <- DisplayAndDispatchQuery("./sql/heterozygous-calls-by-sample.sql",
 ```
 
 ```
-# Count the number of heterozygous variants per sample.
+#standardSQL
+--
+-- Count the number of heterozygous variants per sample.
+--
 WITH filtered_snp_calls AS (
   SELECT
     call.call_set_name,
@@ -403,20 +409,18 @@ GROUP BY
 ORDER BY
   call_set_name
 ```
-Number of rows returned by this query: **17**.
+Number of rows returned by this query: **6**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:08:11 2016 -->
-<table border=1>
-<tr> <th> call_set_name </th> <th> heterozygous_variant_count </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 1916100 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 1961370 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 1959626 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 1982368 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 1984345 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 1919017 </td> </tr>
-   </table>
+
+|call_set_name | heterozygous_variant_count|
+|:-------------|--------------------------:|
+|NA12877       |                    1916100|
+|NA12878       |                    1961370|
+|NA12889       |                    1928251|
+|NA12890       |                    1980057|
+|NA12891       |                    1885606|
+|NA12892       |                    2016053|
 
 Let's join this with the sample information and visualize the results:
 
@@ -475,7 +479,10 @@ result <- DisplayAndDispatchQuery("./sql/homozygous-variant-rate-by-sample-and-r
 ```
 
 ```
-# Compute the ratio of homozygous vs. heterozygous variant calls for each individual.
+#standardSQL
+--
+-- Compute the ratio of homozygous vs. heterozygous variant calls for each individual.
+--
 WITH filtered_snp_calls AS (
   SELECT
     reference_name,
@@ -523,20 +530,19 @@ ORDER BY
   call_set_name,
   reference_name
 ```
-Number of rows returned by this query: **408**.
+Number of rows returned by this query: **144**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:08:16 2016 -->
-<table border=1>
-<tr> <th> call_set_name </th> <th> reference_name </th> <th> HOM_ALT </th> <th> HAS_ALT </th> <th> N_SITES </th> <th> F </th>  </tr>
-  <tr> <td> NA12877 </td> <td> chr1 </td> <td align="right"> 103349 </td> <td align="right"> 247958 </td> <td align="right"> 247958 </td> <td align="right"> 0.42 </td> </tr>
-  <tr> <td> NA12877 </td> <td> chr10 </td> <td align="right"> 66163 </td> <td align="right"> 161993 </td> <td align="right"> 161993 </td> <td align="right"> 0.41 </td> </tr>
-  <tr> <td> NA12877 </td> <td> chr11 </td> <td align="right"> 67922 </td> <td align="right"> 164243 </td> <td align="right"> 164243 </td> <td align="right"> 0.41 </td> </tr>
-  <tr> <td> NA12877 </td> <td> chr12 </td> <td align="right"> 60750 </td> <td align="right"> 154954 </td> <td align="right"> 154954 </td> <td align="right"> 0.39 </td> </tr>
-  <tr> <td> NA12877 </td> <td> chr13 </td> <td align="right"> 55000 </td> <td align="right"> 126927 </td> <td align="right"> 126927 </td> <td align="right"> 0.43 </td> </tr>
-  <tr> <td> NA12877 </td> <td> chr14 </td> <td align="right"> 40460 </td> <td align="right"> 101858 </td> <td align="right"> 101858 </td> <td align="right"> 0.40 </td> </tr>
-   </table>
+
+|call_set_name |reference_name | HOM_ALT| HAS_ALT| N_SITES|       F|
+|:-------------|:--------------|-------:|-------:|-------:|-------:|
+|NA12877       |chr1           |  103349|  247958|  247958| 0.41680|
+|NA12877       |chr10          |   66163|  161993|  161993| 0.40843|
+|NA12877       |chr11          |   67922|  164243|  164243| 0.41355|
+|NA12877       |chr12          |   60750|  154954|  154954| 0.39205|
+|NA12877       |chr13          |   55000|  126927|  126927| 0.43332|
+|NA12877       |chr14          |   40460|  101858|  101858| 0.39722|
+
 Let's join this with the sample information and visualize the results:
 
 ```r
@@ -568,13 +574,21 @@ For each genome, compare the expected and observed rates of homozygosity.
 
 
 ```r
-result <- DisplayAndDispatchQuery("./sql/homozygosity-coefficient.sql",
+if (kMultiSampleTableSchemaIsOptimized) {
+  query = "./sql/homozygosity-coefficient-optimized-schema.sql"
+} else {
+  query = "./sql/homozygosity-coefficient.sql"
+}
+result <- DisplayAndDispatchQuery(query,
                                   project=project,
                                   replacements=queryReplacements)
 ```
 
 ```
-# Compute the expected and observed homozygosity rate for each individual.
+#standardSQL
+--
+-- Compute the expected and observed homozygosity rate for each individual.
+--
 WITH variant_calls AS (
   SELECT
     call.call_set_name,
@@ -582,7 +596,7 @@ WITH variant_calls AS (
     (SELECT SUM((SELECT COUNT(gt) FROM UNNEST(call.genotype) gt WHERE gt >= 0)) FROM v.call) AS AN,
     (SELECT SUM((SELECT COUNT(gt) FROM UNNEST(call.genotype) gt WHERE gt = 1)) FROM v.call) AS AC
   FROM
-    `google.com:biggene.platinum_genomes.expanded_variants` v, v.call call
+    `google.com:biggene.platinum_genomes.multisample_variants_dense_schema` v, v.call call
   WHERE
     # Only include biallelic snps within autosomes. (Concise but inexact regexp used for brevity.)
     REGEXP_CONTAINS(reference_name, r'^(chr)?([1-2])?[0-9]$')
@@ -619,20 +633,18 @@ FROM grouped_values
 ORDER BY
   call_set_name
 ```
-Number of rows returned by this query: **17**.
+Number of rows returned by this query: **6**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:08:26 2016 -->
-<table border=1>
-<tr> <th> call_set_name </th> <th> O_HOM </th> <th> E_HOM </th> <th> N_SITES </th> <th> F </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 5107357 </td> <td align="right"> 5131169.71 </td> <td align="right"> 7022727 </td> <td align="right"> -0.01 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 5079568 </td> <td align="right"> 5098324.62 </td> <td align="right"> 6984556 </td> <td align="right"> -0.01 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 4937093 </td> <td align="right"> 4987386.15 </td> <td align="right"> 6841573 </td> <td align="right"> -0.03 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 4903339 </td> <td align="right"> 4979031.62 </td> <td align="right"> 6832036 </td> <td align="right"> -0.04 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 4877364 </td> <td align="right"> 4958460.55 </td> <td align="right"> 6808732 </td> <td align="right"> -0.04 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 5152560 </td> <td align="right"> 5176429.00 </td> <td align="right"> 7070614 </td> <td align="right"> -0.01 </td> </tr>
-   </table>
+
+|call_set_name |   O_HOM|   E_HOM| N_SITES|        F|
+|:-------------|-------:|-------:|-------:|--------:|
+|NA12877       | 2974569| 3073568| 4889939| -0.05450|
+|NA12878       | 2990194| 3075965| 4895182| -0.04715|
+|NA12889       | 2982768| 3084585| 4910114| -0.05577|
+|NA12890       | 2985723| 3084037| 4909733| -0.05385|
+|NA12891       | 3010803| 3075165| 4895617| -0.03535|
+|NA12892       | 2965224| 3090686| 4924716| -0.06841|
 
 Let's join this with the sample information and visualize the results:
 
@@ -652,6 +664,10 @@ ggplot(result) +
   xlab("Observed Homozygous Variants") +
   ylab("Expected Homozygous Variants") +
   ggtitle("Homozygosity")
+```
+
+```
+Warning: Ignoring unknown aesthetics: label
 ```
 
 <img src="./platinum_genomes/figure/homozygosityCoeff-1.png" title="plot of chunk homozygosityCoeff" alt="plot of chunk homozygosityCoeff" style="display: block; margin: auto;" />
@@ -689,7 +705,10 @@ result <- DisplayAndDispatchQuery("./sql/ti-tv-by-sample-and-reference.sql",
 ```
 
 ```
-# Compute the transition/transversion ratio per sample and reference name.
+#standardSQL
+--
+-- Compute the transition/transversion ratio per sample and reference name.
+--
 WITH filtered_snp_calls AS (
   SELECT
     reference_name,
@@ -734,20 +753,18 @@ ORDER BY
   titv DESC,
   call_set_name
 ```
-Number of rows returned by this query: **408**.
+Number of rows returned by this query: **144**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:08:31 2016 -->
-<table border=1>
-<tr> <th> reference_name </th> <th> call_set_name </th> <th> transitions </th> <th> transversions </th> <th> titv </th>  </tr>
-  <tr> <td> chr22 </td> <td> NA12887 </td> <td align="right"> 29028 </td> <td align="right"> 11960 </td> <td align="right"> 2.43 </td> </tr>
-  <tr> <td> chr22 </td> <td> NA12893 </td> <td align="right"> 28724 </td> <td align="right"> 11864 </td> <td align="right"> 2.42 </td> </tr>
-  <tr> <td> chr22 </td> <td> NA12886 </td> <td align="right"> 28476 </td> <td align="right"> 11767 </td> <td align="right"> 2.42 </td> </tr>
-  <tr> <td> chr22 </td> <td> NA12892 </td> <td align="right"> 30420 </td> <td align="right"> 12616 </td> <td align="right"> 2.41 </td> </tr>
-  <tr> <td> chr22 </td> <td> NA12879 </td> <td align="right"> 28914 </td> <td align="right"> 11995 </td> <td align="right"> 2.41 </td> </tr>
-  <tr> <td> chr22 </td> <td> NA12889 </td> <td align="right"> 29342 </td> <td align="right"> 12183 </td> <td align="right"> 2.41 </td> </tr>
-   </table>
+
+|reference_name |call_set_name | transitions| transversions|     titv|
+|:--------------|:-------------|-----------:|-------------:|--------:|
+|chr22          |NA12892       |       30420|         12616| 2.411224|
+|chr22          |NA12889       |       29342|         12183| 2.408438|
+|chr22          |NA12878       |       28418|         11829| 2.402401|
+|chr22          |NA12877       |       29591|         12385| 2.389261|
+|chr17          |NA12877       |       61396|         25702| 2.388764|
+|chr17          |NA12890       |       58786|         24688| 2.381157|
 
 Let's join this with the sample information and visualize the results:
 
@@ -759,7 +776,7 @@ joinedResult <- inner_join(result, sampleInfo)
 ```r
 ggplot(joinedResult, aes(y=titv, x=reference_name, color=sex)) +
   geom_boxplot() +
-  facet_grid(~ ethnicity)+
+  facet_wrap(~ ethnicity) +
   scale_y_continuous(labels=comma) +
   ylab("Ti/Tv ratio") +
   xlab("Chromosome") +
@@ -788,9 +805,12 @@ result <- DisplayAndDispatchQuery("./sql/check-sex.sql",
 ```
 
 ```
-# Compute the homozygous and heterozygous variant counts for each individual
-# within chromosome X to help determine whether the sex phenotype value is
-# correct for each individual.
+#standardSQL
+--
+-- Compute the homozygous and heterozygous variant counts for each individual
+-- within chromosome X to help determine whether the sex phenotype value is
+-- correct for each individual.
+--
 WITH filtered_snp_calls AS (
   SELECT
     call.call_set_name,
@@ -824,20 +844,18 @@ GROUP BY
 ORDER BY
   call_set_name
 ```
-Number of rows returned by this query: **17**.
+Number of rows returned by this query: **6**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:08:37 2016 -->
-<table border=1>
-<tr> <th> call_set_name </th> <th> perct_het_alt_in_snvs </th> <th> perct_hom_alt_in_snvs </th> <th> hom_AA_count </th> <th> het_RA_count </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right"> 0.01 </td> <td align="right"> 0.99 </td> <td align="right"> 65922 </td> <td align="right"> 655 </td> </tr>
-  <tr> <td> NA12878 </td> <td align="right"> 0.61 </td> <td align="right"> 0.39 </td> <td align="right"> 35769 </td> <td align="right"> 56382 </td> </tr>
-  <tr> <td> NA12879 </td> <td align="right"> 0.59 </td> <td align="right"> 0.41 </td> <td align="right"> 37747 </td> <td align="right"> 55144 </td> </tr>
-  <tr> <td> NA12880 </td> <td align="right"> 0.58 </td> <td align="right"> 0.42 </td> <td align="right"> 39094 </td> <td align="right"> 53670 </td> </tr>
-  <tr> <td> NA12881 </td> <td align="right"> 0.57 </td> <td align="right"> 0.43 </td> <td align="right"> 39969 </td> <td align="right"> 52976 </td> </tr>
-  <tr> <td> NA12882 </td> <td align="right"> 0.01 </td> <td align="right"> 0.99 </td> <td align="right"> 67242 </td> <td align="right"> 763 </td> </tr>
-   </table>
+
+|call_set_name | perct_het_alt_in_snvs| perct_hom_alt_in_snvs| hom_AA_count| het_RA_count|
+|:-------------|---------------------:|---------------------:|------------:|------------:|
+|NA12877       |                 0.010|                 0.990|        65922|          655|
+|NA12878       |                 0.612|                 0.388|        35769|        56382|
+|NA12889       |                 0.011|                 0.989|        64397|          704|
+|NA12890       |                 0.604|                 0.396|        36763|        56046|
+|NA12891       |                 0.008|                 0.992|        66349|          556|
+|NA12892       |                 0.618|                 0.382|        34943|        56543|
 
 Let's join this with the sample information and visualize the results:
 
@@ -975,7 +993,7 @@ dim(sampleResults)
 ```
 
 ```
-[1] 17 14
+[1]  6 14
 ```
 
 ```r
@@ -984,40 +1002,40 @@ summary(sampleResults)
 
 ```
  call_set_name      number_of_calls      no_calls        
- Length:17          Min.   :3825240   Min.   : 84981715  
- Class :character   1st Qu.:3870044   1st Qu.: 86275658  
- Mode  :character   Median :3877100   Median : 88847153  
-                    Mean   :3875038   Mean   : 93487248  
-                    3rd Qu.:3888561   3rd Qu.:101300696  
-                    Max.   :3903770   Max.   :102372220  
+ Length:6           Min.   :3825240   Min.   : 85025808  
+ Class :character   1st Qu.:3834090   1st Qu.: 87187002  
+ Mode  :character   Median :3866982   Median : 94609667  
+                    Mean   :3864431   Mean   : 93802230  
+                    3rd Qu.:3893784   3rd Qu.:100766640  
+                    Max.   :3901539   Max.   :101036492  
  missingness_rate  private_variant_count heterozygous_variant_count
- Min.   :0.02968   Min.   : 12846        Min.   :1885606           
- 1st Qu.:0.03013   1st Qu.: 16293        1st Qu.:1919017           
- Median :0.03103   Median : 18669        Median :1939962           
- Mean   :0.03265   Mean   : 81112        Mean   :1949622           
- 3rd Qu.:0.03538   3rd Qu.: 24783        3rd Qu.:1980057           
- Max.   :0.03576   Max.   :303216        Max.   :2016053           
+ Min.   :0.02970   Min.   : 78934        Min.   :1885606           
+ 1st Qu.:0.03045   1st Qu.:140022        1st Qu.:1919138           
+ Median :0.03305   Median :315674        Median :1944810           
+ Mean   :0.03276   Mean   :245907        Mean   :1947906           
+ 3rd Qu.:0.03520   3rd Qu.:330326        3rd Qu.:1975385           
+ Max.   :0.03529   Max.   :348480        Max.   :2016053           
      O_HOM             E_HOM            N_SITES              F           
- Min.   :4877364   Min.   :4958461   Min.   :6808732   Min.   :-0.04611  
- 1st Qu.:4943497   1st Qu.:4998364   1st Qu.:6862189   1st Qu.:-0.03635  
- Median :4980269   Median :5034754   Median :6902259   Median :-0.02712  
- Mean   :4994753   Mean   :5041605   Mean   :6917916   Mean   :-0.02509  
- 3rd Qu.:5039706   3rd Qu.:5072849   3rd Qu.:6980214   3rd Qu.:-0.01259  
- Max.   :5152560   Max.   :5176429   Max.   :7070614   Max.   : 0.00028  
+ Min.   :2965224   Min.   :3073568   Min.   :4889939   Min.   :-0.06841  
+ 1st Qu.:2976619   1st Qu.:3075365   1st Qu.:4895291   1st Qu.:-0.05545  
+ Median :2984246   Median :3080001   Median :4902675   Median :-0.05418  
+ Mean   :2984880   Mean   :3080668   Mean   :4904217   Mean   :-0.05251  
+ 3rd Qu.:2989076   3rd Qu.:3084448   3rd Qu.:4910019   3rd Qu.:-0.04883  
+ Max.   :3010803   Max.   :3090686   Max.   :4924716   Max.   :-0.03535  
  perct_het_alt_in_snvs perct_hom_alt_in_snvs  hom_AA_count  
- Min.   :0.0080        Min.   :0.3820        Min.   :34943  
- 1st Qu.:0.0120        1st Qu.:0.4060        1st Qu.:37747  
- Median :0.0160        Median :0.9840        Median :64397  
- Mean   :0.2866        Mean   :0.7134        Mean   :52428  
- 3rd Qu.:0.5940        3rd Qu.:0.9880        3rd Qu.:65922  
- Max.   :0.6180        Max.   :0.9920        Max.   :67242  
-  het_RA_count  
- Min.   :  556  
- 1st Qu.:  769  
- Median : 1073  
- Mean   :26351  
- 3rd Qu.:55144  
- Max.   :56543  
+ Min.   :0.00800       Min.   :0.3820        Min.   :34943  
+ 1st Qu.:0.01025       1st Qu.:0.3900        1st Qu.:36018  
+ Median :0.30750       Median :0.6925        Median :50580  
+ Mean   :0.31050       Mean   :0.6895        Mean   :50690  
+ 3rd Qu.:0.61000       3rd Qu.:0.9898        3rd Qu.:65541  
+ Max.   :0.61800       Max.   :0.9920        Max.   :66349  
+  het_RA_count    
+ Min.   :  556.0  
+ 1st Qu.:  667.2  
+ Median :28375.0  
+ Mean   :28481.0  
+ 3rd Qu.:56298.0  
+ Max.   :56543.0  
 ```
 
 ```r
@@ -1031,7 +1049,7 @@ dim(sampleReferenceResults)
 ```
 
 ```
-[1] 408   9
+[1] 144   9
 ```
 
 ```r
@@ -1040,26 +1058,26 @@ summary(sampleReferenceResults)
 
 ```
  call_set_name      reference_name        HOM_ALT          HAS_ALT      
- Length:408         Length:408         Min.   :   123   Min.   :   135  
- Class :character   Class :character   1st Qu.: 35368   1st Qu.: 84462  
- Mode  :character   Mode  :character   Median : 55347   Median :131487  
-                                       Mean   : 54947   Mean   :136181  
-                                       3rd Qu.: 72902   3rd Qu.:187800  
-                                       Max.   :109168   Max.   :269962  
+ Length:144         Length:144         Min.   :   123   Min.   :   141  
+ Class :character   Class :character   1st Qu.: 34826   1st Qu.: 84019  
+ Mode  :character   Mode  :character   Median : 55396   Median :131487  
+                                       Mean   : 54636   Mean   :135799  
+                                       3rd Qu.: 72390   3rd Qu.:187405  
+                                       Max.   :108452   Max.   :269962  
     N_SITES             F           transitions     transversions  
- Min.   :   135   Min.   :0.3122   Min.   :    90   Min.   :   45  
- 1st Qu.: 84462   1st Qu.:0.3802   1st Qu.: 59466   1st Qu.:25027  
- Median :131487   Median :0.3986   Median : 88706   Median :42931  
- Mean   :136181   Mean   :0.4236   Mean   : 92279   Mean   :43904  
- 3rd Qu.:187800   3rd Qu.:0.4167   3rd Qu.:127154   3rd Qu.:61680  
+ Min.   :   141   Min.   :0.3122   Min.   :    93   Min.   :   48  
+ 1st Qu.: 84019   1st Qu.:0.3785   1st Qu.: 59132   1st Qu.:24888  
+ Median :131487   Median :0.3947   Median : 88440   Median :42931  
+ Mean   :135799   Mean   :0.4240   Mean   : 92018   Mean   :43784  
+ 3rd Qu.:187405   3rd Qu.:0.4146   3rd Qu.:126712   3rd Qu.:61680  
  Max.   :269962   Max.   :1.0000   Max.   :182576   Max.   :87391  
       titv      
- Min.   :1.369  
+ Min.   :1.486  
  1st Qu.:2.053  
  Median :2.111  
- Mean   :2.109  
- 3rd Qu.:2.164  
- Max.   :2.427  
+ Mean   :2.112  
+ 3rd Qu.:2.163  
+ Max.   :2.411  
 ```
 
 ```r
@@ -1072,9 +1090,13 @@ sessionInfo()
 ```
 
 ```
-## R version 3.2.3 (2015-12-10)
-## Platform: x86_64-apple-darwin13.4.0 (64-bit)
-## Running under: OS X 10.11.6 (El Capitan)
+## R version 3.4.0 (2017-04-21)
+## Platform: x86_64-apple-darwin15.6.0 (64-bit)
+## Running under: macOS Sierra 10.12.5
+## 
+## Matrix products: default
+## BLAS: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
+## LAPACK: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRlapack.dylib
 ## 
 ## locale:
 ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -1083,19 +1105,22 @@ sessionInfo()
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] knitr_1.13           ggplot2_2.1.0        bigrquery_0.3.0.9000
-## [4] scales_0.4.0         dplyr_0.5.0          RCurl_1.95-4.8      
-## [7] bitops_1.0-6         xtable_1.8-2        
+## [1] ggplot2_2.2.1        bigrquery_0.3.0.9000 scales_0.4.1        
+## [4] dplyr_0.5.0          RCurl_1.95-4.8       bitops_1.0-6        
+## [7] knitr_1.16          
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] Rcpp_0.12.7      magrittr_1.5     munsell_0.4.3    lattice_0.20-33 
-##  [5] colorspace_1.2-6 R6_2.1.2         stringr_1.0.0    httr_1.2.1      
-##  [9] plyr_1.8.3       tools_3.2.3      grid_3.2.3       nlme_3.1-128    
-## [13] gtable_0.2.0     mgcv_1.8-12      DBI_0.5-1        htmltools_0.3.5 
-## [17] openssl_0.9.5    lazyeval_0.2.0   assertthat_0.1   digest_0.6.9    
-## [21] tibble_1.2       Matrix_1.2-6     formatR_1.4      reshape2_1.4.1  
-## [25] curl_2.2         evaluate_0.9     rmarkdown_0.9.6  labeling_0.3    
-## [29] stringi_1.0-1    jsonlite_1.1
+##  [1] Rcpp_0.12.11      magrittr_1.5      progress_1.1.2   
+##  [4] munsell_0.4.3     colorspace_1.3-2  R6_2.2.1         
+##  [7] rlang_0.1.1       highr_0.6         stringr_1.2.0    
+## [10] httr_1.2.1        plyr_1.8.4        tools_3.4.0      
+## [13] grid_3.4.0        gtable_0.2.0      DBI_0.6-1        
+## [16] htmltools_0.3.6   rprojroot_1.2     digest_0.6.12    
+## [19] openssl_0.9.6     lazyeval_0.2.0    assertthat_0.2.0 
+## [22] tibble_1.3.3      reshape2_1.4.2    curl_2.6         
+## [25] evaluate_0.10     rmarkdown_1.5     labeling_0.3     
+## [28] stringi_1.1.5     compiler_3.4.0    backports_1.1.0  
+## [31] prettyunits_1.0.2 jsonlite_1.5
 ```
 --------------------------------------------------------
 _Next_: [Part 4: Variant-Level QC](./Variant-Level-QC.md)

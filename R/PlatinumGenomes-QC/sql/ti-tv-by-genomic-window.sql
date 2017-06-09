@@ -1,4 +1,7 @@
-# Compute the Ti/Tv ratio for variants within genomic windows.
+#standardSQL
+--
+-- Compute the Ti/Tv ratio for variants within genomic windows.
+--
 WITH filtered_snp_calls AS (
   SELECT
     reference_name,

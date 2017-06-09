@@ -1,4 +1,7 @@
-# Count the number of variant calls per genome.
+#standardSQL
+--
+-- Count the number of variant calls per genome.
+--
 SELECT
   call.call_set_name,
   COUNT(call.call_set_name) AS number_of_calls

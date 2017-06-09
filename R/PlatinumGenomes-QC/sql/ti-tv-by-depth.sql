@@ -1,4 +1,7 @@
-# Transition/Transversion Ratio by Depth of Coverage.
+#standardSQL
+--
+-- Transition/Transversion Ratio by Depth of Coverage.
+--
 WITH filtered_snp_calls AS (
   SELECT
     call.call_set_name,
