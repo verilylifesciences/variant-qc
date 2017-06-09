@@ -1,4 +1,7 @@
-# Compute the transition/transversion ratio per sample and reference name.
+#standardSQL
+--
+-- Compute the transition/transversion ratio per sample and reference name.
+--
 WITH filtered_snp_calls AS (
   SELECT
     reference_name,

@@ -1,4 +1,7 @@
-# Compute the Ti/Tv ratio for variants binned by alternate allele count.
+#standardSQL
+--
+-- Compute the Ti/Tv ratio for variants binned by alternate allele count.
+--
 WITH filtered_snp_calls AS (
   SELECT
     ( -- Compute the allele count for this site of variation.

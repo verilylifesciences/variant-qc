@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-library(xtable)
 library(RCurl)
 library(dplyr)
 library(scales)
@@ -69,7 +68,7 @@ DisplayAndDispatchQuery <- function(queryUri, project, replacements=list(), ...)
   cat(querySql)
 
   # Dispatch the query to BigQuery.
-  query_exec(querySql, project, useLegacySql=FALSE, ...)
+  query_exec(querySql, project, use_legacy_sql=FALSE, ...)
 }
 
 #' This is a helper method to display the first few rows of the query results.
@@ -101,7 +100,7 @@ DisplayQueryResults <- function(result, n=6) {
                          call_set_name = "not displayed")
       }
     }
-    print(xtable(head(result, n=n)), type="html", include.rownames=F)
+    print(knitr::kable(head(result, n=n)))
   }
 }
 

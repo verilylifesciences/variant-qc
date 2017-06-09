@@ -1,6 +1,9 @@
-# Compute the homozygous and heterozygous variant counts for each individual
-# within chromosome X to help determine whether the sex phenotype value is
-# correct for each individual.
+#standardSQL
+--
+-- Compute the homozygous and heterozygous variant counts for each individual
+-- within chromosome X to help determine whether the sex phenotype value is
+-- correct for each individual.
+--
 WITH filtered_snp_calls AS (
   SELECT
     call.call_set_name,

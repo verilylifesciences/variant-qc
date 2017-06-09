@@ -1,4 +1,7 @@
-# Count the number of heterozygous variants per sample.
+#standardSQL
+--
+-- Count the number of heterozygous variants per sample.
+--
 WITH filtered_snp_calls AS (
   SELECT
     call.call_set_name,

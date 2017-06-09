@@ -1,4 +1,7 @@
-# Retrieve non-variant segments for BRCA1.
+#standardSQL
+--
+-- Retrieve non-variant segments for BRCA1.
+--
 SELECT
   call.call_set_name,
   (SELECT STRING_AGG(CAST(gt AS STRING)) from UNNEST(call.genotype) gt) AS genotype,

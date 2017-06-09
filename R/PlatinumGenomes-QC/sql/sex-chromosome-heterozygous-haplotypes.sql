@@ -1,4 +1,7 @@
-# Retrieve heterozygous haplotype calls on chromosomes X and Y.
+#standardSQL
+--
+-- Retrieve heterozygous haplotype calls on chromosomes X and Y.
+--
 SELECT
   reference_name,
   start,

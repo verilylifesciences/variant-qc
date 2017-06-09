@@ -1,5 +1,7 @@
-# Compute the expected and observed homozygosity rate for each individual.
-
+#standardSQL
+--
+-- Compute the expected and observed homozygosity rate for each individual.
+--
 WITH variant_calls AS (
   SELECT
     call.call_set_name,

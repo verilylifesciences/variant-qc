@@ -1,4 +1,7 @@
-# Query to show the variety of genotypes.
+#standardSQL
+--
+-- Query to show the variety of genotypes.
+--
 SELECT
   genotype,
   COUNT(genotype) AS genotype_count

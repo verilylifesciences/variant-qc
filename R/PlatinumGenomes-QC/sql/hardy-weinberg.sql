@@ -1,4 +1,7 @@
-# The following query computes the Hardy-Weinberg equilibrium for variants.
+#standardSQL
+--
+-- The following query computes the Hardy-Weinberg equilibrium for variants.
+--
 WITH variants AS (
   SELECT
     reference_name,

@@ -1,4 +1,7 @@
-# Compute the ratio of no-calls for each variant.
+#standardSQL
+--
+-- Compute the ratio of no-calls for each variant.
+--
 WITH variant_missingness AS (
   SELECT
     reference_name,

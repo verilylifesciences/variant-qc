@@ -1,4 +1,7 @@
-# Compute private variants counts for each sample.
+#standardSQL
+--
+-- Compute private variants counts for each sample.
+--
 WITH filtered_called_alleles AS (
   SELECT
     reference_name,

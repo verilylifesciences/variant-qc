@@ -51,7 +51,10 @@ result <- DisplayAndDispatchQuery("./sql/ti-tv-by-genomic-window.sql",
 ```
 
 ```
-# Compute the Ti/Tv ratio for variants within genomic windows.
+#standardSQL
+--
+-- Compute the Ti/Tv ratio for variants within genomic windows.
+--
 WITH filtered_snp_calls AS (
   SELECT
     reference_name,
@@ -95,24 +98,19 @@ WHERE
 ORDER BY
   reference_name,
   window_start
-
-Retrieving data:  9.4s
-Retrieving data: 19.5s
 ```
-Number of rows returned by this query: **28354**.
+Number of rows returned by this query: **28319**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:51:43 2016 -->
-<table border=1>
-<tr> <th> reference_name </th> <th> window_start </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_group </th>  </tr>
-  <tr> <td> chr1 </td> <td align="right"> 500000 </td> <td align="right">   1 </td> <td align="right">   1 </td> <td align="right"> 1.00 </td> <td align="right">   2 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 700000 </td> <td align="right">  51 </td> <td align="right">  31 </td> <td align="right"> 1.65 </td> <td align="right">  82 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 800000 </td> <td align="right"> 162 </td> <td align="right">  67 </td> <td align="right"> 2.42 </td> <td align="right"> 229 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 900000 </td> <td align="right"> 212 </td> <td align="right">  73 </td> <td align="right"> 2.90 </td> <td align="right"> 285 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 1000000 </td> <td align="right"> 106 </td> <td align="right">  45 </td> <td align="right"> 2.36 </td> <td align="right"> 151 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 1100000 </td> <td align="right"> 151 </td> <td align="right">  38 </td> <td align="right"> 3.97 </td> <td align="right"> 189 </td> </tr>
-   </table>
+
+|reference_name | window_start| transitions| transversions|     titv| num_variants_in_group|
+|:--------------|------------:|-----------:|-------------:|--------:|---------------------:|
+|chr1           |       700000|          44|            26| 1.692308|                    70|
+|chr1           |       800000|         156|            66| 2.363636|                   222|
+|chr1           |       900000|         207|            71| 2.915493|                   278|
+|chr1           |      1000000|         104|            41| 2.536585|                   145|
+|chr1           |      1100000|         145|            37| 3.918919|                   182|
+|chr1           |      1200000|          93|            33| 2.818182|                   126|
 
 Visualizing the results:
 
@@ -140,7 +138,10 @@ result <- DisplayAndDispatchQuery("./sql/ti-tv-by-alternate-allele-count.sql",
 ```
 
 ```
-# Compute the Ti/Tv ratio for variants binned by alternate allele count.
+#standardSQL
+--
+-- Compute the Ti/Tv ratio for variants binned by alternate allele count.
+--
 WITH filtered_snp_calls AS (
   SELECT
     ( -- Compute the allele count for this site of variation.
@@ -186,20 +187,18 @@ WHERE
 ORDER BY
   AC DESC
 ```
-Number of rows returned by this query: **34**.
+Number of rows returned by this query: **12**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:51:49 2016 -->
-<table border=1>
-<tr> <th> AC </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_group </th>  </tr>
-  <tr> <td align="right">  34 </td> <td align="right"> 300985 </td> <td align="right"> 142987 </td> <td align="right"> 2.10 </td> <td align="right"> 443972 </td> </tr>
-  <tr> <td align="right">  33 </td> <td align="right"> 96846 </td> <td align="right"> 45222 </td> <td align="right"> 2.14 </td> <td align="right"> 142068 </td> </tr>
-  <tr> <td align="right">  32 </td> <td align="right"> 60764 </td> <td align="right"> 29492 </td> <td align="right"> 2.06 </td> <td align="right"> 90256 </td> </tr>
-  <tr> <td align="right">  31 </td> <td align="right"> 26838 </td> <td align="right"> 12751 </td> <td align="right"> 2.10 </td> <td align="right"> 39589 </td> </tr>
-  <tr> <td align="right">  30 </td> <td align="right"> 15224 </td> <td align="right"> 7442 </td> <td align="right"> 2.05 </td> <td align="right"> 22666 </td> </tr>
-  <tr> <td align="right">  29 </td> <td align="right"> 13632 </td> <td align="right"> 6442 </td> <td align="right"> 2.12 </td> <td align="right"> 20074 </td> </tr>
-   </table>
+
+| AC| transitions| transversions|     titv| num_variants_in_group|
+|--:|-----------:|-------------:|--------:|---------------------:|
+| 12|      305770|        145657| 2.099247|                451427|
+| 11|       98223|         45962| 2.137048|                144185|
+| 10|      159649|         75857| 2.104605|                235506|
+|  9|      161852|         76643| 2.111765|                238495|
+|  8|      193681|         91602| 2.114375|                285283|
+|  7|      212197|        101342| 2.093870|                313539|
 
 Visualizing the results:
 
@@ -221,14 +220,16 @@ Visualize the ratio of transitions vs. transversions by depth of coverage.
 
 
 ```r
-query <- "./sql/ti-tv-by-depth.sql"
-result <- DisplayAndDispatchQuery(query,
+result <- DisplayAndDispatchQuery("./sql/ti-tv-by-depth.sql",
                                   project=project,
                                   replacements=queryReplacements)
 ```
 
 ```
-# Transition/Transversion Ratio by Depth of Coverage.
+#standardSQL
+--
+-- Transition/Transversion Ratio by Depth of Coverage.
+--
 WITH filtered_snp_calls AS (
   SELECT
     call.call_set_name,
@@ -278,21 +279,25 @@ ORDER BY
   average_depth
 ```
 
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:51:55 2016 -->
-<table border=1>
-<tr> <th> call_set_name </th> <th> average_depth </th> <th> transitions </th> <th> transversions </th> <th> titv </th> <th> num_variants_in_group </th>  </tr>
-  <tr> <td> NA12877 </td> <td align="right">   3 </td> <td align="right">   4 </td> <td align="right">   8 </td> <td align="right"> 0.50 </td> <td align="right">  12 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right">   4 </td> <td align="right">   7 </td> <td align="right">  10 </td> <td align="right"> 0.70 </td> <td align="right">  17 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right">   5 </td> <td align="right">  12 </td> <td align="right">  10 </td> <td align="right"> 1.20 </td> <td align="right">  22 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right">   6 </td> <td align="right">   8 </td> <td align="right">  11 </td> <td align="right"> 0.73 </td> <td align="right">  19 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right">   7 </td> <td align="right">   8 </td> <td align="right">  11 </td> <td align="right"> 0.73 </td> <td align="right">  19 </td> </tr>
-  <tr> <td> NA12877 </td> <td align="right">   8 </td> <td align="right">  11 </td> <td align="right">   6 </td> <td align="right"> 1.83 </td> <td align="right">  17 </td> </tr>
-   </table>
+
+|call_set_name | average_depth| transitions| transversions|      titv| num_variants_in_group|
+|:-------------|-------------:|-----------:|-------------:|---------:|---------------------:|
+|NA12877       |             3|           4|             8| 0.5000000|                    12|
+|NA12877       |             4|           7|            10| 0.7000000|                    17|
+|NA12877       |             5|          12|            10| 1.2000000|                    22|
+|NA12877       |             6|           8|            11| 0.7272727|                    19|
+|NA12877       |             7|           8|            11| 0.7272727|                    19|
+|NA12877       |             8|          11|             6| 1.8333333|                    17|
+
+Let's join this with the sample information and visualize the results:
+
+```r
+joinedResult <- inner_join(result, sampleInfo)
+```
 
 
 ```r
-ggplot(result, aes(x=average_depth, y=titv, color=call_set_name)) + 
+ggplot(joinedResult, aes(x=average_depth, y=titv, color=ethnicity)) + 
   geom_point() +
   ggtitle("Ti/Tv Ratio By Depth") +
   xlab("Coverage Depth") + 
@@ -307,8 +312,13 @@ For each variant, compute the missingness rate.  This query can be used to ident
 
 
 ```r
+if (kMultiSampleTableSchemaIsOptimized) {
+  query = "./sql/variant-level-missingness-optimized-schema.sql"
+} else {
+  query = "./sql/variant-level-missingness.sql"
+}
 sortAndLimit <- "ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alt_concat LIMIT 1000"
-result <- DisplayAndDispatchQuery("./sql/variant-level-missingness.sql",
+result <- DisplayAndDispatchQuery(query,
                                   project=project,
                                   replacements=c(
                                     "-- Optionally add a clause here to constrain the results."=sortAndLimit,
@@ -316,7 +326,10 @@ result <- DisplayAndDispatchQuery("./sql/variant-level-missingness.sql",
 ```
 
 ```
-# Compute the ratio of no-calls for each variant.
+#standardSQL
+--
+-- Compute the ratio of no-calls for each variant.
+--
 WITH variant_missingness AS (
   SELECT
     reference_name,
@@ -327,7 +340,7 @@ WITH variant_missingness AS (
     (SELECT SUM((SELECT COUNT(gt) FROM UNNEST(call.genotype) gt)) FROM v.call) AS all_calls,
     (SELECT SUM((SELECT COUNT(gt) FROM UNNEST(call.genotype) gt WHERE gt < 0)) FROM v.call) AS no_calls
   FROM
-    `google.com:biggene.platinum_genomes.expanded_variants` v
+    `google.com:biggene.platinum_genomes.multisample_variants_dense_schema` v
 )
 
 SELECT
@@ -347,17 +360,15 @@ ORDER BY missingness_rate DESC, reference_name, start, reference_bases, alt_conc
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:52:02 2016 -->
-<table border=1>
-<tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alt_concat </th> <th> no_calls </th> <th> all_calls </th> <th> missingness_rate </th>  </tr>
-  <tr> <td> chr1 </td> <td align="right"> 723799 </td> <td align="right"> 723800 </td> <td> G </td> <td> C </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 823721 </td> <td align="right"> 823722 </td> <td> C </td> <td> A </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 825391 </td> <td align="right"> 825392 </td> <td> C </td> <td> T </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 825393 </td> <td align="right"> 825394 </td> <td> A </td> <td> T </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 867994 </td> <td align="right"> 867995 </td> <td> T </td> <td> G </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 867996 </td> <td align="right"> 867997 </td> <td> C </td> <td> G </td> <td align="right">  17 </td> <td align="right">  17 </td> <td align="right"> 1.00 </td> </tr>
-   </table>
+
+|reference_name |     start|       end|reference_bases |alt_concat | no_calls| all_calls| missingness_rate|
+|:--------------|---------:|---------:|:---------------|:----------|--------:|---------:|----------------:|
+|chr1           | 194451572| 194451573|A               |C          |       10|        12|        0.8333333|
+|chr1           | 194452155| 194452156|T               |C          |       10|        12|        0.8333333|
+|chr1           | 194452296| 194452297|C               |T          |       10|        12|        0.8333333|
+|chr1           | 194452477| 194452478|C               |A          |       10|        12|        0.8333333|
+|chr1           | 213085506| 213085507|A               |C,T        |       10|        12|        0.8333333|
+|chr10          | 109847474| 109847475|C               |A,T        |       10|        12|        0.8333333|
 
 ## Hardy-Weinberg Equilibrium
 
@@ -373,7 +384,10 @@ result <- DisplayAndDispatchQuery("./sql/hardy-weinberg.sql",
 ```
 
 ```
-# The following query computes the Hardy-Weinberg equilibrium for variants.
+#standardSQL
+--
+-- The following query computes the Hardy-Weinberg equilibrium for variants.
+--
 WITH variants AS (
   SELECT
     reference_name,
@@ -389,7 +403,7 @@ WITH variants AS (
     (SELECT SUM(CAST((SELECT LOGICAL_OR(gt = 0) AND LOGICAL_OR(gt = 1)
       FROM UNNEST(call.genotype) gt) AS INT64)) FROM v.call) AS HET
   FROM
-    `google.com:biggene.platinum_genomes.expanded_variants` v
+    `google.com:biggene.platinum_genomes.multisample_variants_dense_schema` v
   WHERE
     # Only include biallelic snps.
     reference_bases IN ('A','C','G','T')
@@ -485,17 +499,15 @@ ORDER BY ChiSq DESC, reference_name, start, alt LIMIT 1000
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:52:12 2016 -->
-<table border=1>
-<tr> <th> reference_name </th> <th> start </th> <th> reference_bases </th> <th> alt </th> <th> OBS_HOM1 </th> <th> OBS_HET </th> <th> OBS_HOM2 </th> <th> E_HOM1 </th> <th> E_HET </th> <th> E_HOM2 </th> <th> ChiSq </th> <th> PVALUE_SIG </th>  </tr>
-  <tr> <td> chr1 </td> <td align="right"> 10176 </td> <td> A </td> <td> C </td> <td align="right">   0 </td> <td align="right">  17 </td> <td align="right">   0 </td> <td align="right"> 4.25 </td> <td align="right"> 8.50 </td> <td align="right"> 4.25 </td> <td align="right"> 17.00 </td> <td> TRUE </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 10688 </td> <td> C </td> <td> G </td> <td align="right">  16 </td> <td align="right">   0 </td> <td align="right">   1 </td> <td align="right"> 15.06 </td> <td align="right"> 1.88 </td> <td align="right"> 0.06 </td> <td align="right"> 17.00 </td> <td> TRUE </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 14698 </td> <td> C </td> <td> G </td> <td align="right">   0 </td> <td align="right">  17 </td> <td align="right">   0 </td> <td align="right"> 4.25 </td> <td align="right"> 8.50 </td> <td align="right"> 4.25 </td> <td align="right"> 17.00 </td> <td> TRUE </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 15117 </td> <td> A </td> <td> G </td> <td align="right">   0 </td> <td align="right">  17 </td> <td align="right">   0 </td> <td align="right"> 4.25 </td> <td align="right"> 8.50 </td> <td align="right"> 4.25 </td> <td align="right"> 17.00 </td> <td> TRUE </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 16377 </td> <td> T </td> <td> C </td> <td align="right">   0 </td> <td align="right">  17 </td> <td align="right">   0 </td> <td align="right"> 4.25 </td> <td align="right"> 8.50 </td> <td align="right"> 4.25 </td> <td align="right"> 17.00 </td> <td> TRUE </td> </tr>
-  <tr> <td> chr1 </td> <td align="right"> 54365 </td> <td> A </td> <td> G </td> <td align="right">  14 </td> <td align="right">   0 </td> <td align="right">   3 </td> <td align="right"> 11.53 </td> <td align="right"> 4.94 </td> <td align="right"> 0.53 </td> <td align="right"> 17.00 </td> <td> TRUE </td> </tr>
-   </table>
+
+|reference_name |  start|reference_bases |alt | OBS_HOM1| OBS_HET| OBS_HOM2| E_HOM1| E_HET| E_HOM2| ChiSq|PVALUE_SIG |
+|:--------------|------:|:---------------|:---|--------:|-------:|--------:|------:|-----:|------:|-----:|:----------|
+|chr1           | 757842|C               |A   |        0|       6|        0|    1.5|     3|    1.5|     6|TRUE       |
+|chr1           | 913888|G               |A   |        0|       6|        0|    1.5|     3|    1.5|     6|TRUE       |
+|chr1           | 914332|C               |G   |        0|       6|        0|    1.5|     3|    1.5|     6|TRUE       |
+|chr1           | 914851|G               |C   |        0|       6|        0|    1.5|     3|    1.5|     6|TRUE       |
+|chr1           | 914939|T               |C   |        0|       6|        0|    1.5|     3|    1.5|     6|TRUE       |
+|chr1           | 916548|A               |G   |        0|       6|        0|    1.5|     3|    1.5|     6|TRUE       |
 
 See also [a version of this query](./sql/hardy-weinberg-udf.sql) that uses BigQuery [user-defined javascript functions](https://cloud.google.com/bigquery/user-defined-functions).
 
@@ -522,7 +534,10 @@ result <- DisplayAndDispatchQuery("./sql/sex-chromosome-heterozygous-haplotypes.
 ```
 
 ```
-# Retrieve heterozygous haplotype calls on chromosomes X and Y.
+#standardSQL
+--
+-- Retrieve heterozygous haplotype calls on chromosomes X and Y.
+--
 SELECT
   reference_name,
   start,
@@ -542,17 +557,15 @@ ORDER BY reference_name, start, alt_concat, call_set_name LIMIT 1000
 Number of rows returned by this query: **1000**.
 
 Displaying the first few rows of the dataframe of results:
-<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
-<!-- Wed Nov 23 13:52:16 2016 -->
-<table border=1>
-<tr> <th> reference_name </th> <th> start </th> <th> end </th> <th> reference_bases </th> <th> alt_concat </th> <th> call_set_name </th> <th> genotype </th>  </tr>
-  <tr> <td> chrX </td> <td align="right"> 2701389 </td> <td align="right"> 2701390 </td> <td> T </td> <td> G </td> <td> not displayed </td> <td> 0,1 </td> </tr>
-  <tr> <td> chrX </td> <td align="right"> 2701401 </td> <td align="right"> 2701402 </td> <td> T </td> <td> G </td> <td> not displayed </td> <td> 0,1 </td> </tr>
-  <tr> <td> chrX </td> <td align="right"> 2702609 </td> <td align="right"> 2702610 </td> <td> C </td> <td> A </td> <td> not displayed </td> <td> 0,1 </td> </tr>
-  <tr> <td> chrX </td> <td align="right"> 2702609 </td> <td align="right"> 2702610 </td> <td> C </td> <td> A </td> <td> not displayed </td> <td> 0,1 </td> </tr>
-  <tr> <td> chrX </td> <td align="right"> 2703499 </td> <td align="right"> 2703500 </td> <td> A </td> <td> T </td> <td> not displayed </td> <td> 0,1 </td> </tr>
-  <tr> <td> chrX </td> <td align="right"> 2703499 </td> <td align="right"> 2703500 </td> <td> A </td> <td> T </td> <td> not displayed </td> <td> 0,1 </td> </tr>
-   </table>
+
+|reference_name |   start|     end|reference_bases |alt_concat |call_set_name |genotype |
+|:--------------|-------:|-------:|:---------------|:----------|:-------------|:--------|
+|chrX           | 2702609| 2702610|C               |A          |not displayed |0,1      |
+|chrX           | 2703499| 2703500|A               |T          |not displayed |0,1      |
+|chrX           | 2705031| 2705032|A               |G          |not displayed |0,1      |
+|chrX           | 2705051| 2705052|C               |T          |not displayed |0,1      |
+|chrX           | 2705053| 2705054|T               |C          |not displayed |0,1      |
+|chrX           | 2705063| 2705064|G               |A          |not displayed |0,1      |
 
 # Removing variants from the Cohort
 

@@ -1,4 +1,7 @@
-# Compute the ratio of homozygous vs. heterozygous variant calls for each individual.
+#standardSQL
+--
+-- Compute the ratio of homozygous vs. heterozygous variant calls for each individual.
+--
 WITH filtered_snp_calls AS (
   SELECT
     reference_name,

@@ -1,8 +1,10 @@
-# The following query computes the Hardy-Weinberg equilibrium for variants.
-#
-# This query uses BigQuery user-defined javascript functions
-# https://cloud.google.com/bigquery/user-defined-functions
-#
+#standardSQL
+--
+-- The following query computes the Hardy-Weinberg equilibrium for variants.
+--
+-- This query uses BigQuery user-defined javascript functions
+-- https://cloud.google.com/bigquery/user-defined-functions
+--
 SELECT
   reference_name,
   start,
