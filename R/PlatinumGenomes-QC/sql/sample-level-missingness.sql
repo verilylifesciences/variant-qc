@@ -27,7 +27,9 @@ positions_called AS (
 SELECT
   call_set_name,
   no_calls,
-  all_calls,
+  --- Cast to a float since the values can sometimes be larger than int32.
+  --- Environments such as R do not have native support for int64.
+  CAST(all_calls AS FLOAT64) AS all_calls,
   (no_calls/all_calls) AS missingness_rate
 FROM positions_called
 ORDER BY

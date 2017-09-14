@@ -1,6 +1,7 @@
 #standardSQL
 --
 -- Compute the expected and observed homozygosity rate for each individual.
+-- This query is for the large cohort optimized schema.
 --
 WITH variant_calls AS (
   SELECT

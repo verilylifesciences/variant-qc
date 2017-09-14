@@ -31,6 +31,7 @@ mutation_type_counts AS (
   FROM filtered_snp_calls
   WHERE
     DP IS NOT NULL
+    AND DP > 0
   GROUP BY
     call_set_name,
     DP
@@ -45,7 +46,7 @@ SELECT
   num_variants_in_group
 FROM mutation_type_counts
 WHERE
-  transversions > 0
+  transversions > 0 AND transitions > 0
 ORDER BY
   call_set_name,
   average_depth
