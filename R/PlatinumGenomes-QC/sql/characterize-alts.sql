@@ -9,7 +9,7 @@ SELECT
   MAX(LENGTH(reference_bases)) AS max_ref_len,
   MAX(LENGTH(alt)) AS max_alt_len
 FROM
-  `@GENOME_CALL_TABLE` v, v.alternate_bases alt
+  `@GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE` v, v.alternate_bases alt
 WHERE
   # Skip non-variant segments.
   EXISTS (SELECT alt FROM UNNEST(v.alternate_bases) alt WHERE alt NOT IN ("<NON_REF>", "<*>"))

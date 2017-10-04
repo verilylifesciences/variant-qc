@@ -11,7 +11,7 @@ SELECT
   reference_bases AS ref,
   ARRAY_TO_STRING(v.alternate_bases, ',') AS alt_concat
 FROM
-  `@GENOME_CALL_TABLE` v, v.call call
+  `@GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE` v, v.call call
 WHERE
   reference_name IN ('17', 'chr17')
   AND start BETWEEN 41196311 AND 41277499 # per GRCh37
