@@ -57,8 +57,8 @@ This analysis performed an `O(N^2)` computation upon the relevant fields within 
 
 Visualizing the results, we see quite distinct clusters:
 ```{r pca, fig.align="center", fig.width=10, message=FALSE, comment=NA}
-require(scales) # for scientific_format()
-require(ggplot2)
+library(scales) # for scientific_format()
+library(ggplot2)
 ggplot(pca_1kg) +
   geom_point(aes(x=PC1, y=PC2)) +
   xlab("principal component 1") +
@@ -69,7 +69,7 @@ ggplot(pca_1kg) +
 Let's pull in the [supplementary information](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/README_20130606_sample_info) we do have on these samples from [Google Cloud Storage](https://cloud.google.com/storage/):
 ```{r message=FALSE, warning=FALSE, comment=NA}
 sample_info <- read.csv("http://storage.googleapis.com/genomics-public-data/1000-genomes/other/sample_info/sample_info.csv")
-require(dplyr)
+library(dplyr)
 pca_1kg <- inner_join(pca_1kg, sample_info)
 ```
 
@@ -90,7 +90,7 @@ Let's also visualize a different aspect of this data by examining the variant co
 
 ```{r comment=NA, message=FALSE, warning=FALSE}
 # Setup for BigQuery access
-require(bigrquery)
+library(bigrquery)
 DisplayAndDispatchQuery <- function(queryUri, replacements=list()) {
   querySql <- readChar(queryUri, nchars=1e6)
   cat(querySql)
@@ -197,11 +197,11 @@ head(result)
 
 Now let's use the [GoogleGenomics R client](https://github.com/googlegenomics/api-client-r) to retrieve the full records for the variants in which we are interested.
 ```{r message=FALSE, comment=NA}
-require(GoogleGenomics)
+library(GoogleGenomics)
 ```
 
 ```{r echo=FALSE, eval=FALSE}
-authenticate(file="YOUR/PATH/TO/client_secrets.json")
+authenticate()
 ```
 
 ```{r message=FALSE, comment=NA}
@@ -209,7 +209,7 @@ top_results_sorted_by_start <- arrange(head(result, 20), start)
 variants <- Reduce(c, apply(top_results_sorted_by_start,
                            1,
                            function(var) {
-                             getVariants(datasetId="10473108253681171589",
+                             getVariants(variantSetId="10473108253681171589",
                                          chromosome=as.character(var["reference_name"]),
                                          start=as.integer(var["start"]),
                                          end=as.integer(var["end"]))
@@ -230,14 +230,14 @@ granges
 This allows us to utilize the various Bioconductor variant annotation packages:
 
 ```{r comment=NA, message=FALSE}
-require(VariantAnnotation)
-require(BSgenome.Hsapiens.UCSC.hg19)
-require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(VariantAnnotation)
+library(BSgenome.Hsapiens.UCSC.hg19)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 codingVariants <- locateVariants(granges, txdb, CodingVariants())
 codingVariants
 
-coding <- predictCoding(rep(granges, elementLengths(granges$ALT)),
+coding <- predictCoding(rep(granges, elementNROWS(granges$ALT)),
                         txdb,
                         seqSource=Hsapiens,
                         varAllele=unlist(granges$ALT, use.names=FALSE))
@@ -259,7 +259,7 @@ galignments
 ```
 
 ```{r alignments, fig.align="center", fig.width=10, message=FALSE, warning=FALSE, comment=NA}
-require(ggbio)
+library(ggbio)
 strand_plot <- autoplot(galignments, aes(color=strand, fill=strand))
 coverage_plot <- ggplot(as(galignments, "GRanges")) + stat_coverage(color="gray40",
                                                       fill="skyblue")

@@ -1,11 +1,11 @@
-# Use Cloud Dataflow to transform data with Non-Variant Segments
+# Use Apache Beam to transform data with non-variant segments
 
-In this codelab we use Cloud Dataflow to transform data with non-variant segments (such as data that was in source format Genome VCF ([gVCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions)) or Complete Genomics) to variant-only data with calls from non-variant-segments merged into the variants with which they overlap. 
+In this codelab we use [Apache Beam](https://beam.apache.org/) to transform data with non-variant segments (such as data that was in source format Genome VCF ([gVCF](https://sites.google.com/site/gvcftools/home/about-gvcf/gvcf-conventions)) or Complete Genomics) to variant-only data with calls from non-variant-segments merged into the variants with which they overlap. 
 
 * [Motivation](#motivation)
-* [Run the Cluster Compute Job](#run-the-cluster-compute-job)
+* [Run the pipeline](#run-the-pipeline)
 * [Results](#results)
-* [Optional: Modify the Cluster Compute Job](#optional-modify-the-cluster-compute-job)
+* [Optional: Modify the pipeline](#optional-modify-the-pipeline)
 * [Appendix](#appendix)
 
 ## Motivation
@@ -27,25 +27,25 @@ becomes
 ```
 to capture not only that variant, but any other records that overlap that genomic position.
 
-Suppose we want to calculate an aggregate for a particular variant, such as the number of samples with the variant on one or both alleles and of samples that match the reference?  The WHERE clause above will do the trick.  But then suppose we want to do this for all SNPs in our dataset?  There are [a few ways to do this](https://github.com/googlegenomics/bigquery-examples/tree/master/pgp/data-stories/schema-comparisons#motivation). In this codelab we will use a cluster computing job to transform data with non-variant segments to variant-only data with calls from non-variant-segments merged into the variants with which they overlap.
+Suppose we want to calculate an aggregate for a particular variant, such as the number of samples with the variant on zero, one, or two alleles? The WHERE clause above will do the trick. But then suppose we want to do this for all SNPs in our dataset? There are [a few ways to do this](https://github.com/googlegenomics/bigquery-examples/tree/master/pgp/data-stories/schema-comparisons#motivation). In this codelab we will use a [MapReduce](https://en.wikipedia.org/wiki/MapReduce) style pipeline to transform data with non-variant segments to variant-only data with calls from non-variant-segments merged into the variants with which they overlap.
 
 * The default merge strategy only merges SNP variants. Indels and structural variants are left as-is.
 * The resultant data is emitted to a BigQuery table.
 
-> The result of this cluster compute job is used specifically in codelab [Quality Control using Google Genomics](../../R/PlatinumGenomes-QC).
+> The result of this pipeline is used specifically in codelab [Quality Control using Google Genomics](../../R/PlatinumGenomes-QC).
 
-## Run the Cluster Compute Job
+## Run the pipeline
 
 _Note: This codelab assumes you have already worked with Google Genomics, Google Cloud Storage, and BigQuery and set up those necessary prerequsites._
 
-The following example makes use of [Illumina Platinum Genomes](http://www.illumina.com/platinumgenomes/).  For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/platinum-genomes).
+The following example makes use of [Illumina Platinum Genomes](http://www.illumina.com/platinumgenomes/). For more detail about how this data was loaded into the Google Genomics API, please see [Google Genomics Public Data](https://cloud.google.com/genomics/data/platinum-genomes).
 
-This job retrieves variants from the Genomics API, transforms them and writes the result to a new BigQuery table.
+This Apache Beam pipeline running on [Cloud Dataflow](https://cloud.google.com/dataflow/) retrieves variants from the Genomics API, transforms them and writes the result to a new BigQuery table.
 
 * The schema contains the common fields found in all variants exported from Google Genomics, but we did not run a Google Genomics variants export --> instead this is a custom export.
 * It adds the reference-matching calls to the relevant SNP variant records --> essentially adding redundant data in an effort to enable easier querying.
 
-<img src="Dataflow.png" title="Use Cloud Dataflow to transform data with Non-Variant Segments" alt="Use Cloud Dataflow to transform data with Non-Variant Segments" style="display: block; margin: auto;" />
+<img src="Dataflow.png" title="Use Apache Beam to transform data with Non-Variant Segments" alt="Use Apache Beam to transform data with Non-Variant Segments" style="display: block; margin: auto;" />
 
 ### Instructions
 
@@ -59,7 +59,7 @@ mvn clean package
 (3) If you do not already have one, create a BigQuery dataset in the web UI to hold the data.
 
 * Open the [BigQuery web UI](https://bigquery.cloud.google.com/).
-* Click the down arrow icon <img src=https://cloud.google.com/bigquery/images/icon-down-arrow.png> next to your project name in the navigation
+* Click the down arrow icon next to your project name in the navigation pane.
 * Then click **Create new dataset**.
 
 (4) Run the pipeline locally over BRCA1 in Platinum Genomes with the command line:
@@ -76,9 +76,9 @@ java -cp target/non-variant-segment-transformer-*runnable.jar \
   --outputTable=YOUR_BIGQUERY_DATASET.YOUR_BIGQUERY_DESTINATION_TABLE
 ```
 
-To run this job on the entire dataset:
+To run this pipeline on the entire dataset:
 
-* Add `--runner=DataflowPipelineRunner` to run the job on Google Cloud instead of locally.
+* Add `--runner=DataflowRunner` to run the pipeline on Google Cloud instead of locally.
 * Use `--allReferences` instead of `--references=chr17:41196311:41277499` to run over the entire genome.
 
 To see the help text for many more pipeline options:
@@ -101,11 +101,11 @@ Depending on your pipeline options, you have now created a table like the follow
 
 # Appendix
 
-### How to Run this Job Against Your Own Data
+### How to Run this pipeline against your own data
 
 Pass `--variantSetId=YOUR_GOOGLE_GENOMICS_VARIANTSET_ID` instead of `--variantSetId=3049512673186936334`.
 
-## Optional: Modify the Cluster Compute Job
+## Optional: Modify the pipeline
 
 Some ideas:
 

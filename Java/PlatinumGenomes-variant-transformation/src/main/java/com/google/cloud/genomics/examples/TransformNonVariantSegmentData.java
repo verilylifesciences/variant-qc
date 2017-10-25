@@ -17,17 +17,18 @@ import com.google.api.client.util.Preconditions;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.TableSchema;
-import com.google.cloud.dataflow.sdk.Pipeline;
-import com.google.cloud.dataflow.sdk.io.BigQueryIO;
-import com.google.cloud.dataflow.sdk.options.Default;
-import com.google.cloud.dataflow.sdk.options.Description;
-import com.google.cloud.dataflow.sdk.options.PipelineOptionsFactory;
-import com.google.cloud.dataflow.sdk.options.Validation;
-import com.google.cloud.dataflow.sdk.transforms.Aggregator;
-import com.google.cloud.dataflow.sdk.transforms.Create;
-import com.google.cloud.dataflow.sdk.transforms.DoFn;
-import com.google.cloud.dataflow.sdk.transforms.ParDo;
-import com.google.cloud.dataflow.sdk.transforms.Sum;
+import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.PipelineResult;
+import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO;
+import org.apache.beam.sdk.metrics.Metrics;
+import org.apache.beam.sdk.options.Default;
+import org.apache.beam.sdk.options.Description;
+import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.apache.beam.sdk.options.Validation;
+import org.apache.beam.sdk.transforms.Create;
+import org.apache.beam.sdk.transforms.DoFn;
+import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.Sum;
 import com.google.cloud.genomics.dataflow.functions.JoinNonVariantSegmentsWithVariants;
 import com.google.cloud.genomics.dataflow.readers.VariantStreamer;
 import com.google.cloud.genomics.dataflow.utils.CallSetNamesOptions;
@@ -157,6 +158,11 @@ public class TransformNonVariantSegmentData {
     @Default.Boolean(false)
     boolean getSummarizeRefMatchCallSets();
     void setSummarizeRefMatchCallSets(boolean value);
+
+    @Description("Whether to wait until the pipeline completes.")
+    @Default.Boolean(false)
+    boolean getWait();
+    void setWait(boolean wait);
   }
 
   /**
@@ -297,7 +303,7 @@ public class TransformNonVariantSegmentData {
       }
     }
 
-    @Override
+    @ProcessElement
     public void processElement(ProcessContext c) {
       Variant v = c.element();
 
@@ -380,7 +386,7 @@ public class TransformNonVariantSegmentData {
       this.filterLowQualityPassing = filterNonPassing;
     }
 
-    @Override
+    @ProcessElement
     public void processElement(ProcessContext context) {
       Variant variant = context.element();
 
@@ -427,7 +433,6 @@ public class TransformNonVariantSegmentData {
    */
   public static final class FlagVariantsWithAmbiguousCallsFn extends DoFn<Variant, Variant> {
 
-    final Aggregator<Long, Long> variantsWithAmbiguousCallsCount = createAggregator("Number of variants containing ambiguous calls", new Sum.SumLongFn());
     public static final Map HAS_AMBIGUOUS_CALLS_INFO;
     public static final Map NO_AMBIGUOUS_CALLS_INFO;
 
@@ -449,7 +454,7 @@ public class TransformNonVariantSegmentData {
                   .build());
     }
 
-    @Override
+    @ProcessElement
     public void processElement(ProcessContext context) {
       Variant variant = context.element();
 
@@ -475,7 +480,7 @@ public class TransformNonVariantSegmentData {
           LOG.warning("Variant " + variant.getId() + " contains ambiguous calls for at least one genome: "
               + entry.getValue().iterator().next().getCallSetName());
           isAmbiguous = true;
-          variantsWithAmbiguousCallsCount.addValue(1l);
+          Metrics.counter(TransformNonVariantSegmentData.class, "Number of variants containing ambiguous calls").inc();
           break;  // No need to look for additional ambiguity; one instance is enough to warrant the flag.
         }
       }
@@ -490,7 +495,7 @@ public class TransformNonVariantSegmentData {
         if (0 != callSetNames.size()) {
           LOG.warning("Variant " + variant.getId() + " contains ambiguous calls for a variant that overlaps this variant: " + callSetNames);
           isAmbiguous = true;
-          variantsWithAmbiguousCallsCount.addValue(1l);
+          Metrics.counter(TransformNonVariantSegmentData.class, "Number of variants containing ambiguous calls").inc();
         }
       }
 
@@ -549,12 +554,15 @@ public class TransformNonVariantSegmentData {
             !options.getVariantMergeStrategy().equals(MergeNonVariantSegmentsWithSnps.class),
             cohortMap)))
         .apply(
-            BigQueryIO.Write.to(options.getOutputTable()).withSchema(getTableSchema(options.getSummarizeRefMatchCallSets(),
-                cohortMap.keySet()))
+            BigQueryIO.writeTableRows().to(options.getOutputTable())
+                .withSchema(getTableSchema(options.getSummarizeRefMatchCallSets(), cohortMap.keySet()))
                 .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
                 .withWriteDisposition(options.getAppendToTable()
                     ? BigQueryIO.Write.WriteDisposition.WRITE_APPEND : BigQueryIO.Write.WriteDisposition.WRITE_EMPTY));
 
-    p.run();
+    PipelineResult result = p.run();
+    if (options.getWait()) {
+      result.waitUntilFinish();
+    }
   }
 }
