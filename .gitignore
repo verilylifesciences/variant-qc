@@ -6,3 +6,5 @@
 client_secrets.json
 .idea
 *.pyc
+*.csv
+*.html

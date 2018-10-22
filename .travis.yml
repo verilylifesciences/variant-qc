@@ -1,6 +1,0 @@
-language: java
-
-script: cd Java/PlatinumGenomes-variant-transformation && mvn test javadoc:javadoc
-
-after_success:
-  - mvn clean cobertura:cobertura -Dcobertura.report.format=xml coveralls:cobertura

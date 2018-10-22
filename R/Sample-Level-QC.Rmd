@@ -1,0 +1,560 @@
+---
+# R Markdown Documentation, DO NOT EDIT THE PLAIN MARKDOWN VERSION OF THIS FILE
+
+# Copyright 2015 Google Inc., Verily Life Sciences LLC. All rights reserved.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "Sample-Level QC"
+output: html_document
+params:
+  PROJECT_ID: "YOUR-PROJECT-ID"
+  DATASET_NAME: "DeepVariant Platinum Genomes"
+  DATASET_DESCRIPTION: "Platinum Genomes called using DeepVariant https://cloud.google.com/genomics/docs/public-datasets/illumina-platinum-genomes"
+  # Zero-based b38 coordinates per https://www.ncbi.nlm.nih.gov/grc/human
+  PAR1_START: 10000
+  PAR1_END: 2781479
+  PAR2_START: 155701382
+  PAR2_END: 156030895
+  GENOME_CALL_TABLE: "bigquery-public-data.human_genome_variants.platinum_genomes_deepvariant_variants_20180823"
+  GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE: "bigquery-public-data.human_genome_variants.platinum_genomes_deepvariant_variants_20180823"
+  MULTISAMPLE_VARIANT_TABLE: ""
+  MULTISAMPLE_IS_OPTIMIZED: FALSE
+  # Simply use a filter of 'TRUE' to include all calls.
+  HIGH_QUALITY_CALLS_FILTER: "NOT EXISTS (SELECT ft FROM UNNEST(c.filter) ft WHERE ft NOT IN ('PASS', '.'))"
+  # Simply use a filter of 'FALSE' to include all calls.
+  LOW_QUALITY_CALLS_FILTER: "EXISTS (SELECT ft FROM UNNEST(c.filter) ft WHERE ft NOT IN ('PASS', '.'))"
+  # This query must return columns 'name', 'sex', and 'ancestry'.
+  SAMPLE_INFORMATION_QUERY: "
+SELECT
+  Sample AS name,
+  Gender AS sex,
+  Super_Population AS ancestry
+FROM
+  `bigquery-public-data.human_genome_variants.1000_genomes_sample_info`
+WHERE
+  Sample IN ('NA12877', 'NA12878', 'NA12889', 'NA12890', 'NA12891', 'NA12892')
+  "
+  
+# This RMarkdown is a parameterized report.  See
+# http://rmarkdown.rstudio.com/developer_parameterized_reports.html
+# for more detail.
+---
+
+```{r echo = FALSE, eval = FALSE}
+######################[ CHANGE ME ]##################################
+# This codelab assumes that the current working directory is where the Rmd file resides.
+setwd("/YOUR/PATH/TO/HERE")
+```
+
+```{r, setup, include = FALSE}
+# When knitting, keep going if any failures occur.
+knitr::opts_chunk$set(error = TRUE)
+# Filename prefix for output results.
+FILENAME_PREFIX <- stringr::str_replace_all(params$DATASET_NAME, "\\W", "_")
+# Set up for BigQuery access.
+source("setup.R")
+```
+
+# Part 3: Sample-Level QC of `r params$DATASET_NAME`
+
+In Part 3 of the codelab, we perform some quality control analyses that could help to identify any problematic genomes that should be removed from the cohort before proceeding with further analysis.  The appropriate cut off thresholds will depend upon the input dataset and/or other factors.
+
+* [Sample Information](#sample-information)
+* [Genome Variant Call Rate](#genome-variant-call-rate)
+* [Missingness Rate](#missingness-rate)
+* [Singleton Rate](#singleton-rate)
+* [Heterozygosity Rate](#heterozygosity-rate)
+* [Homozygosity Rate](#homozygosity-rate)
+* [Inbreeding Coefficient](#inbreeding-coefficient)
+* [Ti/Tv Ratio per Chromosome](#titv-ratio-per-chromosome)
+* [Sex Inference](#sex-inference)
+* [Removing samples from the cohort](#removing-samples-from-the-cohort)
+
+The following example makes use of `r params$DATASET_DESCRIPTION` but note that this is a [parameterized RMarkdown report]( http://rmarkdown.rstudio.com/developer_parameterized_reports.html) so the narrative does not include any particular conclusions about the data presented.
+
+## Sample Information
+
+Sample information can vary greatly. This report expects a query resulting in three columns ('name', 'sex', and 'ancestry') with values for every sample in the input VCFs.
+
+```{r comment = NA}
+sample_info <- perform_bqquery(sql = params$SAMPLE_INFORMATION_QUERY,
+                              params = params)
+ANCESTRY_PLOT_HEIGHT <- 2 * length(unique(sample_info$ancestry))
+SEX_PLOT_HEIGHT <- 3 * length(unique(sample_info$sex))
+```
+
+```{r sampleSummary, fig.align = "center", fig.width = 10, fig.height = SEX_PLOT_HEIGHT, comment = NA}
+sample_info %>%
+  group_by(ancestry, sex) %>%
+  summarize(
+    count = n(),
+    proportion = n() / nrow(.)
+  ) %>%
+ggplot(aes(x = ancestry, y = count, fill = ancestry)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = percent(proportion)), size = 4, vjust = 1) +
+  facet_wrap( ~ sex, ncol = 1) +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
+  ggtitle("Sample count and proportion by ancestry and sex")
+```
+
+## Genome Variant Call Rate
+
+For each genome, count the number of variant calls.  Any genomes whose count is far away from the mean may indicate a problem such as sample quality or identical data loaded multiple times.
+
+```{r comment = NA}
+result <- perform_bqquery(sql_path = "../sql/genome_variant_calls.sql",
+                          params = params)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+Let's join this with the sample information and visualize the results:
+```{r comment = NA}
+joined_result <- inner_join(result, sample_info)
+```
+
+```{r genomeCallsSummary, fig.align = "center", fig.width = 10, comment = NA}
+ggplot(joined_result, aes(y = number_of_calls, x = ancestry, fill = ancestry)) +
+  geom_boxplot() +
+  scale_y_continuous(expand = c(0.3, 0)) +
+  stat_summary(fun.data = get_boxplot_fun_data, geom = "text",
+               position = position_dodge(width = 0.9), vjust = -0.5) +
+  ylab("Number of Variant Calls") +
+  xlab("Ancestry") +
+  ggtitle("Box plot: Count of variant calls per genome by ancestry") +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))
+```
+
+```{r genomeCalls, fig.align = "center", fig.width = 10, comment = NA}
+p <- ggplot(joined_result) +
+  geom_point(aes(x = name, y = number_of_calls, color = sex)) +
+  scale_x_discrete(expand = c(0.05, 1)) +
+  scale_y_continuous(labels = comma) +
+  xlab("Sample") +
+  ylab("Number of Calls") +
+  ggtitle("Scatter Plot: Count of Calls Per Genome")
+if (nrow(result) <= 20) {
+  p + theme(axis.text.x = element_text(angle = 50, hjust = 1))
+} else {
+  p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+            panel.grid.major.x = element_blank())
+}
+```
+
+Let's accumulate our sample-specific results for later use.
+```{r comment = NA}
+sample_results <- result
+```
+
+## Missingness Rate
+
+For each genome, determine the percentage of sites explicitly called as a no-call.  If this percentage is too high, the genome may be problematic.
+
+```{r comment = NA}
+result <- perform_bqquery(sql_path = "../sql/sample_level_missingness.sql",
+                          params = params)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+Let's join this with the sample information and visualize the results:
+```{r comment = NA}
+joined_result <- inner_join(result, sample_info)
+```
+
+```{r sampleMissingnessSummary, fig.align = "center", fig.width = 10, comment = NA}
+ggplot(joined_result, aes(y = missingness_rate, x = ancestry)) +
+  geom_boxplot() +
+  stat_summary(fun.data = get_boxplot_fun_data, geom = "text",
+               position = position_dodge(width = 0.9), vjust = -0.5) +
+  scale_y_continuous(limits = c(0, NA), labels = percent_format()) +
+  ylab("Missingness Rate") +
+  xlab("Ancestry") +
+  ggtitle("Genome-Specific Missingness") +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))
+```
+
+```{r sampleMissingness, fig.align = "center", fig.width = 10, comment = NA}
+p <- ggplot(joined_result) +
+  geom_point(aes(x = name, y = missingness_rate, color = sex)) +
+  scale_x_discrete(expand = c(0.05, 1)) +
+  scale_y_continuous(limits = c(0, NA), labels = percent_format()) +
+  xlab("Sample") +
+  ylab("Missingness Rate") +
+  ggtitle("Scatter Plot: Genome-Specific Missingness")
+if (nrow(result) <= 20) {
+  p + theme(axis.text.x = element_text(angle = 50, hjust = 1))
+} else {
+  p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+            panel.grid.major.x = element_blank())
+}
+```
+
+Let's accumulate our sample-specific results for later use.
+```{r comment = NA}
+sample_results <- full_join(sample_results, result)
+```
+
+## Singleton Rate
+
+For each genome, count the number of variants shared by no other member of the cohort.  Too many private calls for a particular individual may indicate a problem.
+
+```{r comment = NA}
+result <- perform_bqquery(sql_path = "../sql/private_variants.sql",
+                          params = params)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+Let's join this with the sample information and visualize the results:
+```{r comment = NA}
+joined_result <- inner_join(result, sample_info)
+```
+
+```{r singletonsSummary, fig.align = "center", fig.width = 10, comment = NA}
+ggplot(joined_result,
+       aes(y = private_variant_count, x = ancestry, fill = ancestry)) +
+  geom_boxplot() +
+  stat_summary(fun.data = get_boxplot_fun_data, geom = "text",
+               position = position_dodge(width = 0.9), vjust = -0.5) +
+  scale_y_continuous(labels = comma, expand = c(0.3, 0)) +
+  ylab("Number of Singletons") +
+  xlab("Ancestry") +
+  ggtitle("Box plot: Count of singletons per genome by ancestry") +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))
+```
+
+```{r singletons, fig.align = "center", fig.width = 10, comment = NA}
+p <- ggplot(joined_result) +
+  geom_point(aes(x = name, y = private_variant_count, color = sex)) +
+  scale_x_discrete(expand = c(0.05, 1)) +
+  scale_y_log10(labels = comma) +
+  xlab("Sample") +
+  ylab("Number of Singletons (log scale)") +
+  ggtitle("Scatter Plot: Count of Singletons Per Genome")
+if (nrow(result) <= 20) {
+  p + theme(axis.text.x = element_text(angle = 50, hjust = 1))
+} else {
+  p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+            panel.grid.major.x = element_blank())
+}
+```
+
+Let's accumulate our sample-specific results for later use.
+```{r comment = NA}
+sample_results <- full_join(sample_results, result)
+```
+
+## Heterozygosity Rate
+
+For each genome, determine the number of heterozygous variants.
+
+```{r comment = NA}
+result <- perform_bqquery(sql_path = "../sql/heterozygous_calls_by_sample.sql",
+                          params = params)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+Let's join this with the sample information and visualize the results:
+```{r comment = NA}
+joined_result <- inner_join(result, sample_info)
+```
+
+```{r heterozygousSummary, fig.align = "center", fig.width = 10, comment = NA}
+ggplot(joined_result,
+       aes(y = heterozygous_variant_count, x = ancestry, fill = ancestry)) +
+  geom_boxplot() +
+  stat_summary(fun.data = get_boxplot_fun_data, geom = "text",
+               position = position_dodge(width = 0.9), vjust = -0.5) +
+  scale_y_continuous(labels = comma, expand = c(0.3, 0)) +
+  ylab("Number of Heterozyous Variants") +
+  xlab("Ancestry") +
+  ggtitle("Box plot: Count of heterozygous variants per genome by ancestry") +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))
+```
+
+```{r heterozygous, fig.align = "center", fig.width = 10, comment = NA}
+p <- ggplot(joined_result) +
+  geom_point(aes(x = name, y = heterozygous_variant_count, color = sex)) +
+  scale_x_discrete(expand = c(0.05, 1)) +
+  scale_y_continuous(labels = comma) +
+  xlab("Sample") +
+  ylab("Number of Heterozygous Variants") +
+  ggtitle("Scatter Plot: Count of Heterozygous Variants Per Genome")
+if (nrow(result) <= 20) {
+  p + theme(axis.text.x = element_text(angle = 50, hjust = 1))
+} else {
+  p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+            panel.grid.major.x = element_blank())
+}
+```
+
+Let's accumulate our sample-specific results for later use.
+```{r comment = NA}
+sample_results <- full_join(sample_results, result)
+```
+
+## Homozygosity Rate
+
+For each genome, calculate the fraction of homozygous positions per chromosome.  This is useful to identify uniparental disomy (UPD) or large stretches of homozygosity.
+
+```{r comment = NA}
+result <- perform_bqquery(
+  sql_path = "../sql/homozygous_variant_rate_by_sample_and_reference.sql",
+  params = params,
+  max_pages = Inf)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+Let's join this with the sample information and visualize the results:
+```{r comment = NA}
+joined_result <- inner_join(result, sample_info)
+```
+
+```{r homozygositySummary, fig.align = "center", fig.width = 12, comment = NA}
+  ggplot(joined_result %>% filter(!stringr::str_detect(reference_name, "^GL")),
+         aes(y = F, x = reference_name, color = sex)) +
+  geom_boxplot() +
+  facet_grid(sex ~ .) +
+  scale_y_continuous(labels = comma) +
+  ylab("Fraction of Homozygous Variants") +
+  xlab("Reference Name") +
+  ggtitle("Fraction of Homozygous Variants Per Genome") +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))
+```
+
+```{r comment = NA}
+sample_reference_results <- result
+```
+
+## Inbreeding Coefficient
+
+For each genome, compare the expected and observed rates of homozygosity.
+```{r comment = NA}
+if (1 >= length(params$MULTISAMPLE_VARIANT_TABLE)) {
+  result <- data.frame()
+  cat("not run")
+} else {
+  if (params$MULTISAMPLE_IS_OPTIMIZED) {
+    query <- "../sql/homozygosity_coefficient_optimized_schema.sql"
+  } else {
+    query <- "../sql/homozygosity_coefficient.sql"
+  }
+  result <- perform_bqquery(sql_path = query,
+                            params = params)
+}
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+if (nrow(result) > 0) {
+  DisplayQueryResults(result)
+} else {
+  cat("not run")
+}
+```
+
+Let's join this with the sample information and visualize the results:
+```{r comment = NA}
+if (nrow(result) > 0) {
+  joined_result <- inner_join(result, sample_info)
+} else {
+  cat("not run")
+}
+```
+
+```{r homozygosityCoeff, fig.align = "center", fig.width = 10, comment = NA}
+if (nrow(result) > 0) {
+limits <- c(min(result$O_HOM, result$E_HOM),
+            max(result$O_HOM, result$E_HOM))
+ggplot(result) +
+  geom_point(aes(x = O_HOM, y = E_HOM, label = name), alpha = .66) +
+  geom_abline(color = "darkslateblue") +
+  scale_x_continuous(limits = limits, labels = comma) +
+  scale_y_continuous(limits = limits, labels = comma) +
+  xlab("Observed Homozygous Variants") +
+  ylab("Expected Homozygous Variants") +
+  ggtitle("Homozygosity")
+} else {
+  cat("not run")
+}
+```
+
+And with labels:
+```{r homozygosityCoeffLabelled, fig.align = "center", fig.width = 10, comment = NA}
+if (nrow(result) > 0) {
+ggplot(result) +
+  geom_text(aes(x = O_HOM, y = E_HOM, label = name), alpha = .66) +
+  geom_abline(color = "darkslateblue") +
+  scale_x_continuous(limits = limits, labels = comma, expand = c(0.05, 5)) +
+  scale_y_continuous(limits = limits, labels = comma) +
+  xlab("Observed Homozygous Variants") +
+  ylab("Expected Homozygous Variants") +
+  ggtitle("Homozygosity")
+} else {
+  cat("not run")
+}
+```
+
+Let's accumulate our sample-specific results for later use.
+```{r comment = NA}
+if (nrow(result) > 0) {
+  sample_results <- full_join(sample_results, result)
+} else {
+  cat("not run")
+}
+```
+
+## Ti/Tv Ratio per Chromosome
+
+For each genome, determine the Ti/Tv ratio per chromosome.
+```{r comment = NA}
+result <- perform_bqquery(sql_path = "../sql/ti_tv_by_sample_and_reference.sql",
+                          params = params,
+                          max_pages = Inf)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+Let's join this with the sample information and visualize the results:
+```{r comment = NA}
+joined_result <- inner_join(result, sample_info)
+```
+
+```{r titvSummary, fig.align = "center", fig.width = 12, fig.height = ANCESTRY_PLOT_HEIGHT, comment = NA}
+ggplot(joined_result %>%
+         filter(!stringr::str_detect(reference_name, "^(GL|M|m)")),
+       aes(y = titv, x = reference_name, color = sex)) +
+  geom_boxplot() +
+  facet_wrap(~ ancestry, ncol = 1) +
+  scale_y_continuous(labels = comma) +
+  ylab("Ti/Tv ratio") +
+  xlab("Chromosome") +
+  ggtitle("Ti/Tv ratio per genome") +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))
+```
+
+```{r comment = NA}
+sample_reference_results <- full_join(sample_reference_results, result)
+```
+
+## Sex Inference
+
+For each genome, compare the sex from the sample information to the heterozygosity rate on the chromosome X calls.
+
+In the query that follows we specifically examine the percentage of SNP variants that are heterozygous but note that the Inbreeding Coefficient query above can also be used as a sex check when run upon only chromosome X omitting the pseudoautosomal regions.  For more detail, see the [comparison](./comparison/QC-Comparison.md) against results from other tools.
+
+```{r comment = NA}
+result <- perform_bqquery(sql_path = "../sql/check_sex.sql",
+                          params = params)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+Let's join this with the sample information and visualize the results:
+```{r comment = NA}
+joined_result <- inner_join(result, sample_info)
+```
+
+```{r sexCheckSummary, fig.align = "center", fig.width = 10, comment = NA}
+ggplot(joined_result, aes(x = sex, y = perct_het_alt_in_snvs, fill = sex)) +
+  geom_boxplot() +
+  stat_summary(fun.data = get_boxplot_fun_data, geom = "text", position = position_dodge(width = 0.9), vjust = -0.5) +
+  scale_y_continuous(labels = percent_format()) +
+  xlab("Sex") +
+  ylab("Heterozygosity Rate ") +
+  ggtitle("Box Plot: Heterozygosity Rate on the X Chromosome")
+```
+
+```{r sexCheck, fig.align = "center", fig.width = 10, comment = NA}
+p <- ggplot(joined_result) +
+  geom_point(aes(x = name, y = perct_het_alt_in_snvs, color = sex)) +
+  scale_x_discrete(expand = c(0.05, 1)) +
+  scale_y_continuous(labels = percent_format()) +
+  xlab("Sample") +
+  ylab("Heterozygosity Rate ") +
+  ggtitle("Scatter Plot: Heterozygosity Rate on the X Chromosome")
+if (nrow(result) <= 20) {
+  p + theme(axis.text.x = element_text(angle = 50, hjust = 1))
+} else {
+  p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+            panel.grid.major.x = element_blank())
+}
+```
+
+Let's accumulate our sample-specific results for later use.
+```{r comment = NA}
+sample_results <- full_join(sample_results, result)
+```
+
+# Summary
+
+Accumulated results for per sample analyses:
+```{r comment = NA}
+dim(sample_results)
+summary(sample_results)
+write.csv(sample_results,
+          file = stringr::str_glue("{FILENAME_PREFIX}_sample_results.csv"))
+```
+
+Accumulated results for per sample, reference analyses:
+```{r comment = NA}
+dim(sample_reference_results)
+summary(sample_reference_results)
+write.csv(
+  sample_reference_results,
+  file = stringr::str_glue("{FILENAME_PREFIX}_sample_reference_results.csv"))
+```
+
+# Removing samples from the cohort
+
+To remove samples identified as problematic, you can materialize a new version of the table with those samples omitted or [mutate the existing table](https://cloud.google.com/blog/products/gcp/performing-large-scale-mutations-in-bigquery).
+
+# Provenance
+
+```{r}
+devtools::session_info()
+```

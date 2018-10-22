@@ -1,0 +1,233 @@
+---
+# R Markdown Documentation, DO NOT EDIT THE PLAIN MARKDOWN VERSION OF THIS FILE
+
+# Copyright 2015 Google Inc., Verily Life Sciences LLC. All rights reserved.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "Variant-Level QC"
+output: html_document
+params:
+  PROJECT_ID: "YOUR-PROJECT-ID"
+  DATASET_NAME: "DeepVariant Platinum Genomes"
+  DATASET_DESCRIPTION: "Platinum Genomes called using DeepVariant https://cloud.google.com/genomics/docs/public-datasets/illumina-platinum-genomes"
+  WINDOW_SIZE: 100000
+  GENOME_CALL_TABLE: "bigquery-public-data.human_genome_variants.platinum_genomes_deepvariant_variants_20180823"
+  GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE: "bigquery-public-data.human_genome_variants.platinum_genomes_deepvariant_variants_20180823"
+  MULTISAMPLE_VARIANT_TABLE: ""
+  MULTISAMPLE_IS_OPTIMIZED: FALSE
+  # Simply use a filter of 'TRUE' to include all variants.
+  HIGH_QUALITY_VARIANTS_FILTER: "NOT EXISTS (SELECT ft FROM  UNNEST(call) AS c, UNNEST(c.filter) ft WHERE ft NOT IN ('PASS', '.'))"
+  # Simply use a filter of 'TRUE' to include all calls.
+  HIGH_QUALITY_CALLS_FILTER: "NOT EXISTS (SELECT ft FROM UNNEST(c.filter) ft WHERE ft NOT IN ('PASS', '.'))"
+  # This query must return columns 'name', 'sex', and 'ancestry'.
+  MALE_SAMPLES_QUERY: "
+SELECT
+  Sample AS name
+FROM
+  `bigquery-public-data.human_genome_variants.1000_genomes_sample_info`
+WHERE
+  Sample IN ('NA12877', 'NA12878', 'NA12889', 'NA12890', 'NA12891', 'NA12892')
+  AND Gender = 'male'
+  "
+  
+# This RMarkdown is a parameterized report.  See
+# http://rmarkdown.rstudio.com/developer_parameterized_reports.html
+# for more detail.
+---
+
+```{r echo = FALSE, eval = FALSE}
+######################[ CHANGE ME ]##################################
+# This codelab assumes that the current working directory is where the Rmd file resides.
+setwd("/YOUR/PATH/TO/HERE")
+```
+
+```{r, setup, include = FALSE}
+# When knitting, keep going if any failures occur.
+knitr::opts_chunk$set(error = TRUE)
+# Set up for BigQuery access.
+source("setup.R")
+```
+
+# Part 4: Variant-Level QC of `r params$DATASET_NAME`
+
+In Part 4 of the codelab, we perform some quality control analyses that could help to identify any problematic variants which should be excluded from further analysis.  The appropriate cut off thresholds will depend upon the input dataset and/or other factors.
+
+* [Ti/Tv by Genomic Window](#titv-by-genomic-window)
+* [Ti/Tv by Alternate Allele Counts](#titv-by-alternate-allele-counts)
+* [Ti/Tv by Depth](#titv-by-depth)
+* [Missingness Rate](#missingness-rate)
+* [Hardy-Weinberg Equilibrium](#hardy-weinberg-equilibrium)
+* [Heterozygous Haplotype](#heterozygous-haplotype)
+* [Removing variants from the cohort](#removing-variants-from-the-cohort)
+
+The following example makes use of `r params$DATASET_DESCRIPTION` but note that this is a [parameterized RMarkdown report]( http://rmarkdown.rstudio.com/developer_parameterized_reports.html) so the narrative does not include any particular conclusions about the data presented.
+
+## Ti/Tv by Genomic Window
+
+Check whether the ratio of transitions vs. transversions in SNPs appears to be reasonable in each window of genomic positions.  This query may help identify problematic regions.
+
+```{r comment = NA}
+result <- perform_bqquery(sql_path = "../sql/ti_tv_by_genomic_window.sql",
+                          params = params)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+Visualizing the results:
+```{r titvByWindow, fig.align = "center", fig.width = 10, fig.height = 26, comment = NA}
+ggplot(result %>% filter(!stringr::str_detect(reference_name, "^GL")),
+       aes(x = window_start, y = titv)) +
+  geom_point() +
+  facet_wrap(~ reference_name, ncol = 1, scales = "free") +
+  stat_smooth() +
+  scale_x_continuous(labels = comma) +
+  xlab("Genomic Position") +
+  ylab("Ti/Tv") +
+  ggtitle("Ti/Tv by 100,000 base pair windows")
+```
+
+## Ti/Tv by Alternate Allele Counts
+
+Check whether the ratio of transitions vs. transversions in SNPs appears to be resonable across the range of rare variants to common variants.  This query may help to identify problems with rare or common variants.
+
+```{r comment = NA}
+result <- perform_bqquery(
+  sql_path = "../sql/ti_tv_by_alternate_allele_count.sql",
+  params = params)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+Visualizing the results:
+```{r titvByAlt, fig.align = "center", fig.width = 10, comment = NA}
+ggplot(result, aes(x = AC, y = titv)) +
+  geom_point() +
+  stat_smooth() +
+  scale_x_continuous(labels = comma) +
+  xlab("Total Number of Sample Alleles with the Variant") +
+  ylab("Ti/Tv") +
+  ggtitle("Ti/Tv by Alternate Allele Count")
+```
+
+## Ti/Tv by Depth
+
+Visualize the ratio of transitions vs. transversions by depth of coverage.
+
+```{r comment = NA}
+result <- perform_bqquery(sql_path = "../sql/ti_tv_by_depth.sql",
+                          params = params)
+```
+
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+```{r titv-by-depth, fig.align = "center", fig.width = 10, comment = NA}
+ggplot(result, aes(x = depth, y = titv)) +
+  geom_point() +
+  ggtitle("Ti/Tv Ratio By Depth") +
+  xlab("Coverage Depth") +
+  ylab("Ti/Tv")
+```
+
+## Missingness Rate
+
+For each variant, compute the missingness rate.  This query can be used to identify variants with a poor call rate.
+
+```{r comment = NA}
+if (1 >= stringr::str_length(params$MULTISAMPLE_VARIANT_TABLE)) {
+  result <- data.frame()
+  cat("not run, multisample variants table is not available")
+} else {
+  if (params$MULTISAMPLE_IS_OPTIMIZED) {
+    query <- "../sql/variant_level_missingness_optimized_schema.sql"
+  } else {
+    query <- "../sql/variant_level_missingness.sql"
+  }
+  result <- perform_bqquery(sql_path = query,
+                            params = params)
+}
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+if (nrow(result) > 0) {
+  DisplayQueryResults(result)
+} else {
+  cat("not run, multisample variants table is not available")
+}
+```
+
+## Hardy-Weinberg Equilibrium
+
+For each variant, compute the expected versus observed relationship between allele frequencies and genotype frequencies per the Hardy-Weinberg Equilibrium.
+
+```{r comment = NA}
+if (1 >= stringr::str_length(params$MULTISAMPLE_VARIANT_TABLE)) {
+  result <- data.frame()
+  cat("not run, multisample variants table is not available")
+} else {
+  if (params$MULTISAMPLE_IS_OPTIMIZED) {
+    query <- "../sql/hardy_weinberg_optimized_schema.sql"
+  } else {
+    query <- "../sql/hardy_weinberg.sql"
+  }
+result <- perform_bqquery(sql_path = query,
+                          params = params)
+}
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+if (nrow(result) > 0) {
+  DisplayQueryResults(result)
+} else {
+  cat("not run, multisample variants table is not available")
+}
+```
+
+## Heterozygous Haplotype
+For each variant within the X and Y chromosome, identify heterozygous variants in male genomes.
+
+```{r comment = NA}
+result <- perform_bqquery(
+  sql_path = "../sql/sex_chromosome_heterozygous_haplotypes.sql",
+  params = params)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+# Removing variants from the cohort
+
+To mark a variant as problematic so that downstream analyses can filter it out or to remove it from the table entirely, you can materialize a new version of the table with those variants marked/omitted or [mutate the existing table](https://cloud.google.com/blog/products/gcp/performing-large-scale-mutations-in-bigquery).
+
+# Provenance
+
+```{r}
+devtools::session_info()
+```
