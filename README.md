@@ -49,7 +49,7 @@ Drill down further on results by creating additional plots and/or performing add
 Technologies used
 -----------------
 
-The queries make use of:
+The methods make use of:
 
   * Standard SQL via [BigQuery](https://cloud.google.com/bigquery/docs/)
   * [Apache Beam](https://beam.apache.org/) via [Dataflow](https://cloud.google.com/dataflow/docs/)
