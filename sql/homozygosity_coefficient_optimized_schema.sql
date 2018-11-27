@@ -32,7 +32,7 @@ reference_calls AS (
     TRUE AS O_HOM,
     1.0 - (2.0 * alternate_bases[ORDINAL(1)].AF * (1.0 - alternate_bases[ORDINAL(1)].AF) * (AN / (AN - 1.0))) AS E_HOM
   FROM
-    `{{ MULTISAMPLE_VARIANT_TABLE }}` AS v, UNNEST(v.refMatchCallsets) AS name
+    `{{ MULTISAMPLE_VARIANT_TABLE }}` AS v, UNNEST(v.hom_ref_call) AS name
   WHERE
     # Only include biallelic snps within autosomes. (Concise but inexact regexp used for brevity.)
     REGEXP_CONTAINS(reference_name, r'^(chr)?([1-2])?[0-9]$')

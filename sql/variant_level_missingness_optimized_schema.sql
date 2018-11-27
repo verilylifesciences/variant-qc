@@ -9,7 +9,7 @@ WITH variant_missingness AS (
     end_position,
     reference_bases,
     ARRAY_TO_STRING(ARRAY(SELECT a.alt FROM UNNEST(alternate_bases) AS a), ',') AS alt_concat,
-    ARRAY_LENGTH(refMatchCallsets) * 2
+    ARRAY_LENGTH(hom_ref_call) * 2
       + (SELECT SUM((SELECT COUNT(g) FROM UNNEST(c.genotype) AS g)) FROM UNNEST(call) AS c) AS all_calls,
     (SELECT SUM((SELECT COUNT(g) FROM UNNEST(c.genotype) AS g WHERE g < 0)) FROM UNNEST(call) AS c) AS no_calls
   FROM

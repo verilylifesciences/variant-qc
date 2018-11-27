@@ -63,7 +63,7 @@ STRUCT<reference_name STRING,
        alternate_bases ARRAY<STRUCT<alt STRING, AC INT64, AF FLOAT64>>,
        call ARRAY<STRUCT<name STRING,
                          genotype ARRAY<INT64>>>,
-       refMatchCallsets ARRAY<STRING> >
+       hom_ref_call ARRAY<STRING> >
     ('chr1', 123, 124, 'A', 8, ARRAY[STRUCT('T', 1, 0.125)], ARRAY[STRUCT('sample1', ARRAY[0, -1]),
                                                                    STRUCT('sample3', ARRAY[0, 1]),
                                                                    STRUCT('sample5', ARRAY[-1, -1])],

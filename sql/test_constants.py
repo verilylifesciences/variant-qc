@@ -127,7 +127,7 @@ STRUCT<reference_name STRING,
        alternate_bases ARRAY<STRUCT<alt STRING, AC INT64, AF FLOAT64>>,
        call ARRAY<STRUCT<name STRING,
                          genotype ARRAY<INT64>>>,
-       refMatchCallsets ARRAY<STRING> >
+       hom_ref_call ARRAY<STRING> >
     -- SNP with ref-homozygous, heterozygous, and alt-homozygous genotypes.
     ('chr1', 123, 124, 'A', 6, ARRAY[STRUCT('T', 3, .5),
                                      STRUCT('<*>', 0, 0.0)], ARRAY[STRUCT('sample2', ARRAY[0, 1]),

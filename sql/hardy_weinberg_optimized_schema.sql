@@ -11,7 +11,7 @@ WITH variants AS (
     reference_bases,
     alternate_bases[ORDINAL(1)].alt AS alt,
     -- Within each variant count the number of HOM_REF/HOM_ALT/HET samples.
-    ARRAY_LENGTH(refMatchCallsets) AS HOM_REF,
+    ARRAY_LENGTH(hom_ref_call) AS HOM_REF,
     (SELECT SUM(CAST((SELECT LOGICAL_AND(g = 1)
       FROM UNNEST(genotype) AS g) AS INT64)) FROM UNNEST(call)) AS HOM_ALT,
     (SELECT SUM(CAST((SELECT LOGICAL_OR(g = 0) AND LOGICAL_OR(g = 1)
