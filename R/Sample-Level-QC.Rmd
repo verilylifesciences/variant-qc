@@ -365,9 +365,9 @@ sample_reference_results <- result
 
 For each genome, compare the expected and observed rates of homozygosity.
 ```{r comment = NA}
-if (1 >= length(params$MULTISAMPLE_VARIANT_TABLE)) {
+if (1 >= stringr::str_length(params$MULTISAMPLE_VARIANT_TABLE)) {
   result <- data.frame()
-  cat("not run")
+  cat("not run, multisample variants table is not available")
 } else {
   if (params$MULTISAMPLE_IS_OPTIMIZED) {
     query <- "../sql/homozygosity_coefficient_optimized_schema.sql"

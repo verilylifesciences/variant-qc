@@ -22,7 +22,7 @@ rmarkdown::render(
     BRCA1_START = 41196311,
     BRCA1_END = 41277500,
     GENOME_CALL_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_variants_20150220",
-    GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_variants_20150220"
+    GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_optimized_schema_variants_20150220"
     ),
   output_file = "Data-Overview-1000-Genomes.html")
 
@@ -39,9 +39,9 @@ rmarkdown::render(
     PAR2_START = 154931043,
     PAR2_END = 155260560,
     GENOME_CALL_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_variants_20150220",
-    GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_variants_20150220",
-    MULTISAMPLE_VARIANT_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_variants_20150220",
-    MULTISAMPLE_IS_OPTIMIZED = FALSE,
+    GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_optimized_schema_variants_20150220",
+    MULTISAMPLE_VARIANT_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_optimized_schema_variants_20150220",
+    MULTISAMPLE_IS_OPTIMIZED = TRUE,
     HIGH_QUALITY_CALLS_FILTER = "TRUE",
     LOW_QUALITY_CALLS_FILTER = "FALSE",
     SAMPLE_INFORMATION_QUERY = "
@@ -62,9 +62,9 @@ rmarkdown::render(
     DATASET_NAME = "1000 Genomes phase 3",
     DATASET_DESCRIPTION = "1000 Genomes phase 3 https://cloud.google.com/genomics/docs/public-datasets/1000-genomes",
     GENOME_CALL_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_variants_20150220",
-    GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_variants_20150220",
-    MULTISAMPLE_VARIANT_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_variants_20150220",
-    MULTISAMPLE_IS_OPTIMIZED = FALSE,
+    GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_optimized_schema_variants_20150220",
+    MULTISAMPLE_VARIANT_TABLE = "bigquery-public-data.human_genome_variants.1000_genomes_phase_3_optimized_schema_variants_20150220",
+    MULTISAMPLE_IS_OPTIMIZED = TRUE,
     HIGH_QUALITY_VARIANTS_FILTER = "TRUE",
     HIGH_QUALITY_CALLS_FILTER = "TRUE",
     MALE_SAMPLES_QUERY = "
