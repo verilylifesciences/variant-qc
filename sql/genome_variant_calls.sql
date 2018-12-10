@@ -4,6 +4,7 @@
 --
 SELECT
   c.name,
+  reference_name,
   COUNT(c.name) AS number_of_calls
 FROM
   `{{ GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE }}` AS v, UNNEST(v.call) AS c
@@ -14,6 +15,9 @@ WHERE
   # Include only high quality calls.
   AND {{ HIGH_QUALITY_CALLS_FILTER }}
 GROUP BY
-  name
+  name,
+  reference_name
 ORDER BY
-  name
+  name,
+  reference_name
+

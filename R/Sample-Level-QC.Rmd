@@ -90,8 +90,12 @@ Sample information can vary greatly. This report expects a query resulting in th
 ```{r comment = NA}
 sample_info <- perform_bqquery(sql = params$SAMPLE_INFORMATION_QUERY,
                               params = params)
-ANCESTRY_PLOT_HEIGHT <- 2 * length(unique(sample_info$ancestry))
+ANCESTRY_PLOT_HEIGHT <- 3 * length(unique(sample_info$ancestry))
 SEX_PLOT_HEIGHT <- 3 * length(unique(sample_info$sex))
+AUTOSOMES <- c(paste("chr", c(as.character(seq(1,22))), sep=""),
+               as.character(seq(1,22)))
+ALLOSOMES <- c("chrX", "X", "chrY", "Y")
+MITOCHONDRIA <- c("chrM", "M", "MT")
 ```
 
 ```{r sampleSummary, fig.align = "center", fig.width = 10, fig.height = SEX_PLOT_HEIGHT, comment = NA}
@@ -130,26 +134,39 @@ joined_result <- inner_join(result, sample_info)
 ```
 
 ```{r genomeCallsSummary, fig.align = "center", fig.width = 10, comment = NA}
-ggplot(joined_result, aes(y = number_of_calls, x = ancestry, fill = ancestry)) +
+joined_result %>%
+  filter(reference_name %in% c(AUTOSOMES, ALLOSOMES, MITOCHONDRIA)) %>%
+  mutate(reference_name = parse_factor(reference_name, levels = c(AUTOSOMES, ALLOSOMES, MITOCHONDRIA))) %>%
+ggplot(aes(y = number_of_calls, x = reference_name)) +
   geom_boxplot() +
-  scale_y_continuous(expand = c(0.3, 0)) +
-  stat_summary(fun.data = get_boxplot_fun_data, geom = "text",
-               position = position_dodge(width = 0.9), vjust = -0.5) +
+  scale_y_continuous(labels = comma) +
   ylab("Number of Variant Calls") +
-  xlab("Ancestry") +
-  ggtitle("Box plot: Count of variant calls per genome by ancestry") +
+  xlab("Chromosome") +
+  ggtitle("Box plot: Count of variant calls per genome by chromosome") +
   theme(axis.text.x = element_text(angle = 50, hjust = 1))
 ```
 
+```{r, results = "asis"}
+result %>%
+  filter(reference_name %in% c(AUTOSOMES, ALLOSOMES, MITOCHONDRIA)) %>%
+  mutate(reference_name = parse_factor(reference_name, levels = c(AUTOSOMES, ALLOSOMES, MITOCHONDRIA))) %>%
+  group_by(reference_name) %>%
+  summarize(number_of_samples = n()) %>%
+  knitr::kable()
+```
+
 ```{r genomeCalls, fig.align = "center", fig.width = 10, comment = NA}
-p <- ggplot(joined_result) +
-  geom_point(aes(x = name, y = number_of_calls, color = sex)) +
+p <- joined_result %>%
+  group_by(name, sex, ancestry) %>%
+  summarize(n = sum(number_of_calls)) %>%
+  ggplot() +
+  geom_point(aes(x = name, y = n, color = ancestry, shape = sex)) +
   scale_x_discrete(expand = c(0.05, 1)) +
   scale_y_continuous(labels = comma) +
   xlab("Sample") +
   ylab("Number of Calls") +
   ggtitle("Scatter Plot: Count of Calls Per Genome")
-if (nrow(result) <= 20) {
+if (nrow(result) <= 20*24) {
   p + theme(axis.text.x = element_text(angle = 50, hjust = 1))
 } else {
   p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
@@ -157,9 +174,9 @@ if (nrow(result) <= 20) {
 }
 ```
 
-Let's accumulate our sample-specific results for later use.
+Let's accumulate our sample and reference specific results for later use.
 ```{r comment = NA}
-sample_results <- result
+sample_reference_results <- result
 ```
 
 ## Missingness Rate
@@ -212,7 +229,7 @@ if (nrow(result) <= 20) {
 
 Let's accumulate our sample-specific results for later use.
 ```{r comment = NA}
-sample_results <- full_join(sample_results, result)
+sample_results <- result
 ```
 
 ## Singleton Rate
@@ -346,8 +363,10 @@ joined_result <- inner_join(result, sample_info)
 ```
 
 ```{r homozygositySummary, fig.align = "center", fig.width = 12, comment = NA}
-  ggplot(joined_result %>% filter(!stringr::str_detect(reference_name, "^GL")),
-         aes(y = F, x = reference_name, color = sex)) +
+joined_result %>%
+  filter(reference_name %in% c(AUTOSOMES, ALLOSOMES, MITOCHONDRIA)) %>%
+  mutate(reference_name = parse_factor(reference_name, levels = c(AUTOSOMES, ALLOSOMES, MITOCHONDRIA))) %>%
+  ggplot(aes(y = F, x = reference_name, color = sex)) +
   geom_boxplot() +
   facet_grid(sex ~ .) +
   scale_y_continuous(labels = comma) +
@@ -358,7 +377,7 @@ joined_result <- inner_join(result, sample_info)
 ```
 
 ```{r comment = NA}
-sample_reference_results <- result
+sample_reference_results <- full_join(sample_reference_results, result)
 ```
 
 ## Inbreeding Coefficient
@@ -461,9 +480,10 @@ joined_result <- inner_join(result, sample_info)
 ```
 
 ```{r titvSummary, fig.align = "center", fig.width = 12, fig.height = ANCESTRY_PLOT_HEIGHT, comment = NA}
-ggplot(joined_result %>%
-         filter(!stringr::str_detect(reference_name, "^(GL|M|m)")),
-       aes(y = titv, x = reference_name, color = sex)) +
+joined_result %>%
+  filter(reference_name %in% c(AUTOSOMES)) %>%
+  mutate(reference_name = parse_factor(reference_name, levels = c(AUTOSOMES))) %>%
+  ggplot(aes(y = titv, x = reference_name, color = sex)) +
   geom_boxplot() +
   facet_wrap(~ ancestry, ncol = 1) +
   scale_y_continuous(labels = comma) +

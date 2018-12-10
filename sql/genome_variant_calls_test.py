@@ -82,10 +82,10 @@ STRUCT<reference_name STRING,
          "HIGH_QUALITY_CALLS_FILTER": "TRUE"})
     expected = [
         # name, number_of_calls
-        ("sample4", 1),
-        ("sample5", 1),
-        ("sample6", 1),
-        ("sample7", 1)
+        ("sample4", "chr1", 1),
+        ("sample5", "chr1", 1),
+        ("sample6", "chr1", 1),
+        ("sample7", "chr1", 1)
         ]
     self.expect_query_result(
         query=sql, expected=expected, enforce_ordering=False)
@@ -99,10 +99,10 @@ STRUCT<reference_name STRING,
          "HIGH_QUALITY_CALLS_FILTER": "TRUE"})
     expected = [
         # name, number_of_calls
-        ("sample2", 1),
-        ("sample3", 2),
-        ("sample4", 1),
-        ("sample5", 1)
+        ("sample2", "chr1", 1),
+        ("sample3", "chr1", 2),
+        ("sample4", "chr1", 1),
+        ("sample5", "chr1", 1)
     ]
     self.expect_query_result(
         query=sql, expected=expected, enforce_ordering=False)
