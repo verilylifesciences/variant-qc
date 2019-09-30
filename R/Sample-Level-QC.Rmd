@@ -369,7 +369,6 @@ joined_result %>%
   ggplot(aes(y = F, x = reference_name, color = sex)) +
   geom_boxplot() +
   facet_grid(sex ~ .) +
-  scale_y_continuous(labels = comma) +
   ylab("Fraction of Homozygous Variants") +
   xlab("Reference Name") +
   ggtitle("Fraction of Homozygous Variants Per Genome") +
@@ -486,7 +485,6 @@ joined_result %>%
   ggplot(aes(y = titv, x = reference_name, color = sex)) +
   geom_boxplot() +
   facet_wrap(~ ancestry, ncol = 1) +
-  scale_y_continuous(labels = comma) +
   ylab("Ti/Tv ratio") +
   xlab("Chromosome") +
   ggtitle("Ti/Tv ratio per genome") +
@@ -556,17 +554,17 @@ Accumulated results for per sample analyses:
 ```{r comment = NA}
 dim(sample_results)
 summary(sample_results)
-write.csv(sample_results,
-          file = stringr::str_glue("{FILENAME_PREFIX}_sample_results.csv"))
+write_csv(sample_results,
+          path = stringr::str_glue("{FILENAME_PREFIX}_sample_results.csv"))
 ```
 
 Accumulated results for per sample, reference analyses:
 ```{r comment = NA}
 dim(sample_reference_results)
 summary(sample_reference_results)
-write.csv(
+write_csv(
   sample_reference_results,
-  file = stringr::str_glue("{FILENAME_PREFIX}_sample_reference_results.csv"))
+  path = stringr::str_glue("{FILENAME_PREFIX}_sample_reference_results.csv"))
 ```
 
 # Removing samples from the cohort
