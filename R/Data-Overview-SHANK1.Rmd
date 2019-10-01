@@ -1,0 +1,130 @@
+---
+# R Markdown Documentation, DO NOT EDIT THE PLAIN MARKDOWN VERSION OF THIS FILE
+
+# Copyright 2019 Google Inc., Verily Life Sciences LLC. All rights reserved.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "Data Overview"
+output: html_document
+params:
+  PROJECT_ID: "YOUR-PROJECT-ID"
+  DATASET_NAME: "DeepVariant Platinum Genomes"
+  DATASET_DESCRIPTION: "Platinum Genomes called using DeepVariant https://cloud.google.com/genomics/docs/public-datasets/illumina-platinum-genomes"
+  # Zero-based b38 coordinates for SHANK1 per https://www.ncbi.nlm.nih.gov/gene/50944
+  SHANK1_START: 50659256
+  SHANK1_END: 50719783
+  GENOME_CALL_TABLE: "bigquery-public-data.human_genome_variants.platinum_genomes_deepvariant_variants_20180823"
+  GENOME_CALL_OR_MULTISAMPLE_VARIANT_TABLE: "bigquery-public-data.human_genome_variants.platinum_genomes_deepvariant_variants_20180823"
+
+# This RMarkdown is a parameterized report.  See
+# http://rmarkdown.rstudio.com/developer_parameterized_reports.html
+# for more detail.
+---
+
+```{r echo = FALSE, eval = FALSE}
+######################[ CHANGE ME ]##################################
+# This codelab assumes that the current working directory is where the Rmd file resides.
+setwd("/YOUR/PATH/TO/HERE")
+```
+
+```{r, setup, include=FALSE}
+# When knitting, keep going if any failures occur.
+knitr::opts_chunk$set(error = TRUE)
+# Set up for BigQuery access.
+source("setup.R")
+```
+
+# Part 1: Data Overview of `r params$DATASET_NAME`
+
+In Part 1 of the codelab, we perform some queries to acquaint ourselves with the data and determine whether it has any characteristics requiring any additional consideration in the QC checks that follow. These queries all assume that the VCFs were loaded to BigQuery using https://cloud.google.com/genomics/docs/how-tos/load-variants therefore resulting in some columns common to all tables.
+
+* [Variants](#variants)
+* [Non-Variant Segments](#non-variant-segments)
+* [Alternative Allele Field](#alternative-allele-field)
+* [Genotype Field](#genotype-field)
+
+The following example makes use of `r params$DATASET_DESCRIPTION` but note that this is a [parameterized RMarkdown report](http://rmarkdown.rstudio.com/developer_parameterized_reports.html) so the narrative does not include any particular conclusions about the data presented.
+
+## Variants
+
+Let's take a look at a few of the variants within SHANK1 via BigQuery.
+```{r comment = NA}
+result <- perform_bqquery(sql_path = "../sql/variant_level_data_for_shank1.sql",
+                          params = params)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+These are the variant-level fields common to all tables. There are often dataset-specific variant-level fields as well. For more information about additional fields, see the schema for the table being queried.
+
+## Non-Variant Segments
+
+Let's take a look at a few non-variant segments within SHANK1 (if any, it will depend on the input VCF files):
+```{r comment = NA}
+result <- perform_bqquery(sql_path = "../sql/non_variant_segments_shank1.sql",
+                          params = params)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+If the data contains non-variant segments, for any analyses that require us to know for example _"how many samples do and do not have a particular SNP?"_, we'll need to make sure that the non-variant segments are considered in addition to the variants.
+
+## Alternative Allele Field
+
+And then let's take a look at the domain and range of values for alternate_bases:
+```{r comment = NA}
+result <- perform_bqquery(sql_path = "../sql/characterize_alts.sql",
+                          params = params)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying the first few rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result)
+```
+
+If any alternate alleles include special characters (e.g., large deletions coded as `<DEL>`, complex structural variants, etc...) we'll want to take that into consideration in our analyses downstream.
+
+## Genotype Field
+
+And finally let's take a look at the domain and range of values for genotype:
+```{r comment = NA}
+result <- perform_bqquery(sql_path = "../sql/characterize_genotypes.sql",
+                          params = params)
+```
+Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
+
+Displaying at most 100 rows of the dataframe of results:
+```{r echo = FALSE, comment = NA, results = "asis"}
+DisplayQueryResults(result, n = 100)
+```
+
+For example, we'll want to examine the result to see if we have any:
+
+* no-calls (the -1 values)
+* genotypes consisting of just a single allele or more than two alleles
+
+# Provenance
+
+```{r}
+devtools::session_info()
+```

@@ -119,7 +119,8 @@ For each genome, count the number of variant calls.  Any genomes whose count is 
 
 ```{r comment = NA}
 result <- perform_bqquery(sql_path = "../sql/genome_variant_calls.sql",
-                          params = params)
+                          params = params,
+                          max_pages = Inf)
 ```
 Number of rows returned by this query: **`r if(is.null(result)) { "None" } else { nrow(result) }`**.
 
