@@ -46,8 +46,13 @@ perform_bqquery <- function(sql, sql_path, params, ...) {
   }
   sql <- jinja$Template(sql)$render(params)
   cat(sql)
-  result <- try(query_exec(sql, use_legacy_sql = FALSE, project = params$PROJECT_ID, ...))
-  if ("try-error" == class(result)) {
+  result <- try(
+      bq_table_download(
+          bq_project_query(
+              params$PROJECT_ID,
+              sql,
+              ...)))
+  if ("try-error" %in% class(result)) {
     warning(result)
     return(data.frame())  # Empty dataframe.
   }
